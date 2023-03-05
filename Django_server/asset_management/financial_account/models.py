@@ -4,7 +4,7 @@ from django.db import models
 class Financialaccount(models.Model):
     nickname = models.CharField(max_length=250)
     bankname = models.CharField(max_length=20)
-    accountnumber= models.CharField(max_length=100, unique=True)
+    accountnumber= models.CharField(max_length=100, unique=True, primary_key=True)
     assetamount = models.IntegerField()
     
     
@@ -43,7 +43,7 @@ class Payaccount(models.Model):
 class Cardaccount(models.Model):
     nickname = models.CharField(max_length=250)
     corpname = models.CharField(max_length=20)
-    bankconnect = models.ForeignKey('Financialaccount', on_delete=models.CASCADE)
+    bankconnect = models.ForeignKey(Financialaccount, on_delete=models.CASCADE, related_name='connectcard', null=True, blank=True)
     description = models.TextField(blank=True)
     
     def __str__(self):

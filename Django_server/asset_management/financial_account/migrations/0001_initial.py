@@ -39,7 +39,6 @@ class Migration(migrations.Migration):
                 ('nickname', models.CharField(max_length=250)),
                 ('corpname', models.CharField(max_length=20)),
                 ('description', models.TextField(blank=True)),
-                ('bankconnect', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='financial_account.financialaccount')),
             ],
         ),
     ]

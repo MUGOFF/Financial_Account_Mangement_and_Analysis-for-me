@@ -18,5 +18,5 @@ from . import views
 
 
 urlpatterns = [
-    # path('money_account_list/', views.Account_Book_Bookmark.as_view()),
+    path('money_account_list/', views.Account_Book_Bookmark.as_view()),
 ]

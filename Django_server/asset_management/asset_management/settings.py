@@ -102,11 +102,20 @@ WSGI_APPLICATION = 'asset_management.wsgi.application'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # }
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'budgetaccount_db',
+        'USER': 'adminF',
+        'PASSWORD': '0223',
+        'HOST': 'localhost',
+        'PORT': '3306'
+    } #sql
 }
+
 
 
 # Password validation

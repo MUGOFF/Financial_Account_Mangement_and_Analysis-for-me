@@ -17,5 +17,5 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    
+    path('accountedit/<accountname>/',views.TransactionBasics.as_view()),
 ]
