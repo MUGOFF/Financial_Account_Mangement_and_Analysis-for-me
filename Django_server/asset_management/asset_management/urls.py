@@ -21,8 +21,8 @@ from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('djoser.urls'),name='api'),
-    path('api/', include('djoser.urls.authtoken')),
+    path('api/v0/', include('djoser.urls'),name='api'),
+    path('api/v0/', include('djoser.urls.authtoken')),
     # path('api/', include('financial_company.urls')),
     path('api/v1/', include('financial_account.urls')),
     path('api/v1/', include('acc_record.urls')),

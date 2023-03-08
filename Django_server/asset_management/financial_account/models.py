@@ -29,23 +29,26 @@ class Financialaccount(models.Model):
     
 #     def __str__(self):
 #         return self.nickname
+class Cardaccount(models.Model):
+    nickname = models.CharField(max_length=250)
+    corpname = models.CharField(max_length=20)
+    cardnumber = models.CharField(max_length=50, unique=True, primary_key=True)
+    bankconnect = models.ForeignKey(Financialaccount, on_delete=models.CASCADE, related_name='connectcard', null=True, blank=True)
+    description = models.TextField(blank=True)
+    
+    def __str__(self):
+        return self.nickname
     
 class Payaccount(models.Model):
     nickname = models.CharField(max_length=250)
     corpname = models.CharField(max_length=20)
     assetamount = models.IntegerField()
     description = models.TextField(blank=True)
+    bankconnection = models.ManyToManyField('Financialaccount', related_name='connectpay')
+    cardconnection = models.ManyToManyField('Cardaccount', related_name='connectpay')
     
     def __str__(self):
         return self.nickname
     
     
-class Cardaccount(models.Model):
-    nickname = models.CharField(max_length=250)
-    corpname = models.CharField(max_length=20)
-    bankconnect = models.ForeignKey(Financialaccount, on_delete=models.CASCADE, related_name='connectcard', null=True, blank=True)
-    description = models.TextField(blank=True)
-    
-    def __str__(self):
-        return self.nickname
     

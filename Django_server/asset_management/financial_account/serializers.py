@@ -11,6 +11,29 @@ class AccountInfo(serializers.ModelSerializer):
             'accountnumber',
             'assetamount',
         )
+        
+class CardInfo(serializers.ModelSerializer):
+    class Meta:
+        model = Cardaccount
+        fields = (
+            'nickname',
+            'corpname',
+            'cardnumber',
+            'bankconnect',
+            'description',
+        )
+        
+class PayInfo(serializers.ModelSerializer):
+    class Meta:
+        model = Payaccount
+        fields = (
+            'nickname',
+            'corpname',
+            'assetamount',
+            'description',
+            'bankconnection',
+            'cardconnection',
+        )
 
 class AccountTrans(serializers.ModelSerializer):
     transaction = TransactionAccountSerializer(many = True, read_only = True)
