@@ -9,7 +9,9 @@ class AccountInfo(serializers.ModelSerializer):
             'nickname',
             'bankname',
             'accountnumber',
+            'account_type',
             'assetamount',
+            'description',
         )
         
 class CardInfo(serializers.ModelSerializer):
@@ -19,6 +21,7 @@ class CardInfo(serializers.ModelSerializer):
             'nickname',
             'corpname',
             'cardnumber',
+            'card_type',
             'bankconnect',
             'description',
         )
