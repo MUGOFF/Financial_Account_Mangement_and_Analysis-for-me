@@ -17,14 +17,42 @@ const routes = [
       import(/* webpackChunkName: "about" */ "../views/AboutView.vue"),
   },
   {
+    path: "/testpage",
+    name: "testpage",
+    component: () => import("../views/TestVue.vue"),
+  },
+  // 계좌 정보 info
+  {
     path: "/addtable",
     name: "AddTable",
     component: () => import("../views/AddTable.vue"),
   },
   {
-    path: "/testpage",
-    name: "testpage",
-    component: () => import("../views/TestVue.vue"),
+    path: "/accountmanage",
+    name: "AccountManagement",
+    component: () => import("../views/AccountManagement.vue"),
+  },
+  // {
+  //   path: "/",
+  //   name: "",
+  //   component: () => import("../views/"),
+  // },
+  // 가계부 Book
+  {
+    path: "/book",
+    name: "BookView",
+    component: () => import("../views/BookView.vue"),
+  },
+  {
+    path: "/budget",
+    name: "BudgetView",
+    component: () => import("../views/BudgetView.vue"),
+  },
+  // 자산분석 Analysis
+  {
+    path: "/anlysis",
+    name: "AssetAnalysis",
+    component: () => import("../views/AssetAnalysis.vue"),
   },
 ];
 

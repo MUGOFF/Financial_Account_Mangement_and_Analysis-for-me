@@ -1,12 +1,23 @@
 <template>
-  <nav class="navbar navbar-expand-lg">
+  <NavBar />
+  <!-- <nav class="navbar navbar-expand-lg">
     <router-link to="/">Home</router-link> |
     <router-link to="/addtable">Account Data</router-link> |
     <router-link to="/about">Data Analysis</router-link> |
-    <router-link to="/testpage">page_test</router-link>
-  </nav>
+  </nav> -->
+  <!-- <router-link to="/testpage">page_test</router-link> -->
   <router-view />
 </template>
+
+<script>
+import NavBar from "@/components/Nav.vue";
+export default {
+  name: "App",
+  components: {
+    NavBar,
+  },
+};
+</script>
 
 <style lang="scss">
 #app {
