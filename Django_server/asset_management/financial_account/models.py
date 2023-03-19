@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import date
 
 # Create your models here.
 class Financialaccount(models.Model):
@@ -37,6 +38,7 @@ class Cardaccount(models.Model):
     cardnumber = models.CharField(max_length=50, unique=True, primary_key=True)
     card_type = models.CharField(max_length=50, default="체크카드")
     bankconnect = models.ForeignKey(Financialaccount, on_delete=models.CASCADE, related_name='connectcard', null=True, blank=True)
+    expiredmonth = models.DateField(default=date.today())
     description = models.TextField(blank=True)
     
     def __str__(self):
@@ -47,8 +49,8 @@ class Payaccount(models.Model):
     corpname = models.CharField(max_length=20)
     assetamount = models.IntegerField(default=0)
     description = models.TextField(blank=True)
-    bankconnection = models.ManyToManyField('Financialaccount', related_name='connectpay')
-    cardconnection = models.ManyToManyField('Cardaccount', related_name='connectpay')
+    bankconnection = models.ManyToManyField('Financialaccount', related_name='connectpay', blank=True)
+    cardconnection = models.ManyToManyField('Cardaccount', related_name='connectpay', blank=True)
     
     def __str__(self):
         return self.nickname

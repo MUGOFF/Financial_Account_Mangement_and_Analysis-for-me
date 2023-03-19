@@ -23,6 +23,7 @@ class CardInfo(serializers.ModelSerializer):
             'cardnumber',
             'card_type',
             'bankconnect',
+            'expiredmonth',
             'description',
         )
         
@@ -30,6 +31,7 @@ class PayInfo(serializers.ModelSerializer):
     class Meta:
         model = Payaccount
         fields = (
+            'id',
             'nickname',
             'corpname',
             'assetamount',
