@@ -24,6 +24,7 @@ class TransactionAllSerializer(serializers.ModelSerializer):
             'transaction_time',
             'transaction_from',
             'transaction_from_str',
+            'transaction_from_card',
             'transaction_to_name',
             'transaction_to_nickname',
             'changed_amount',

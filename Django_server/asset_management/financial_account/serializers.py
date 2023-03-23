@@ -10,6 +10,8 @@ class AccountInfo(serializers.ModelSerializer):
             'bankname',
             'accountnumber',
             'account_type',
+            'account_founddate',
+            'account_expireddate',
             'assetamount',
             'description',
         )

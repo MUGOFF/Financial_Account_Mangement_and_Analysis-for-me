@@ -8,6 +8,7 @@ class Transaction(models.Model):
     updated_datetime = models.DateTimeField(auto_now=True) #작성 날짜
     transaction_time = models.DateTimeField()
     transaction_from = models.ForeignKey(Financialaccount,on_delete=models.CASCADE,related_name='transaction',blank=True,null=True)
+    transaction_from_card = models.ForeignKey(Cardaccount,on_delete=models.CASCADE,related_name='transaction',blank=True,null=True)
     transaction_to_name = models.CharField(max_length=250)
     transaction_to_nickname = models.CharField(max_length=250)
     changed_amount = models.IntegerField(default=0)
