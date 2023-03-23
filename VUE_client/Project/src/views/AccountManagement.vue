@@ -604,7 +604,6 @@ export default {
       dialog.showModal();
     },
     delete_account() {
-      console.log(this.delete_candidate);
       let urls = [];
       this.delete_candidate.map((obj) => {
         if (obj[1] == "bank") {
@@ -617,7 +616,6 @@ export default {
           urls.push("api/v1/pay_account/" + obj[0]);
         }
       });
-      console.log(urls);
       axios
         .all(urls.map((url) => axios.delete(url)))
         .then((response) => {
