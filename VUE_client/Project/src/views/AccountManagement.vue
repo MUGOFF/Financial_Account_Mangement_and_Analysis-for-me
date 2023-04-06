@@ -478,7 +478,7 @@ export default {
   methods: {
     get_table() {
       axios
-        .get("api/v1/bank_account/")
+        .get("api/v1/account_management/bank_account/")
         .then((response) => {
           this.account_table = response.data;
         })
@@ -486,7 +486,7 @@ export default {
           console.error(error);
         });
       axios
-        .get("api/v1/card_account/")
+        .get("api/v1/account_management/card_account/")
         .then((response) => {
           this.card_table = response.data;
         })
@@ -494,7 +494,7 @@ export default {
           console.error(error);
         });
       axios
-        .get("api/v1/pay_account/")
+        .get("api/v1/account_management/pay_account/")
         .then((response) => {
           this.pay_table = response.data;
         })
@@ -545,7 +545,7 @@ export default {
           if (value === "confirm") {
             if (this.fi_type === "bank") {
               axios
-                .post("api/v1/bank_account/", {
+                .post("api/v1/account_management/bank_account/", {
                   nickname: this.account_form.name,
                   bankname: this.account_form.corp,
                   accountnumber: this.account_form.accountnumber,
@@ -562,7 +562,7 @@ export default {
                 });
             } else if (this.fi_type === "card") {
               axios
-                .post("api/v1/card_account/", {
+                .post("api/v1/account_management/card_account/", {
                   nickname: this.account_form.name,
                   corpname: this.account_form.corp,
                   cardnumber: this.account_form.accountnumber,
@@ -580,7 +580,7 @@ export default {
                 });
             } else {
               axios
-                .post("api/v1/pay_account/", {
+                .post("api/v1/account_management/pay_account/", {
                   nickname: this.account_form.name,
                   corpname: this.account_form.corp,
                   assetamount: this.account_form.accountnumber,
@@ -607,13 +607,13 @@ export default {
       let urls = [];
       this.delete_candidate.map((obj) => {
         if (obj[1] == "bank") {
-          urls.push("api/v1/bank_account/" + obj[0]);
+          urls.push("api/v1/account_management/bank_account/" + obj[0]);
         }
         if (obj[1] == "card") {
-          urls.push("api/v1/card_account/" + obj[0]);
+          urls.push("api/v1/account_management/card_account/" + obj[0]);
         }
         if (obj[1] == "pay") {
-          urls.push("api/v1/pay_account/" + obj[0]);
+          urls.push("api/v1/account_management/pay_account/" + obj[0]);
         }
       });
       axios

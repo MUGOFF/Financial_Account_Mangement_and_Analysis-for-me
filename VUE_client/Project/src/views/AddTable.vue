@@ -5,7 +5,7 @@
         <div class="d-flex">
           <div class="input-group m-3">
             <span class="input-group-text">은행선택</span>
-            <select class="form-select" required>
+            <select class="form-select" v-model="form.bank" required>
               <option
                 v-for="account in account_table"
                 :key="account"
@@ -17,8 +17,8 @@
           </div>
           <div class="input-group m-3">
             <span class="input-group-text">카드선택</span>
-            <select class="form-select">
-              <option value="" selected>----------</option>
+            <select class="form-select" v-model="form.card">
+              <option :value="null" selected>----------</option>
               <option
                 v-for="card in card_table"
                 :key="card"
@@ -26,6 +26,8 @@
               >
                 {{ card.nickname }}
               </option>
+              <!-- <option disabled>____________</option> -->
+              <!-- <option value="pay">페이로 변경</option> -->
             </select>
           </div>
           <div class="input-group m-3">
@@ -65,7 +67,7 @@
             <table class="table table-bordered">
               <thead>
                 <tr>
-                  <th v-for="heading in headings" :key="heading">
+                  <th v-for="heading in tableData.headings" :key="heading">
                     {{ heading }}
                   </th>
                   <th>Action</th>
@@ -152,7 +154,7 @@
             <button
               type="button"
               class="w-50 btn btn-outline-success"
-              @click="submitform"
+              @click="openmodal()"
             >
               표 입력
             </button>
@@ -160,15 +162,12 @@
           <div class="btn-group w-100">
             <button
               class="w-50 btn btn-outline-secondary"
-              @click="changeHeading()"
-            >
-              헤더 변경
-            </button>
-            <button
-              class="w-50 btn btn-outline-primary"
               @click="transform_table()"
             >
-              표 변경
+              표(머리) 변경
+            </button>
+            <button class="w-50 btn btn-outline-primary" @click="reset_table()">
+              초기화
             </button>
           </div>
         </div>
@@ -181,11 +180,80 @@
   <!-- Modal -->
   <dialog>
     <form method="dialog">
-      <div id="dialog_body" class="container text-start">field_text</div>
+      <div id="dialog_body" class="container text-start">
+        <div class="input-group m-2">
+          <span class="input-group-text">거래시각</span>
+          <select v-model="form.time" class="form-select">
+            <option
+              v-for="heading in tableData.headings"
+              :key="heading"
+              :value="heading"
+            >
+              {{ heading }}
+            </option>
+          </select>
+          <!-- <span class="input-group-text">날짜형식</span>
+          <input v-model="form.format" class="form-control" /> -->
+        </div>
+        <div class="input-group m-2">
+          <span class="input-group-text">계좌이름</span>
+          <input v-model="form.bank" class="form-control" readonly />
+        </div>
+        <div class="input-group m-2">
+          <span class="input-group-text">카드이름</span>
+          <input v-model="form.card" class="form-control" readonly />
+        </div>
+        <div class="input-group m-2">
+          <span class="input-group-text">거래처회사이름</span>
+          <select v-model="form.corp" class="form-select">
+            <option
+              v-for="heading in tableData.headings"
+              :key="heading"
+              :value="heading"
+            >
+              {{ heading }}
+            </option>
+          </select>
+        </div>
+        <div class="input-group m-2">
+          <span class="input-group-text">입금금액</span>
+          <select v-model="form.deposit" class="form-select">
+            <option
+              v-for="heading in tableData.headings"
+              :key="heading"
+              :value="heading"
+            >
+              {{ heading }}
+            </option>
+          </select>
+        </div>
+        <div class="input-group m-2">
+          <span class="input-group-text">출금금액</span>
+          <select v-model="form.withdrawal" class="form-select">
+            <option
+              v-for="heading in tableData.headings"
+              :key="heading"
+              :value="heading"
+            >
+              {{ heading }}
+            </option>
+          </select>
+        </div>
+        <div class="input-group m-2">
+          <span class="input-group-text">비고내용</span>
+          <select v-model="form.desc" class="form-select">
+            <option
+              v-for="heading in tableData.headings"
+              :key="heading"
+              :value="heading"
+            >
+              {{ heading }}
+            </option>
+          </select>
+        </div>
+      </div>
       <button class="m-2 btn btn-secondary" value="close">취소</button>
-      <button class="m-2 btn btn-info" data-bs-dismiss="modal" value="confirm">
-        확인
-      </button>
+      <button class="m-2 btn btn-info" value="confirm">확인</button>
     </form>
   </dialog>
 </template>
@@ -203,10 +271,21 @@ export default {
       account_table: {},
       card_table: {},
       pay_table: {},
-      headings: [],
-      rows: [],
       selectedRows: [],
-      tableData: {},
+      tableData: {
+        headings: [],
+        rows: [],
+      },
+      form: {
+        time: "",
+        // format: "YYYY-mm-DDTHH:MM:SS",
+        bank: "",
+        card: null,
+        corp: "",
+        deposit: "",
+        withdrawal: "",
+        desc: "",
+      },
       tableON: false,
       currentPage: 1,
       rowsPerPage: 10,
@@ -216,7 +295,7 @@ export default {
     paginatedRows() {
       const start = (this.currentPage - 1) * this.rowsPerPage;
       const end = start + this.rowsPerPage;
-      return this.rows.slice(start, end);
+      return this.tableData.rows.slice(start, end);
     },
     pageRows() {
       let pagerow = _.range(this.currentPage - 2, this.currentPage + 3);
@@ -225,7 +304,7 @@ export default {
       return pagerow;
     },
     totalPages() {
-      return Math.ceil(this.rows.length / this.rowsPerPage);
+      return Math.ceil(this.tableData.rows.length / this.rowsPerPage);
     },
   },
   mounted() {
@@ -234,7 +313,40 @@ export default {
   methods: {
     dragfile(event) {
       event.preventDefault();
-      alert("drop");
+      const file = event.dataTransfer.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        let rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        this.tableData.headings = rows.shift();
+        // Create an object with the table data organized by column
+        // const tableData = {};
+        // this.headings.forEach((heading, index) => {
+        //   tableData[heading] = this.rows.map((row) => row[index]);
+        // });
+        const maxlenrow = Math.max(...rows.map((row) => row.length));
+        this.tableData.headings = this.tableData.headings.map(
+          (heading, index) => heading + ":" + (index + 1)
+        );
+        this.tableData.headings = this.tableData.headings.concat(
+          _.range(this.tableData.headings.length + 1, maxlenrow + 1)
+        );
+        rows = rows.map((row) =>
+          row.concat(_.range(row.length + 1, maxlenrow + 1))
+        );
+        this.tableON = true;
+        rows.forEach((row) => {
+          const rowobj = new Object();
+          this.tableData.headings.forEach((heading, index) => {
+            rowobj[heading] = row[index];
+          });
+          this.tableData.rows.push(rowobj);
+        });
+      };
+      reader.readAsArrayBuffer(file);
     },
     onFileChange(event) {
       const file = event.target.files[0];
@@ -244,31 +356,37 @@ export default {
         const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        this.headings = rows.shift();
-        this.rows = rows;
+        let rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        this.tableData.headings = rows.shift();
         // Create an object with the table data organized by column
         // const tableData = {};
         // this.headings.forEach((heading, index) => {
         //   tableData[heading] = this.rows.map((row) => row[index]);
         // });
         const maxlenrow = Math.max(...rows.map((row) => row.length));
-        this.headings = this.headings.map(
+        this.tableData.headings = this.tableData.headings.map(
           (heading, index) => heading + ":" + (index + 1)
         );
-        this.headings = this.headings.concat(
-          _.range(this.headings.length + 1, maxlenrow + 1)
+        this.tableData.headings = this.tableData.headings.concat(
+          _.range(this.tableData.headings.length + 1, maxlenrow + 1)
         );
-        this.rows = this.rows.map((row) =>
+        rows = rows.map((row) =>
           row.concat(_.range(row.length + 1, maxlenrow + 1))
         );
         this.tableON = true;
+        rows.forEach((row) => {
+          const rowobj = new Object();
+          this.tableData.headings.forEach((heading, index) => {
+            rowobj[heading] = row[index];
+          });
+          this.tableData.rows.push(rowobj);
+        });
       };
       reader.readAsArrayBuffer(file);
     },
     deleteRow() {
       this.selectedRows.map((obj) => {
-        _.pull(this.rows, obj[0]);
+        _.pull(this.tableData.rows, obj[0]);
       });
       this.selectedRows = [];
       // Update the table data object after deleting the row
@@ -278,7 +396,104 @@ export default {
       // });
       // this.tableData = tableData;
     },
-    changeHeading() {
+    submitform() {
+      let forms = this.selectedRows.map((item) => {
+        const regexp = /\d+/g;
+        const form = new FormData();
+        const regarr = Array.from(
+          item[0][this.form.time].matchAll(regexp),
+          (m) => m[0]
+        );
+        let timeformat = "";
+        regarr.forEach((match, index) => {
+          if (0 < index && index < 3) {
+            timeformat = timeformat + "-";
+          } else if (6 > index && index > 3) {
+            timeformat = timeformat + ":";
+          } else if (index === 3) {
+            timeformat = timeformat + "T";
+          }
+          timeformat = timeformat + match;
+        });
+        form.append("transaction_time", timeformat);
+        form.append("transaction_from", this.form.bank);
+        if (this.form.card !== null) {
+          form.append("transaction_from_card", this.form.card);
+        }
+        form.append("transaction_to_name", item[0][this.form.corp]);
+        form.append("deposit_amount ", item[0][this.form.deposit]);
+        form.append("withdrawal_amount ", item[0][this.form.withdrawal]);
+        form.append("description", item[0][this.form.desc]);
+        return form;
+      });
+      axios
+        .all(
+          forms.map((form) =>
+            axios.post(
+              "api/v1/account_record/Transaction_All/" + this.form.bank,
+              form,
+              {
+                headers: {
+                  "Content-Type": "multipart/form-data",
+                },
+              }
+            )
+          )
+        )
+        .then(alert("입력되었습니다"))
+        .catch((error) => {
+          console.log(error);
+        });
+      // 'transaction_time',
+      // 'transaction_from',
+      // 'transaction_from_card',
+      // 'transaction_to_name',
+      // 'transaction_to_name_related',
+      // 'main_category',
+      // 'sub_category',
+      // 'description',
+      //   let form = new FormData();
+      //   form.append("transaction_time", 1);
+      //   form.append("transaction_from", 1);
+      //   form.append("transaction_from_card", 1);
+      //   form.append("transaction_to_name", 1);
+      //   form.append("transaction_to_name_related", 1);
+      //   form.append("main_category", 1);
+      //   form.append("sub_category", 1);
+      //   form.append("description", 1);
+    },
+    openmodal() {
+      if (!this.tableON) {
+        alert("표를 업로드 하세요");
+        return false;
+      }
+      if (this.selectedRows.length === 0) {
+        alert("행을 선택하세요");
+        return false;
+      }
+      if (this.form.bank === "") {
+        alert("계좌가 설정되지 않았습니다.");
+        return false;
+      }
+      const dialog = document.querySelector("dialog");
+      dialog.addEventListener(
+        "close",
+        () => {
+          const value = dialog.returnValue;
+          if (value === "confirm") {
+            const final_value = confirm("설정한 값들로 입력합니까?");
+            if (final_value === true) {
+              this.submitform();
+            } else {
+              this.openmodal();
+            }
+          }
+        },
+        { once: true }
+      );
+      dialog.showModal();
+    },
+    transform_table() {
       if (this.selectedRows.length === 0) {
         alert("선택된 행이 없습니다.");
         return false;
@@ -288,37 +503,49 @@ export default {
       let changerow = [];
       if (this.selectedRows.length > 1) {
         this.selectedRows.forEach((obj) => {
-          changerow = changerow.concat(obj[0]);
+          changerow = changerow.concat(Object.values(obj[0]));
         });
-        this.headings = changerow;
-        this.rows.splice(0, maxrow + 1);
-        this.rows = this.rows.map((row, index, array) => {
+        this.tableData.headings = changerow;
+        this.tableData.rows.splice(0, maxrow + 1);
+        let newrows = this.tableData.rows.map((row, index, array) => {
           if (index % this.selectedRows.length === 0) {
-            row = row.concat(array[index + 1], array[index + 2]);
-            return row;
+            return Object.values(row).concat(
+              Object.values(array[index + 1]),
+              Object.values(array[index + 2])
+            );
           }
         });
-        this.rows = _.without(this.rows, undefined);
+        newrows = _.without(newrows, undefined);
+        this.tableData.rows = newrows.map((row) => {
+          const rowobj = new Object();
+          this.tableData.headings.forEach((heading, index) => {
+            rowobj[heading] = row[index];
+          });
+          return rowobj;
+        });
       } else {
-        this.headings = this.rows[this.selectedRows[0][1]];
-        this.rows.splice(this.selectedRows[0][1], 1);
+        const newheadings = Object.values(
+          this.tableData.rows[this.selectedRows[0][1]]
+        );
+        this.tableData.rows = this.tableData.rows.map((row) => {
+          const rowobj = new Object();
+          this.tableData.headings.map((heading, index) => {
+            rowobj[newheadings[index]] = row[heading];
+          });
+          return rowobj;
+        });
+        this.tableData.headings = newheadings;
+        this.tableData.rows.splice(this.selectedRows[0][1], 1);
       }
       this.selectedRows = [];
     },
-    transform_table() {
-      const tableData = {};
-      this.rows.forEach((row) => {
-        const rowobj = new Object();
-        this.headings.map((heading, index) => {
-          rowobj[heading] = row[index];
-        });
-        tableData.push(rowobj);
-      });
-      console.log(tableData);
+    reset_table() {
+      this.tableON = false;
+      document.getElementById("table_file_upload").value = "";
     },
     get_table() {
       axios
-        .get("api/v1/bank_account/")
+        .get("api/v1/account_management/bank_account/")
         .then((response) => {
           this.account_table = response.data;
         })
@@ -326,7 +553,7 @@ export default {
           console.error(error);
         });
       axios
-        .get("api/v1/card_account/")
+        .get("api/v1/account_management/card_account/")
         .then((response) => {
           this.card_table = response.data;
         })
@@ -334,7 +561,7 @@ export default {
           console.error(error);
         });
       axios
-        .get("api/v1/pay_account/")
+        .get("api/v1/account_management/pay_account/")
         .then((response) => {
           this.pay_table = response.data;
         })
@@ -342,14 +569,20 @@ export default {
           console.error(error);
         });
     },
+    // CardPaySwitch() {
+    //   alert("1");
+    // },
     showPage(index) {
       this.currentPage = index;
+      this.selectedRows = [];
     },
     Previous() {
       this.currentPage--;
+      this.selectedRows = [];
     },
     Next() {
       this.currentPage++;
+      this.selectedRows = [];
     },
   },
 };
