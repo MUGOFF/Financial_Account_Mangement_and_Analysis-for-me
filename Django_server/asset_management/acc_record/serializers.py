@@ -4,54 +4,64 @@ from financial_account.models import Financialaccount
 
 class MoneyCategorySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Flow_category
+        model = Main_Category
         fields = (
             'flow_category',
             'main_category',
+        )
+        
+class CategoryTagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag_Category
+        fields = (
+            'upper_clas_category',
             'sub_category',
+        )
+        
+class CompanyCorrelationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company_Category_Correlation
+        fields = (
+            'company_accountname',
+            'company_commonname',
+            'category_hook',
         )
 
 class TransactionAllSerializer(serializers.ModelSerializer):
-    
-    # transaction_from_dict = AccountTrans(many =)
-    transaction_from_str = serializers.SerializerMethodField()
-    
+        
     class Meta:
         model = Transaction
         fields = (
+            'id',
             'written_datetime',
             'updated_datetime',
             'transaction_time',
             'transaction_from',
-            'transaction_from_str',
             'transaction_from_card',
             'transaction_to_name',
-            'transaction_to_nickname',
-            'changed_amount',
+            'deposit_amount',
+            'withdrawal_amount',
             'main_category',
             'sub_category',
-            'category_hooked',
             'description',
         )
-    
-    def get_transaction_from_str(self, Transaction):
-        print(self)
-        print(self.context)
-        request = self.context.get('request')
-        account = Financialaccount.objects.filter(nickname = request)
-        print(Financialaccount.objects.all())
-        # print(account.nickname)
-        return account
-    
           
-class TransactionAccountSerializer(serializers.ModelSerializer):
+class TransactionShowSerializer(serializers.ModelSerializer):
+    
+    transaction_from_str = serializers.CharField(source='transaction_from.nickname')
+    transaction_to_name_nickname = serializers.CharField(source='transaction_to_name_related.compnay_commonname')
+    transaction_from_card_str = serializers.CharField(source='transaction_from_card.nickname', allow_null=True)
+    
     class Meta:
         model = Transaction
         fields = (
             'transaction_time',
             'transaction_to_name',
-            'transaction_to_nickname',
-            'changed_amount',
+            'transaction_from_str',
+            'transaction_from_card_str',
+            'transaction_to_name_nickname',
+            'deposit_amount',
+            'withdrawal_amount',
             'main_category',
             'sub_category',
         )

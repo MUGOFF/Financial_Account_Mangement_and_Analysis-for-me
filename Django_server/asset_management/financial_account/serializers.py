@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import *
-from acc_record.serializers import TransactionAccountSerializer 
+from acc_record.serializers import TransactionShowSerializer 
 
 class AccountInfo(serializers.ModelSerializer):
     class Meta:
@@ -43,7 +43,7 @@ class PayInfo(serializers.ModelSerializer):
         )
 
 class AccountTrans(serializers.ModelSerializer):
-    transaction = TransactionAccountSerializer(many = True, read_only = True)
+    transaction = TransactionShowSerializer(many = True, read_only = True)
     
     class Meta:
         model = Financialaccount

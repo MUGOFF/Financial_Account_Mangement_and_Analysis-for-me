@@ -40,7 +40,7 @@ class Cardaccount(models.Model):
     cardnumber = models.CharField(max_length=50, unique=True, primary_key=True)
     card_type = models.CharField(max_length=50, default="체크카드")
     bankconnect = models.ForeignKey(Financialaccount, on_delete=models.CASCADE, related_name='connectcard', null=True, blank=True)
-    expiredmonth = models.DateField(default=date.today())
+    expiredmonth = models.DateField(default=date.today)
     description = models.TextField(blank=True)
     
     def __str__(self):

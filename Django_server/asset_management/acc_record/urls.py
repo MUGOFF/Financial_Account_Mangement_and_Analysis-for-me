@@ -13,9 +13,15 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import path
+from rest_framework.routers import DefaultRouter
+from django.urls import path, include
 from . import views
 
+router = DefaultRouter()
+router.register('Transaction_All', views.TransactionAll, basename='transaction')
+router.register('Category', views.Category, basename='category')
+router.register('Company_nickname', views.Company_Nickname, basename='companyname')
 urlpatterns = [
-    path('accountedit/<accountname>/',views.TransactionBasics.as_view()),
+    path('account_record/', include(router.urls), name='account-record'),
+    path('account_transaction/<accountnumber>/',views.TransactionBasics.as_view()),
 ]

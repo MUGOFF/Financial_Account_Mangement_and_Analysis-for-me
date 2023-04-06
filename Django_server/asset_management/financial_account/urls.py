@@ -22,7 +22,7 @@ router.register('bank_account', views.AccountBase, basename='bank')
 router.register('card_account', views.CardBase, basename='card')
 router.register('pay_account', views.PayBase, basename='pay')
 urlpatterns = [
-    path('', include(router.urls)),
+    path('account_management/', include(router.urls), name='account-mangement'),
     # path('account_list/', views.AccountBase.as_view({'get': 'list'})),
     # path('account_ret/', views.AccountBase.as_view({'get': 'retrieve'})),
     path('money_account_list/', views.Account_Book_Bookmark.as_view()),

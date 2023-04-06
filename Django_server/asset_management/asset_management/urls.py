@@ -15,17 +15,23 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from . import views
+# from . import views
+from .views import ApiMapRouter
 from django.conf.urls.static import static
 from django.conf import settings
 
+homerouter = ApiMapRouter()
+# router = DefaultRouter()
+# router.register('Account_record', include('financial_account.urls'), basename='Account_record')
+# router.register('Account_management', include('acc_record.urls'), basename='Account_management')
 urlpatterns = [
+    path('', include(homerouter.urls), name='api-map'),
     path('admin/', admin.site.urls),
     path('api/v0/', include('djoser.urls'),name='api'),
     path('api/v0/', include('djoser.urls.authtoken')),
     # path('api/', include('financial_company.urls')),
     path('api/v1/', include('financial_account.urls')),
     path('api/v1/', include('acc_record.urls')),
-    path('', views.HomeView, name='home'),
+    # path('', views.HomeView, name='home'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
