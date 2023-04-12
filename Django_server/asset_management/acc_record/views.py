@@ -21,18 +21,21 @@ class Company_Nickname(ModelViewSet):
     
 class TransactionBasics(APIView):
     def get(self, request, accountnumber, format=None):
-        account = Transaction.objects.filter(transaction_from=accountnumber)
+        account = Transaction.objects.filter(transaction_from=accountnumber).order_by('transaction_time')
         # account = Transaction.objects.filter(transaction_from=accountname)
         # account = Transaction.objects.filter(transaction_from_str=accountname)
         serializer = TransactionAllSerializer(account, many=True, context={"request": request})
         return Response(serializer.data)
     def post(self, request, accountnumber, format=None):
-        corpname = Company_Category_Correlation.objects.filter(company_accountname = request.data['transaction_to_name'])        
+        corpname = Company_Category_Correlation.objects.filter(company_accountname = request.data['transaction_to_name'])
         if len(corpname) == 0:
             relation_data = {'company_accountname':request.data['transaction_to_name'],'company_commonname':request.data['transaction_to_name']}
             preworkserializer = CompanyCorrelationSerializer(data=relation_data)
             if(preworkserializer.is_valid()):
-                preworkserializer.save()
+                try:
+                    preworkserializer.save()
+                except:
+                    print("already exist")
         post_serializer = TransactionAllSerializer(data=request.data)
         if(post_serializer.is_valid()):
             post_serializer.save()
