@@ -35,12 +35,17 @@
             <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
               <li>
                 <router-link class="dropdown-item" to="/accountmanage"
-                  >계좌 입력</router-link
+                  >계좌 관리</router-link
                 >
               </li>
               <li>
                 <router-link class="dropdown-item" to="/addtable"
                   >거래 기록표 입력</router-link
+                >
+              </li>
+              <li>
+                <router-link class="dropdown-item" to="/transaction"
+                  >거래 기록 관리</router-link
                 >
               </li>
             </ul>

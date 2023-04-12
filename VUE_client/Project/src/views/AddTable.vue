@@ -42,9 +42,10 @@
           <div class="input-group m-3">
             <span class="input-group-text">행 표시수</span>
             <select class="form-select rounded" v-model="rowsPerPage">
-              <option value="10" selected>10개</option>
-              <option value="30">30개</option>
-              <option value="50">50개</option>
+              <option :value="10" selected>10개</option>
+              <option :value="30">30개</option>
+              <option :value="50">50개</option>
+              <option :value="100">100개</option>
             </select>
           </div>
         </div>
@@ -67,10 +68,20 @@
             <table class="table table-bordered">
               <thead>
                 <tr>
-                  <th v-for="heading in tableData.headings" :key="heading">
+                  <th
+                    v-for="heading in tableData.headings"
+                    :key="heading"
+                    @click="sortBy(heading)"
+                  >
                     {{ heading }}
                   </th>
-                  <th>Action</th>
+                  <th>
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      v-model="MasterCheckbox"
+                    />
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -101,7 +112,11 @@
                   <span aria-hidden="true">&laquo;</span>
                 </a>
               </li>
-              <li class="page-item" v-if="currentPage > 3">
+              <li
+                class="page-item"
+                v-if="currentPage > 3"
+                :class="{ active: currentPage === 1 }"
+              >
                 <a class="page-link" href="#" @click.prevent="showPage(1)">
                   1</a
                 >
@@ -109,7 +124,12 @@
               <li class="page-item" v-if="currentPage > 3">
                 <span class="page-link" href="#"> ...</span>
               </li>
-              <li class="page-item" v-for="index in pageRows" :key="index">
+              <li
+                class="page-item"
+                v-for="index in pageRows"
+                :key="index"
+                :class="{ active: currentPage === index }"
+              >
                 <a class="page-link" href="#" @click.prevent="showPage(index)">
                   {{ index }}</a
                 >
@@ -117,7 +137,11 @@
               <li class="page-item" v-if="currentPage < totalPages - 2">
                 <span class="page-link"> ...</span>
               </li>
-              <li class="page-item" v-if="currentPage < totalPages - 2">
+              <li
+                class="page-item"
+                v-if="currentPage < totalPages - 2"
+                :class="{ active: currentPage === totalPages }"
+              >
                 <a
                   class="page-link"
                   href="#"
@@ -202,6 +226,13 @@
         <div class="input-group m-2">
           <span class="input-group-text">카드이름</span>
           <input v-model="form.card" class="form-control" readonly />
+          <!-- list="cards_list" -->
+          <!-- <datalist id="cards_list">
+            <option value="입출금계좌"></option>
+            <option value="정기예금계좌"></option>
+            <option value="정기적금계좌"></option>
+            <option value="예탁금"></option>
+          </datalist> -->
         </div>
         <div class="input-group m-2">
           <span class="input-group-text">거래처회사이름</span>
@@ -282,20 +313,38 @@ export default {
         bank: "",
         card: null,
         corp: "",
-        deposit: "",
-        withdrawal: "",
+        deposit: "입금금액",
+        withdrawal: "출금금액",
         desc: "",
       },
       tableON: false,
+      sortColumn: "",
+      sortDirection: 1,
+      sortStart: false,
       currentPage: 1,
       rowsPerPage: 10,
     };
   },
   computed: {
+    sortedRows() {
+      const sorted = [...this.tableData.rows];
+      sorted.sort((a, b) => {
+        if (a[this.sortColumn] < b[this.sortColumn])
+          return -1 * this.sortDirection;
+        if (a[this.sortColumn] > b[this.sortColumn])
+          return 1 * this.sortDirection;
+        return 0;
+      });
+      return sorted;
+    },
     paginatedRows() {
       const start = (this.currentPage - 1) * this.rowsPerPage;
       const end = start + this.rowsPerPage;
-      return this.tableData.rows.slice(start, end);
+      if (this.sortStart) {
+        return this.sortedRows.slice(start, end);
+      } else {
+        return this.tableData.rows.slice(start, end);
+      }
     },
     pageRows() {
       let pagerow = _.range(this.currentPage - 2, this.currentPage + 3);
@@ -305,6 +354,18 @@ export default {
     },
     totalPages() {
       return Math.ceil(this.tableData.rows.length / this.rowsPerPage);
+    },
+    MasterCheckbox: {
+      get() {
+        return this.selectedRows.length === this.rowsPerPage;
+      },
+      set(value) {
+        this.selectedRows = value
+          ? this.paginatedRows.map((row, index) => {
+              return { 0: row, 1: index };
+            })
+          : [];
+      },
     },
   },
   mounted() {
@@ -338,6 +399,7 @@ export default {
           row.concat(_.range(row.length + 1, maxlenrow + 1))
         );
         this.tableON = true;
+        this.sortColumn = this.tableData.headings[0];
         rows.forEach((row) => {
           const rowobj = new Object();
           this.tableData.headings.forEach((heading, index) => {
@@ -374,6 +436,7 @@ export default {
           row.concat(_.range(row.length + 1, maxlenrow + 1))
         );
         this.tableON = true;
+        this.sortColumn = this.tableData.headings[0];
         rows.forEach((row) => {
           const rowobj = new Object();
           this.tableData.headings.forEach((heading, index) => {
@@ -389,6 +452,9 @@ export default {
         _.pull(this.tableData.rows, obj[0]);
       });
       this.selectedRows = [];
+      if (this.currentPage > this.totalPages) {
+        this.Previous();
+      }
       // Update the table data object after deleting the row
       // const tableData = {};
       // this.headings.forEach((heading, index) => {
@@ -397,6 +463,7 @@ export default {
       // this.tableData = tableData;
     },
     submitform() {
+      const regdate = /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/;
       let forms = this.selectedRows.map((item) => {
         const regexp = /\d+/g;
         const form = new FormData();
@@ -420,17 +487,21 @@ export default {
         if (this.form.card !== null) {
           form.append("transaction_from_card", this.form.card);
         }
-        form.append("transaction_to_name", item[0][this.form.corp]);
+        form.append("transaction_to_name", item[0][this.form.corp].trim());
         form.append("deposit_amount ", item[0][this.form.deposit]);
         form.append("withdrawal_amount ", item[0][this.form.withdrawal]);
         form.append("description", item[0][this.form.desc]);
         return form;
       });
+      if (!regdate.test(forms[0].get("transaction_time"))) {
+        alert("시간 표현이 올바르지 않습니다");
+        return false;
+      }
       axios
         .all(
           forms.map((form) =>
             axios.post(
-              "api/v1/account_record/Transaction_All/" + this.form.bank,
+              "api/v1/account_transaction/" + this.form.bank + "/",
               form,
               {
                 headers: {
@@ -444,23 +515,7 @@ export default {
         .catch((error) => {
           console.log(error);
         });
-      // 'transaction_time',
-      // 'transaction_from',
-      // 'transaction_from_card',
-      // 'transaction_to_name',
-      // 'transaction_to_name_related',
-      // 'main_category',
-      // 'sub_category',
-      // 'description',
-      //   let form = new FormData();
-      //   form.append("transaction_time", 1);
-      //   form.append("transaction_from", 1);
-      //   form.append("transaction_from_card", 1);
-      //   form.append("transaction_to_name", 1);
-      //   form.append("transaction_to_name_related", 1);
-      //   form.append("main_category", 1);
-      //   form.append("sub_category", 1);
-      //   form.append("description", 1);
+      this.deleteRow();
     },
     openmodal() {
       if (!this.tableON) {
@@ -506,6 +561,7 @@ export default {
           changerow = changerow.concat(Object.values(obj[0]));
         });
         this.tableData.headings = changerow;
+        this.sortColumn = this.tableData.headings[0];
         this.tableData.rows.splice(0, maxrow + 1);
         let newrows = this.tableData.rows.map((row, index, array) => {
           if (index % this.selectedRows.length === 0) {
@@ -536,11 +592,17 @@ export default {
         });
         this.tableData.headings = newheadings;
         this.tableData.rows.splice(this.selectedRows[0][1], 1);
+        this.sortColumn = this.tableData.headings[0];
       }
       this.selectedRows = [];
     },
     reset_table() {
       this.tableON = false;
+      this.sortStart = false;
+      this.tableData.headings = [];
+      this.tableData.rows = [];
+      this.currentPage = 1;
+      this.rowsPerPage = 10;
       document.getElementById("table_file_upload").value = "";
     },
     get_table() {
@@ -569,9 +631,15 @@ export default {
           console.error(error);
         });
     },
-    // CardPaySwitch() {
-    //   alert("1");
-    // },
+    sortBy(column) {
+      this.sortStart = true;
+      if (column === this.sortColumn) {
+        this.sortDirection *= -1;
+      } else {
+        this.sortColumn = column;
+        this.sortDirection = 1;
+      }
+    },
     showPage(index) {
       this.currentPage = index;
       this.selectedRows = [];

@@ -32,6 +32,11 @@ const routes = [
     name: "AccountManagement",
     component: () => import("../views/AccountManagement.vue"),
   },
+  {
+    path: "/transaction",
+    name: "TransactionManagement",
+    component: () => import("../views/TransactionManagement.vue"),
+  },
   // {
   //   path: "/",
   //   name: "",

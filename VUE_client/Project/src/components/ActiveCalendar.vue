@@ -1,19 +1,7 @@
-<!-- <template>
-  <div>h1.BookView Page</div>
-</template>
-<script>
-import { Calendar, DatePicker } from "@/components/ActiveCalendar.vue";
-
-export default {
-  name: "BookView",
-};
-</script>
-<style></style> -->
 <!-- calendar -->
 <template>
   <Calendar />
   <DatePicker v-model="date" />
-  <!-- <div>{{ date }}</div> -->
 </template>
 
 <script>
