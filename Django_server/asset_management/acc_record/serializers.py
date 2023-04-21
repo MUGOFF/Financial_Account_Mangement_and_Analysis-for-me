@@ -28,6 +28,8 @@ class CompanyCorrelationSerializer(serializers.ModelSerializer):
         )
 
 class TransactionAllSerializer(serializers.ModelSerializer):
+    transaction_from_str = serializers.CharField(source='transaction_from.nickname')
+    transaction_from_card_str = serializers.CharField(source='transaction_from_card.nickname', allow_null=True)
         
     class Meta:
         model = Transaction
@@ -37,7 +39,9 @@ class TransactionAllSerializer(serializers.ModelSerializer):
             'updated_datetime',
             'transaction_time',
             'transaction_from',
+            'transaction_from_str',
             'transaction_from_card',
+            'transaction_from_card_str',
             'transaction_to_name',
             'deposit_amount',
             'withdrawal_amount',
