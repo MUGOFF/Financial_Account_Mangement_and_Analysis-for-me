@@ -488,8 +488,8 @@ export default {
           form.append("transaction_from_card", this.form.card);
         }
         form.append("transaction_to_name", item[0][this.form.corp].trim());
-        form.append("deposit_amount ", item[0][this.form.deposit]);
-        form.append("withdrawal_amount ", item[0][this.form.withdrawal]);
+        form.append("deposit_amount", item[0][this.form.deposit]);
+        form.append("withdrawal_amount", item[0][this.form.withdrawal]);
         form.append("description", item[0][this.form.desc]);
         return form;
       });

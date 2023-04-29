@@ -64,14 +64,6 @@
       </li>
     </ul>
     <div
-      class="spinner-border"
-      role="status"
-      v-show="this.$store.state.isLoading"
-      style="width: 10vh; height: 10vh"
-    >
-      <span class="visually-hidden">Loading...</span>
-    </div>
-    <div
       v-if="
         Month_filter_Transactions.length === 0 && !this.$store.state.isLoading
       "
@@ -142,12 +134,20 @@ export default {
   data() {
     return {
       yearmonth: {
-        year: new Date().getFullYear(),
-        month: String(new Date().getMonth() + 1).padStart(2, "0"),
+        year: this.$route.query.year
+          ? this.$route.query.year
+          : new Date().getFullYear(),
+        month: this.$route.query.month
+          ? String(this.$route.query.month).padStart(2, "0")
+          : String(new Date().getMonth() + 1).padStart(2, "0"),
       },
       yearmonth_old: {
-        year: new Date().getFullYear(),
-        month: String(new Date().getMonth() + 1).padStart(2, "0"),
+        year: this.$route.query.year
+          ? this.$route.query.year
+          : new Date().getFullYear(),
+        month: this.$route.query.month
+          ? String(this.$route.query.month).padStart(2, "0")
+          : String(new Date().getMonth() + 1).padStart(2, "0"),
       },
       transaction_all: [],
     };

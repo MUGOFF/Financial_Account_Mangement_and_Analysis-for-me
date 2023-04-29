@@ -1,34 +1,67 @@
-<!-- <template>
-  <div>h1.BookView Page</div>
-</template>
-<script>
-import { Calendar, DatePicker } from "@/components/ActiveCalendar.vue";
-
-export default {
-  name: "BookView",
-};
-</script>
-<style></style> -->
-<!-- calendar -->
 <template>
-  <Calendar />
-  <DatePicker v-model="date" />
-  <!-- <div>{{ date }}</div> -->
+  <!-- calendar -->
+  <TransactionCalendar
+    :isExpanded="true"
+    :deposit="deposit_days"
+    :withdrawal="withdrawal_days"
+    @month_year="get_monthly_transactions"
+  />
 </template>
 
 <script>
-import { Calendar, DatePicker } from "v-calendar";
-import "v-calendar/style.css";
+import axios from "axios";
+import TransactionCalendar from "@/components/TransactionCalendar.vue";
+const _ = require("lodash");
 
 export default {
   components: {
-    Calendar,
-    DatePicker,
+    TransactionCalendar,
   },
   data() {
     return {
-      date: new Date(),
+      date_now: new Date(),
+      transaction_data: [],
     };
+  },
+  computed: {
+    deposit_days() {
+      const transactions = this.transaction_data.filter(
+        (transaction) => transaction.deposit_amount > 0
+      );
+      const dates = transactions.map(
+        (transaction) => new Date(transaction.transaction_time)
+      );
+      return _.uniqBy(dates, (date) => date.getDate());
+    },
+    withdrawal_days() {
+      const transactions = this.transaction_data.filter(
+        (transaction) => transaction.withdrawal_amount > 0
+      );
+      const dates = transactions.map(
+        (transaction) => new Date(transaction.transaction_time)
+      );
+      return _.uniqBy(dates, (date) => date.getDate());
+    },
+  },
+  created() {
+    this.get_monthly_transactions(
+      this.date_now.getMonth() + 1,
+      this.date_now.getFullYear()
+    );
+  },
+  methods: {
+    async get_monthly_transactions(month, year) {
+      this.$store.commit("setIsLoading", true);
+      await axios
+        .get("api/v1/account_transaction/" + year + "/" + month + "/")
+        .then((response) => {
+          this.transaction_data = response.data;
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+      this.$store.commit("setIsLoading", false);
+    },
   },
 };
 </script>

@@ -7,6 +7,15 @@
   </nav> -->
   <!-- <router-link to="/testpage">page_test</router-link> -->
   <router-view />
+  <div
+    class="w-100 h-100 fixed-top"
+    id="spinner-container"
+    v-show="this.$store.state.isLoading"
+  >
+    <div class="spinner-border" role="status" style="width: 25vh; height: 25vh">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -39,5 +48,11 @@ nav {
       color: #42b983;
     }
   }
+}
+
+#spinner-container {
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(5px);
 }
 </style>

@@ -412,7 +412,12 @@
     <form method="dialog">
       <div id="dialog_body" class="container text-start">field_text</div>
       <button class="m-2 btn btn-secondary" value="close">취소</button>
-      <button class="m-2 btn btn-info" data-bs-dismiss="modal" value="confirm">
+      <button
+        class="m-2 btn btn-info"
+        data-bs-dismiss="modal"
+        data-bs-target="#accoutadd"
+        value="confirm"
+      >
         확인
       </button>
     </form>
@@ -604,28 +609,30 @@ export default {
       dialog.showModal();
     },
     delete_account() {
-      let urls = [];
-      this.delete_candidate.map((obj) => {
-        if (obj[1] == "bank") {
-          urls.push("api/v1/account_management/bank_account/" + obj[0]);
-        }
-        if (obj[1] == "card") {
-          urls.push("api/v1/account_management/card_account/" + obj[0]);
-        }
-        if (obj[1] == "pay") {
-          urls.push("api/v1/account_management/pay_account/" + obj[0]);
-        }
-      });
-      axios
-        .all(urls.map((url) => axios.delete(url)))
-        .then((response) => {
-          console.log(response);
-          alert("Success");
-          this.get_table();
-        })
-        .catch((error) => {
-          console.log(error);
+      const delete_confirm = confirm("선택된 계좌들을 삭제합니까?");
+      if (delete_confirm) {
+        let urls = [];
+        this.delete_candidate.map((obj) => {
+          if (obj[1] == "bank") {
+            urls.push("api/v1/account_management/bank_account/" + obj[0]);
+          }
+          if (obj[1] == "card") {
+            urls.push("api/v1/account_management/card_account/" + obj[0]);
+          }
+          if (obj[1] == "pay") {
+            urls.push("api/v1/account_management/pay_account/" + obj[0]);
+          }
         });
+        axios
+          .all(urls.map((url) => axios.delete(url)))
+          .then(() => {
+            alert("Success");
+            this.get_table();
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
     },
   },
 };
