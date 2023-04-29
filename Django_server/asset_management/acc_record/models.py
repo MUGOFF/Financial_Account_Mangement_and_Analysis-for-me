@@ -13,7 +13,7 @@ class Transaction(models.Model):
     deposit_amount = models.IntegerField(default=0)
     withdrawal_amount = models.IntegerField(default=0)
     main_category = models.CharField(max_length=250, default='미지정')
-    sub_category = models.ManyToManyField("Tag_Category", blank=True)
+    sub_category = models.ManyToManyField("Tag_Category", blank=True, related_name='transaction',)
     # category_hooked = models.ForeignKey('Main_Category',on_delete=models.CASCADE,related_name='hookedtransaction',blank=True,null=True)
     description = models.TextField(blank=True)
     
@@ -28,7 +28,7 @@ class Main_Category(models.Model):
         return self.flow_category + " : " + self.main_category
 
 class Tag_Category(models.Model):
-    upper_clas_category = models.ForeignKey("Main_Category", on_delete=models.CASCADE, verbose_name="category_id" ,related_name="sub_category")
+    # upper_clas_category = models.ForeignKey("Main_Category", on_delete=models.CASCADE, verbose_name="category_id" ,related_name="sub_category")
     sub_category = models.CharField(max_length=50, unique=True, primary_key=True)
     
     def __str__(self):

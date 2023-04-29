@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import *
 from .serializers import *
+from datetime import date
 # Create your views here.
 
 
@@ -17,6 +18,38 @@ class Category(ModelViewSet):
 class Company_Nickname(ModelViewSet):
     queryset = Company_Category_Correlation.objects.all()
     serializer_class = CompanyCorrelationSerializer
+class Hashtag(ModelViewSet):
+    queryset = Tag_Category.objects.all()
+    serializer_class = TagSerializer
+    
+class HashTagControlAPI(APIView):
+    def get(self, request, formatter=None):
+        Tags = Tag_Category.objects.all()
+        # 미관련 태그 삭제
+        for tag in Tags:
+            if len(TagSerializer(tag).data['relate_transaction'])==0:
+                tag.delete()
+        Tags = Tag_Category.objects.all()
+        serializer = TagSerializer(Tags, many=True, context={"request": request})
+        return Response(serializer.data)
+    
+class MonthlyTransaction(APIView):
+    def get(self, request, year, month, format=None):
+        account = Transaction.objects.filter(transaction_time__year=year, transaction_time__month=month).order_by('transaction_time')
+        # account = Transaction.objects.filter(transaction_from=accountname)
+        # account = Transaction.objects.filter(transaction_from_str=accountname)
+        serializer = TransactionAllSerializer(account, many=True, context={"request": request})
+        return Response(serializer.data)
+    
+class DateRangeTransaction(APIView):
+    def get(self, request, format=None):
+        startdate = request.GET.get('start', '2015-01-01')
+        enddate = request.GET.get('end', date.today())
+        account = Transaction.objects.filter(transaction_time__range=[startdate, enddate]).order_by('transaction_time')
+        # account = Transaction.objects.filter(transaction_from=accountname)
+        # account = Transaction.objects.filter(transaction_from_str=accountname)
+        serializer = TransactionAllSerializer(account, many=True, context={"request": request})
+        return Response(serializer.data)
     
     
 class TransactionBasics(APIView):

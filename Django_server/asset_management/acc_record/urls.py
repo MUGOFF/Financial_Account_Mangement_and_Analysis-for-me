@@ -21,7 +21,11 @@ router = DefaultRouter()
 router.register('Transaction_All', views.TransactionAll, basename='transaction')
 router.register('Category', views.Category, basename='category')
 router.register('Company_nickname', views.Company_Nickname, basename='companyname')
+router.register('Hashtag', views.Hashtag, basename='tag')
 urlpatterns = [
     path('account_record/', include(router.urls), name='account-record'),
+    path('hashtag/', views.HashTagControlAPI.as_view()),
+    path('account_transaction/<year>/<month>/', views.MonthlyTransaction.as_view()),
+    path('account_transaction/rangedate/', views.DateRangeTransaction.as_view()),
     path('account_transaction/<accountnumber>/',views.TransactionBasics.as_view()),
 ]

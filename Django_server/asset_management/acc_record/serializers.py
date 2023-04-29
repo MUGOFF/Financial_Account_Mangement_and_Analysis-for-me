@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import *
 from financial_account.models import Financialaccount
 
+        
 class MoneyCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Main_Category
@@ -10,13 +11,29 @@ class MoneyCategorySerializer(serializers.ModelSerializer):
             'main_category',
         )
         
-class CategoryTagSerializer(serializers.ModelSerializer):
+class TagBaseSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = Tag_Category
         fields = (
-            'upper_clas_category',
             'sub_category',
         )
+    
+class TagSerializer(serializers.ModelSerializer):
+    relate_transaction = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Tag_Category
+        fields = (
+            # 'upper_clas_category',
+            'sub_category',
+            'relate_transaction',
+        )
+        
+    def get_relate_transaction(self, obj):
+        transcations = Transaction.objects.filter(sub_category=obj)
+        id_list = [transaction.id for transaction in transcations]
+        return id_list
         
 class CompanyCorrelationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -27,10 +44,12 @@ class CompanyCorrelationSerializer(serializers.ModelSerializer):
             'category_hook',
         )
 
-class TransactionAllSerializer(serializers.ModelSerializer):
-    transaction_from_str = serializers.CharField(source='transaction_from.nickname')
-    transaction_from_card_str = serializers.CharField(source='transaction_from_card.nickname', allow_null=True)
         
+class TransactionAllSerializer(serializers.ModelSerializer):
+    transaction_from_str = serializers.CharField(source='transaction_from.nickname', required=False)
+    transaction_from_card_str = serializers.CharField(source='transaction_from_card.nickname', required=False, allow_null=True)
+    # sub_category = serializers.PrimaryKeyRelatedField(many=True, allow_null=True)
+    
     class Meta:
         model = Transaction
         fields = (
