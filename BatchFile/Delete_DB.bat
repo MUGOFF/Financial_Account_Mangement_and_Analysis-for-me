@@ -1,2 +1,2 @@
 @echo off
-mysql -u your_username -pyour_password -e "DROP DATABASE IF EXISTS %1;"
+mysql -u adminF -p0223 -e "DROP DATABASE IF EXISTS %1;"
