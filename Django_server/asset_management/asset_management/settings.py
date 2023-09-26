@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES' : (
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT.PERMISSIONS_CLASSES' : (
         'rest_framework.permissions.IsAuthenticated',
@@ -65,6 +66,10 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
         "rest_framework.parsers.FileUploadParser",
     ),
+}
+
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ('JWT',),
 }
 
 MIDDLEWARE = [
@@ -109,7 +114,7 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'budgetaccount_db',
+        'NAME': 'aws_db',
         'USER': 'adminF',
         'PASSWORD': '0223',
         'HOST': 'localhost',

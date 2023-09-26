@@ -69,6 +69,17 @@ const routes = [
     name: "AssetAnalysis",
     component: () => import("@/views/AssetAnalysis.vue"),
   },
+  // 로그인 제외
+  // {
+  //   path: "/login",
+  //   name: "LoginPage",
+  //   component: () => import("@/views/LoginView.vue"),
+  // },
+  {
+    path: "/signup",
+    name: "SingupPage",
+    component: () => import("@/views/SignUpView.vue"),
+  },
 ];
 
 const router = createRouter({

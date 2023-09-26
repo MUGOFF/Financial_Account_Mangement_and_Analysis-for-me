@@ -6,28 +6,42 @@ class AccountInfo(serializers.ModelSerializer):
     class Meta:
         model = Financialaccount
         fields = (
-            'nickname',
-            'bankname',
-            'accountnumber',
-            'account_type',
-            'account_founddate',
-            'account_expireddate',
-            'assetamount',
-            'description',
+            '__all__',
         )
         
 class CardInfo(serializers.ModelSerializer):
     class Meta:
         model = Cardaccount
         fields = (
-            'nickname',
-            'corpname',
-            'cardnumber',
-            'card_type',
-            'bankconnect',
-            'expiredmonth',
-            'description',
+            '__all__',
         )
+        
+# class AccountInfo(serializers.ModelSerializer):
+#     class Meta:
+#         model = Financialaccount
+#         fields = (
+#             'nickname',
+#             'bankname',
+#             'accountnumber',
+#             'account_type',
+#             'account_founddate',
+#             'account_expireddate',
+#             'assetamount',
+#             'description',
+#         )
+        
+# class CardInfo(serializers.ModelSerializer):
+#     class Meta:
+#         model = Cardaccount
+#         fields = (
+#             'nickname',
+#             'corpname',
+#             'cardnumber',
+#             'card_type',
+#             'bankconnect',
+#             'expiredmonth',
+#             'description',
+#         )
         
 class PayInfo(serializers.ModelSerializer):
     class Meta:

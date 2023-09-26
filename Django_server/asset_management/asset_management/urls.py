@@ -27,8 +27,9 @@ homerouter = ApiMapRouter()
 urlpatterns = [
     path('', include(homerouter.urls), name='api-map'),
     path('admin/', admin.site.urls),
-    path('api/v0/', include('djoser.urls'),name='api'),
-    path('api/v0/', include('djoser.urls.authtoken')),
+    path('auth/', include('djoser.urls'),name='auth'),
+    path('auth/', include('djoser.urls.authtoken')),
+    path('auth/', include('djoser.urls.jwt')),
     # path('api/', include('financial_company.urls')),
     path('api/v1/', include('financial_account.urls')),
     path('api/v1/', include('acc_record.urls')),

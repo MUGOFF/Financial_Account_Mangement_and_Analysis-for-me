@@ -1,0 +1,125 @@
+Vue 페이지 구성: {
+    VUE 표입력페이지: {
+      shape: package
+      거래정보: |md
+      # 거래정보 추가
+      - 거래정보 추가
+      - 거래정보 선택 추가
+      |
+      계좌정보: |md
+      # 계좌 추가
+      - 은행/증권 계좌 추가
+      - 카드 추가
+      - 페이 추가
+      |
+    }
+    VUE 가계부 페이지: {
+      shape: package
+      가계부 수정: |md
+      # 가계부 수정
+      - 거래 정보 수정
+      - 거래 항목/소항목 수정
+      |
+      가계부 추가/삭제: |md
+      # 가계부 추가/삭제
+      - 거래 정보 1행 추가/삭제
+      - 거래 항목 1행 추가/삭제
+      - 거래 소항목 1행 추가/삭제
+      |
+    }
+    VUE 자산정보: {
+      shape: package
+      자산 분석: |md 
+      # 자산 분석
+      - 자산 분배표
+      - 연/분기/월간 이익표
+      |
+      가계부 분석: |md
+        # 가계부 분석
+        - 월간 소비분석
+        - 이벤트 소비 분석
+        - 예산 설정
+        |
+      }
+      style: {
+        font-size: 50
+        bold: true
+      }
+    }
+    
+    Django 서버: {
+      API :{
+        shape: package
+        거래정보: {
+          shape: stored_data
+          거래: {
+            shape: sql_table
+            id: Int {constraint: primary_key}
+            거래 날짜: Datetime
+            거래 계좌: String(number) {constraint: foreign_key}
+            거래 대상: String
+            거래 금액: Int
+            거래 항목: String
+            거래 항목 고정: String {constraint: foreign_key}
+            기타 정보: String
+          }
+          거래 항목: {
+            shape: sql_table
+            id: Int {constraint: primary_key}
+            대분류: String #수입 지출 이체
+            이름: String
+          }
+          거래 소항목: {
+            shape: sql_table
+            id: Int {constraint: primary_key}
+            소속 항목: String
+            이름: String
+          }
+        거래.거래 항목 고정 -> 거래 소항목: (선택)
+        거래 소항목.소속 항목 -> 거래 항목: 소속
+      }
+      계좌정보: {
+        shape: stored_data
+        계좌: {
+          shape: sql_table
+          계좌 번호: String(number) {constraint: primary_key}
+          계좌 이름: String
+          은행 및 증권사: String
+        }
+        카드: {
+          shape: sql_table
+          id: Int {constraint: primary_key}
+          카드 번호: String(number)
+          연결 계좌: String(number) {constraint: foreign_key}
+        }
+        페이: {
+          shape: sql_table
+          id: Int {constraint: primary_key}
+          페이 종류: String(number)
+          연결 계좌: String(number) {constraint: foreign_key}
+          연결 카드: String(number) {constraint: foreign_key}
+        }
+        
+        페이 -> 카드 -> 계좌 <-페이 : 계좌 연결
+      } 
+      거래정보.거래 ->계좌정보.계좌 : 계좌 정보
+    }
+    APP{
+      shape: package
+      Analysis
+      AI fit and predict
+    }
+    DB{
+      shape: Cloud
+      type: |md
+      MySQL
+      |
+    }
+    style: {
+      font-size: 50
+      bold: true
+    }
+    APP <-> DB
+  }
+  direction:down
+  Django 서버 <-> Vue 페이지 구성

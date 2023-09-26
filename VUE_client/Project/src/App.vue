@@ -1,5 +1,5 @@
 <template>
-  <NavBar />
+  <NavBar v-if="this.$store.state.isAuthenticated" />
   <!-- <nav class="navbar navbar-expand-lg">
     <router-link to="/">Home</router-link> |
     <router-link to="/addtable">Account Data</router-link> |
@@ -19,11 +19,22 @@
 </template>
 
 <script>
+import axios from "axios";
 import NavBar from "@/components/Nav.vue";
 export default {
   name: "App",
   components: {
     NavBar,
+  },
+  beforeCreate() {
+    this.$store.commit("initializeStore");
+    const token = this.$store.state.token;
+
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = "Token " + token;
+    } else {
+      axios.defaults.headers.common["Authorization"] = "";
+    }
   },
 };
 </script>

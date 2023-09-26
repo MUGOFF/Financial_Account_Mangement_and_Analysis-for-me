@@ -1,0 +1,117 @@
+version: |md
+  # __V0.2__
+| {near: top-left}
+Vue: {
+  데이터 관리: {
+    계좌 카드 관리.shape: page
+    거래 표 입력.shape: page
+    개별 거래 입력.shape: page
+    카테고리 관리.shape: page
+  }
+  가계부.shape: page # 연 월 주간 보기
+  자산 분석.shape: page
+  style: {
+    fill: '#DDEEDD'
+  }
+}
+Django: {
+  API
+  API.style.font-size: 50
+  APP
+  계좌 데이터
+  거래 데이터
+  투자 데이터
+  분석 데이터
+  API -> APP: Request (with Data) {
+    style: {
+      animated: true
+      stroke: '#44FF00'
+      stroke-width: 3
+    }
+  }
+  API <- APP: Data {
+    style: {
+      animated: true
+      stroke: '#44FFAA'
+      stroke-width: 3
+    }
+  }
+  style: {
+    fill: '#DDFFDD'
+  }
+  거래 데이터 -- API -- 계좌 데이터: {
+    style: {
+      stroke: '#000000'
+    }
+  }
+  투자 데이터 -- API -- 분석 데이터: {
+    style: {
+      stroke: '#000000'
+    }
+  }
+}
+DB
+DB.shape: Cloud
+xlsx 데이터.shape: Document
+xlsx 데이터.style.bold: true
+xlsx 데이터.style.font-size: 20
+direction: right
+Django.APP -> DB: Save or Request {
+  style.animated: true
+  style.stroke: '#55AA22'
+  style.stroke-width: 3
+}
+Django.APP <- DB: Data {
+  style.animated: true
+  style.stroke: '#55AA99'
+  style.stroke-width: 3
+}
+
+xlsx 데이터 -> VUE.데이터 관리.거래 표 입력: Input {
+  style: {
+    stroke-width: 5
+    font-size: 32
+  }
+}
+Django.투자 데이터 <- VUE.데이터 관리.거래 표 입력 -> Django.거래 데이터: Post Data {
+  style: {
+    font-size: 32
+    bold: true
+    stroke: '#003300'
+  }
+}
+Django.투자 데이터 <- VUE.데이터 관리.개별 거래 입력 -> Django.거래 데이터: Post/Delete/Put Data {
+  style: {
+    font-size: 32
+    bold: true
+    stroke: '#443300'
+  }
+}
+VUE.데이터 관리.계좌 카드 관리 <-> Django.계좌 데이터: Post/Get/Put/Delete Data {
+  style: {
+    font-size: 32
+    bold: true
+    stroke: '#032358'
+  }
+}
+VUE.데이터 관리.거래 표 입력 <- Django.계좌 데이터 -> VUE.데이터 관리.개별 거래 입력: Get Data {
+  style: {
+    font-size: 32
+    bold: true
+    stroke: '#000022'
+  }
+}
+Django.거래 데이터 -> VUE.가계부: Get Data {
+  style: {
+    font-size: 32
+    bold: true
+    stroke: '#000022'
+  }
+}
+Django.분석 데이터 -> VUE.자산 분석: Get Data {
+  style: {
+    font-size: 32
+    bold: true
+    stroke: '#000022'
+  }
+}

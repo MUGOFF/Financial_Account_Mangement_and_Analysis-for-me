@@ -1,9 +1,9 @@
 @REM @echo off
-call cd D:\Program development\자산_분석_툴\VUE_client\manual_project
+call cd D:\Program development\자산_분석_툴\VUE_client\aws_project
 Start npm run serve
 timeout 3
 call C:\Users\USER\anaconda3\Scripts\activate.bat
-call cd D:\Program development\자산_분석_툴\Django_server\asset_management
+call cd D:\Program development\자산_분석_툴\Django_server\asset_management_aws
 call python manage.py makemigrations
 call python manage.py migrate
 start python manage.py runserver 

@@ -103,13 +103,41 @@
             </ul>
           </li>
         </ul>
+        <button
+          v-if="this.$store.state.isAuthenticated"
+          class="btn btn-outline-success"
+          type="submit"
+          @click="Logout"
+        >
+          로그아웃
+        </button>
+        <router-link v-else class="navbar-brand" to="/login">
+          <button class="btn btn-outline-success" type="submit">로그인</button>
+        </router-link>
       </div>
     </div>
   </nav>
 </template>
 <script>
+import axios from "axios";
+
 export default {
   name: "NavBar",
+  methods: {
+    Logout() {
+      axios
+        .post("/auth/token/logout", {})
+        .then(() => {
+          alert("Log Out");
+          axios.defaults.headers.common["Authorization"] = "";
+          this.$store.commit("removeToken");
+          this.$router.push({ path: "/" });
+        })
+        .catch((error) => {
+          alert(error.request.response);
+        });
+    },
+  },
 };
 </script>
 <style lang=""></style>
