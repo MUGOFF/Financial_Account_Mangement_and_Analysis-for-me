@@ -1,5 +1,9 @@
 <template>
   <div class="container">
+    <button class="mb-2 btn btn-sm btn-success" @click="YearOrMonth()">
+      <span v-if="yearly">연간</span>
+      <span v-else>월간</span>
+    </button>
     <ul class="pagination justify-content-center">
       <li class="datebuttongroup">
         <a
@@ -11,7 +15,7 @@
           <span class="datetext" aria-hidden="true">&laquo;</span>
         </a>
       </li>
-      <li class="datebuttongroup">
+      <li class="datebuttongroup" v-if="!yearly">
         <a
           class="datebutton"
           href="#"
@@ -39,10 +43,11 @@
           class="datetext"
           maxlength="2"
           style="width: 3rem"
+          v-if="!yearly"
           @change="changemonth()"
         />
       </li>
-      <li class="datebuttongroup">
+      <li class="datebuttongroup" v-if="!yearly">
         <a
           class="datebutton"
           href="#"
@@ -63,10 +68,17 @@
         </a>
       </li>
     </ul>
+    <div class="d-flex flex-row-reverse">
+      <button class="mb-2 btn btn-primary" @click="MovetoCreate()">
+        거래기록 생성하기
+      </button>
+      <div>
+        <input type="checkbox" id="supplier" v-model="null_supplier_check" />
+        <label for="supplier">거래 대상 미입력</label>
+      </div>
+    </div>
     <div
-      v-if="
-        Month_filter_Transactions.length === 0 && !this.$store.state.isLoading
-      "
+      v-if="Filter_Transactions.length === 0 && !this.$store.state.isLoading"
     >
       거래기록이 존재하지 않습니다
     </div>
@@ -78,7 +90,7 @@
         aria-expanded="true"
         :aria-controls="'date' + date + 'transaction'"
       >
-        {{ this.yearmonth.month }}월 {{ date }}일
+        {{ date[0] }}월 {{ date[1] }}일
       </p>
       <div
         class="table-responsive collapse show"
@@ -98,7 +110,10 @@
           </thead>
           <tbody>
             <tr
-              v-for="(transaction, tindex) in Date_filter_Transactions(date)"
+              v-for="(transaction, tindex) in Date_filter_Transactions(
+                date[0],
+                date[1]
+              )"
               :key="tindex"
               @click="linkdetail(transaction.id)"
             >
@@ -150,46 +165,69 @@ export default {
           : String(new Date().getMonth() + 1).padStart(2, "0"),
       },
       transaction_all: [],
+      null_supplier_check: false,
+      yearly: false,
     };
   },
   computed: {
-    Month_filter_Transactions() {
-      const filtered_transaction = this.transaction_all.filter(
-        (transaction) =>
-          Date.parse(transaction.transaction_time) >
-            Date.parse(
-              this.yearmonth.year + " " + this.yearmonth.month + " 01 00:00:00"
-            ) &&
-          Date.parse(transaction.transaction_time) <
-            Date.parse(
-              this.yearmonth.year +
-                " " +
-                String(Number(this.yearmonth.month) + 1) +
-                " 01 00:00:00"
-            )
-      );
-      return filtered_transaction;
+    Filter_Transactions() {
+      let filtered_transaction;
+      if (this.yearly) {
+        filtered_transaction = this.transaction_all.filter((transaction) => {
+          const itemYear = new Date(transaction.transaction_time).getFullYear();
+          return itemYear === Number(this.yearmonth.year);
+        });
+      } else {
+        filtered_transaction = this.transaction_all.filter((transaction) => {
+          const itemMonth =
+            new Date(transaction.transaction_time).getMonth() + 1;
+          return itemMonth === Number(this.yearmonth.month);
+        });
+      }
+      if (this.null_supplier_check) {
+        console.log(
+          filtered_transaction.filter(
+            (transaction) => transaction.transaction_to_name === null
+          )
+        );
+        return filtered_transaction.filter(
+          (transaction) => transaction.transaction_to_name === null
+        );
+      } else {
+        return filtered_transaction;
+      }
     },
     Transaction_exist_Date() {
-      const days = new Date(
-        this.yearmonth.year,
-        this.yearmonth.month,
-        0
-      ).getDate();
-      const exist_day = this.Month_filter_Transactions.map((transaction) =>
-        new Date(transaction.transaction_time).getDate()
-      );
-      return _.range(1, days + 1).filter((n) => exist_day.includes(n));
+      const exist_day = this.Filter_Transactions.map((transaction) => {
+        return [
+          new Date(transaction.transaction_time).getMonth() + 1,
+          new Date(transaction.transaction_time).getDate(),
+        ].toString();
+      });
+      return [...new Set(exist_day)].map((date) => date.split(","));
     },
   },
   mounted() {
-    this.get_transaction();
+    this.get_transaction(this.yearmonth.year, this.yearmonth.month);
   },
   methods: {
-    async get_transaction() {
+    async get_transaction(year, month) {
       this.$store.commit("setIsLoading", true);
       await axios
-        .get("api/v1/account_record/Transaction_All/")
+        .get("api/v1/account_transaction/" + year + "/" + month + "/")
+        .then((response) => {
+          this.transaction_all = response.data;
+          // console.log(response.data);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+      this.$store.commit("setIsLoading", false);
+    },
+    async get_yearly_transaction(year) {
+      this.$store.commit("setIsLoading", true);
+      await axios
+        .get("api/v1/account_transaction/" + year + "/")
         .then((response) => {
           this.transaction_all = response.data;
           // console.log(response.data);
@@ -211,30 +249,32 @@ export default {
       }
       this.yearmonth_old = _.cloneDeep(this.yearmonth);
     },
-    Date_filter_Transactions(day) {
+    Date_filter_Transactions(month, day) {
       const filtered_transaction = this.transaction_all.filter(
-        (transaction) =>
-          Date.parse(transaction.transaction_time) >
-            Date.parse(
-              this.yearmonth.year +
-                " " +
-                this.yearmonth.month +
-                " " +
-                day +
-                " 00:00:00"
-            ) &&
-          Date.parse(transaction.transaction_time) <
-            Date.parse(
-              this.yearmonth.year +
-                " " +
-                this.yearmonth.month +
-                " " +
-                (day + 1) +
-                " 00:00:00"
-            )
+        (transaction) => {
+          const itemDate = new Date(transaction.transaction_time).getDate();
+          const itemMonth =
+            new Date(transaction.transaction_time).getMonth() + 1;
+          return itemDate === Number(day) && itemMonth === Number(month);
+        }
       );
-      this.$store.commit("setIsLoading", false);
-      return filtered_transaction;
+      if (this.null_supplier_check) {
+        console.log(
+          filtered_transaction.filter(
+            (transaction) => transaction.transaction_to_name === null
+          )
+        );
+        return filtered_transaction.filter(
+          (transaction) => transaction.transaction_to_name === null
+        );
+      } else {
+        return filtered_transaction;
+      }
+    },
+    MovetoCreate() {
+      this.$router.push({
+        name: "TransactionCreate",
+      });
     },
     linkdetail(transaction_Id) {
       this.$router.push({
@@ -244,13 +284,31 @@ export default {
         },
       });
     },
+    YearOrMonth() {
+      this.yearly = !this.yearly;
+      if (this.yearly) {
+        this.get_yearly_transaction(this.yearmonth.year);
+      } else {
+        this.get_transaction(this.yearmonth.year, this.yearmonth.month);
+      }
+    },
     PreviousYear() {
       this.yearmonth.year--;
       this.yearmonth_old.year--;
+      if (this.yearly) {
+        this.get_yearly_transaction(this.yearmonth.year);
+      } else {
+        this.get_transaction(this.yearmonth.year, this.yearmonth.month);
+      }
     },
     NextYear() {
       this.yearmonth.year++;
       this.yearmonth_old.year++;
+      if (this.yearly) {
+        this.get_yearly_transaction(this.yearmonth.year);
+      } else {
+        this.get_transaction(this.yearmonth.year, this.yearmonth.month);
+      }
     },
     PreviousMonth() {
       if (this.yearmonth.month === "01") {
@@ -264,6 +322,7 @@ export default {
           Number(this.yearmonth_old.month) - 1
         ).padStart(2, "0");
       }
+      this.get_transaction(this.yearmonth.year, this.yearmonth.month);
     },
     NextMonth() {
       if (this.yearmonth.month === "12") {
@@ -277,6 +336,7 @@ export default {
           Number(this.yearmonth_old.month) + 1
         ).padStart(2, "0");
       }
+      this.get_transaction(this.yearmonth.year, this.yearmonth.month);
     },
   },
 };

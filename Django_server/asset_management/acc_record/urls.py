@@ -26,6 +26,7 @@ urlpatterns = [
     path('account_record/', include(router.urls), name='account-record'),
     path('hashtag/', views.HashTagControlAPI.as_view()),
     path('account_transaction/<year>/<month>/', views.MonthlyTransaction.as_view()),
+    path('account_transaction/<year>/', views.YearlyTransaction.as_view()),
     path('account_transaction/rangedate/', views.DateRangeTransaction.as_view()),
     path('account_transaction/<accountnumber>/',views.TransactionBasics.as_view()),
 ]

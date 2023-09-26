@@ -67,11 +67,11 @@
                   >가계부 보기</router-link
                 >
               </li>
-              <li>
+              <!-- <li>
                 <router-link class="dropdown-item" to="/budget"
                   >예산 설정</router-link
                 >
-              </li>
+              </li> -->
               <!-- <li>
                 <router-link class="nav-link" to="/"></router-link>
               </li> -->

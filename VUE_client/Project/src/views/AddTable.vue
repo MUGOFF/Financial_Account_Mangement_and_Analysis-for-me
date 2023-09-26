@@ -57,7 +57,7 @@
             @drop="dragfile"
             @dragover.prevent
           >
-            <img :src="require('@/assets/file_upload_icon.png')" />
+            <img :src="require('@/assets/ICONs/file_upload_icon.png')" />
             <h1 class="display-2 text-primary">OR</h1>
             <label for="table_file_upload" class="btn btn-success btn-lg"
               >파일 업로드</label
@@ -247,6 +247,18 @@
           </select>
         </div>
         <div class="input-group m-2">
+          <span class="input-group-text">거래처회사이름(빈칸일시)</span>
+          <select v-model="form.corp_2nd_nominate" class="form-select">
+            <option
+              v-for="heading in tableData.headings"
+              :key="heading"
+              :value="heading"
+            >
+              {{ heading }}
+            </option>
+          </select>
+        </div>
+        <div class="input-group m-2">
           <span class="input-group-text">입금금액</span>
           <select v-model="form.deposit" class="form-select">
             <option
@@ -313,6 +325,7 @@ export default {
         bank: "",
         card: null,
         corp: "",
+        corp_2nd_nominate: "",
         deposit: "입금금액",
         withdrawal: "출금금액",
         desc: "",
@@ -487,9 +500,19 @@ export default {
         if (this.form.card !== null) {
           form.append("transaction_from_card", this.form.card);
         }
-        form.append("transaction_to_name", item[0][this.form.corp].trim());
-        form.append("deposit_amount", item[0][this.form.deposit]);
-        form.append("withdrawal_amount", item[0][this.form.withdrawal]);
+        if (
+          item[0][this.form.corp].trim() === null ||
+          item[0][this.form.corp].trim() === ""
+        ) {
+          form.append(
+            "transaction_to_name",
+            item[0][this.form.corp_2nd_nominate].trim()
+          );
+        } else {
+          form.append("transaction_to_name", item[0][this.form.corp].trim());
+        }
+        form.append("deposit_amount", Number(item[0][this.form.deposit]));
+        form.append("withdrawal_amount", Number(item[0][this.form.withdrawal]));
         form.append("description", item[0][this.form.desc]);
         return form;
       });

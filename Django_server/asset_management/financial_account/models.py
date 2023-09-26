@@ -1,8 +1,11 @@
 from django.db import models
+import uuid
 from datetime import date
 
 # Create your models here.
 class Financialaccount(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, editable=False)
+    # user_connector = models.ForeignKey()
     nickname = models.CharField(max_length=250) #1
     bankname = models.CharField(max_length=20) #2
     accountnumber= models.CharField(max_length=100, unique=True, primary_key=True) #3
@@ -35,6 +38,7 @@ class Financialaccount(models.Model):
 #     def __str__(self):
 #         return self.nickname
 class Cardaccount(models.Model):
+    # id = models.UUIDField(default=uuid.uuid4, editable=False)
     nickname = models.CharField(max_length=250)
     corpname = models.CharField(max_length=20)
     cardnumber = models.CharField(max_length=50, unique=True, primary_key=True)

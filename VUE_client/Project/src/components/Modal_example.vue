@@ -1,4 +1,12 @@
 <template>
+  <button
+    type="button"
+    class="btn m-2 btn-primary"
+    data-bs-toggle="modal"
+    data-bs-target="#accoutadd"
+  >
+    계좌 추가
+  </button>
   <!-- Modalstart bootstrap -->
   <div
     class="modal fade"

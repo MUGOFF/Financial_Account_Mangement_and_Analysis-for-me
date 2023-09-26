@@ -14,55 +14,60 @@ const routes = [
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () =>
-      import(/* webpackChunkName: "about" */ "../views/AboutView.vue"),
+      import(/* webpackChunkName: "about" */ "@/views/AboutView.vue"),
   },
   {
     path: "/testpage",
     name: "testpage",
-    component: () => import("../views/TestVue.vue"),
+    component: () => import("@/views/TestVue.vue"),
   },
   // 계좌 정보 info
   {
     path: "/addtable",
     name: "AddTable",
-    component: () => import("../views/AddTable.vue"),
+    component: () => import("@/views/AddTable.vue"),
   },
   {
     path: "/accountmanage",
     name: "AccountManagement",
-    component: () => import("../views/AccountManagement.vue"),
+    component: () => import("@/views/AccountManagement.vue"),
   },
   {
     path: "/transaction",
     name: "TransactionManagement",
-    component: () => import("../views/TransactionManagement.vue"),
+    component: () => import("@/views/TransactionManagement.vue"),
+  },
+  {
+    path: "/transaction/create",
+    name: "TransactionCreate",
+    component: () => import("@/views/TransactionCreate.vue"),
   },
   {
     path: "/transaction/:transactionId",
     name: "TransactionDetail",
-    component: () => import("../views/TransactionDetail.vue"),
+    component: () => import("@/views/TransactionDetail.vue"),
   },
   // {
   //   path: "/",
   //   name: "",
-  //   component: () => import("../views/"),
+  //   component: () => import("@/views/"),
   // },
   // 가계부 Book
   {
     path: "/book",
     name: "BookView",
-    component: () => import("../views/BookView.vue"),
+    component: () => import("@/views/BookView.vue"),
   },
   {
     path: "/budget",
     name: "BudgetView",
-    component: () => import("../views/BudgetView.vue"),
+    component: () => import("@/views/BudgetView.vue"),
   },
   // 자산분석 Analysis
   {
     path: "/anlysis",
     name: "AssetAnalysis",
-    component: () => import("../views/AssetAnalysis.vue"),
+    component: () => import("@/views/AssetAnalysis.vue"),
   },
 ];
 

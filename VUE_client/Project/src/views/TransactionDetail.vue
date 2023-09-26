@@ -162,16 +162,6 @@
       </button>
     </div>
   </div>
-
-  <!-- Modal -->
-  <dialog>
-    <form method="dialog">
-      <div id="dialog_body" class="container text-start">field_text</div>
-      <button class="m-2 btn btn-secondary" value="close">취소</button>
-      <button class="m-2 btn btn-warning" value="back">저장하지 않음</button>
-      <button class="m-2 btn btn-primary" value="save">저장</button>
-    </form>
-  </dialog>
 </template>
 <script>
 import Hashtag from "@/components/Hashtag.vue";
@@ -288,10 +278,14 @@ export default {
     },
     // 거래대상 등록
     post_history_name() {
+      if (this.to_company.company_commonname === "") {
+        alert("별칭을 입력하세요");
+        return false;
+      }
       axios
         .post("api/v1/account_record/Company_nickname/", {
           company_accountname: this.transaction.transaction_to_name,
-          company_commonname: this.transaction.transaction_to_name,
+          company_commonname: this.to_company.company_commonname,
         })
         .then(() => {
           alert("등록 되었습니다.");
@@ -393,6 +387,14 @@ export default {
     // 변화 표시
     component_change() {
       this.changed = true;
+      if (this.exist_history_name) {
+        this.history_changed = false;
+        this.to_company.company_commonname = _.find(this.company_table, {
+          company_accountname: this.transaction.transaction_to_name,
+        }).company_commonname;
+      } else {
+        this.to_company.company_commonname = "";
+      }
     },
     history_change() {
       this.history_changed = true;

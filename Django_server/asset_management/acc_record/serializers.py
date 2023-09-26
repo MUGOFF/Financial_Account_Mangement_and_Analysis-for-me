@@ -47,7 +47,9 @@ class CompanyCorrelationSerializer(serializers.ModelSerializer):
         
 class TransactionAllSerializer(serializers.ModelSerializer):
     transaction_from_str = serializers.CharField(source='transaction_from.nickname', required=False)
+    transaction_from_type = serializers.CharField(source='transaction_from.bankname', required=False)
     transaction_from_card_str = serializers.CharField(source='transaction_from_card.nickname', required=False, allow_null=True)
+    transaction_from_card_type = serializers.CharField(source='transaction_from_card.corpname', required=False, allow_null=True)
     # sub_category = serializers.PrimaryKeyRelatedField(many=True, allow_null=True)
     
     class Meta:
@@ -59,8 +61,10 @@ class TransactionAllSerializer(serializers.ModelSerializer):
             'transaction_time',
             'transaction_from',
             'transaction_from_str',
+            'transaction_from_type',
             'transaction_from_card',
             'transaction_from_card_str',
+            'transaction_from_card_type',
             'transaction_to_name',
             'deposit_amount',
             'withdrawal_amount',

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     # 'financial_company',
     'financial_account',
     'acc_record',
+    'book'
 ]
 
 REST_FRAMEWORK = {
@@ -167,12 +168,17 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_ALLOW_ALL = False
+# CORS_ORIGIN_ALLOW_ALL = False
 
-CORS_ORIGIN_WHITELIST = [
-    r"http://localhost:808*",
+# CORS_ORIGIN_WHITELIST = [
+#     r"http://localhost:808*",
+#     "http://localhost:8080",
+#     "http://localhost:8081",
+# ]
+CORS_ALLOWED_ORIGINS  = [
     "http://localhost:8080",
     "http://localhost:8081",
+    "http://localhost:8082",
 ]
 
 CORS_ALLOW_METHODS = (
