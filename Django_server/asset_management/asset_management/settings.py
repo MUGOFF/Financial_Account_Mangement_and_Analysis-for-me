@@ -114,7 +114,7 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'aws_db',
+        'NAME': 'test_db',
         'USER': 'adminF',
         'PASSWORD': '0223',
         'HOST': 'localhost',
