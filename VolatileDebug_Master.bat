@@ -9,7 +9,7 @@ call "BatchFile\Create_DB_MySQL.bat" %DB_NAME%
 start "Django server" cmd /k call "BatchFile\RunServer_Django.bat" %DB_NAME%
 
 @REM Start Vue server (in a new command prompt window)
-start "Vue server" cmd /k call "BatchFile\RunServer_Vue.bat"
+start "Vue server Volatile" cmd /k call "BatchFile\RunServer_Vue.bat"
 
 @REM Start chrome http://localhost:8080/
 @REM start chrome http://localhost:8000/
@@ -20,7 +20,6 @@ pause >nul
 
 @REM Stop the servers
 call "BatchFile\StopServer.bat"
-timeout /t 3
+
 @REM Delete the database
 call "BatchFile\Delete_DB.bat" %DB_NAME%
-timeout /t 3

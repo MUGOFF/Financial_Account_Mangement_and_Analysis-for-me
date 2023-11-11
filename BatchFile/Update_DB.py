@@ -10,8 +10,8 @@ def main():
 
     # Define the new value for 'NAME'
     new_value = str(sys.argv[1])
-    file_path = glob.glob('../Django_server/asset_management/asset_management/*',recursive= True)
-    print(file_path)
+    # file_path = glob.glob('../Django_server/asset_management/asset_management/*',recursive= True)
+    # print(file_path)
     file_path = glob.glob('../Django_server/asset_management/asset_management/settings.py')[0]
 
     rawdata = open(file_path, 'rb').read()

@@ -114,7 +114,7 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'test_db',
+        'NAME': 'fish_db',
         'USER': 'adminF',
         'PASSWORD': '0223',
         'HOST': 'localhost',
