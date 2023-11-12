@@ -19,7 +19,7 @@ echo Press any key to stop the servers and delete the database...
 pause >nul
 
 @REM Stop the servers
-call "BatchFile\StopServer.bat"
+@REM call "BatchFile\StopServer.bat"
 
 @REM Delete the database
 call "BatchFile\Delete_DB.bat" %DB_NAME%

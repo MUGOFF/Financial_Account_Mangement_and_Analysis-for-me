@@ -20,4 +20,4 @@ call python manage.py migrate
 @REM Start Django server
 start "Django server Volatile" python manage.py runserver
 
-python manage.py createsuperuser --username=admin --email=admin@example.com
+call python manage.py createsuperuser --username=admin --email=admin@example.com 

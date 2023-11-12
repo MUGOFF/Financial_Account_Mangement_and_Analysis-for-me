@@ -13,7 +13,11 @@
                 placeholder="username@email.com"
                 class="form-control"
               />
-              <button class="btn btn-outline-primary" type="button">
+              <button
+                class="btn btn-outline-primary"
+                type="button"
+                @click="CheckDuplicateID"
+              >
                 중복 확인하기
               </button>
             </div>
@@ -98,6 +102,28 @@ export default {
         .then(alert("가입되었습니다."))
         .catch((error) => {
           console.error(error);
+        });
+    },
+    async CheckDuplicateID() {
+      // 임시 비번
+      const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const randomnumber = Math.floor(Math.random() * 10);
+      const randomIndex = charset[Math.floor(Math.random() * charset.length)];
+      const seed = Date.now();
+      const hash = Math.abs(Math.sin(seed)).toString(36).substring(2);
+      let temp_password = randomIndex + hash + randomnumber;
+      await axios
+        .post("/auth/users/", {
+          email: this.id_email,
+          username: this.id_email,
+          password: temp_password,
+        })
+        .then(() => {
+          axios.delete("/auth/users/" + this.id_email + "/");
+          this.isUsernameChecked = true;
+        })
+        .catch(() => {
+          alert("이미 존재하는 이메일주소입니다");
         });
     },
     PasswordVisible() {
