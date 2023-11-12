@@ -1,0 +1,173 @@
+{
+  "main": {
+    "id": "e15a5d853d9f46fa",
+    "type": "split",
+    "children": [
+      {
+        "id": "4b1e3d62e7e2998b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8dcca8b15d8ceb31",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Obsidian MarkDown/TODO.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2b303e60e10d2b78",
+    "type": "split",
+    "children": [
+      {
+        "id": "2e392f128a124e45",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d556a9789f3bccd4",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "eca69bb310524794",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "a41eb5af16b67267",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "cc1a062b02c9fe7a",
+    "type": "split",
+    "children": [
+      {
+        "id": "07b6cb22a6bcd4f7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7e0ca8b51a536012",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Obsidian MarkDown/TODO.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "f865a0e307455cfd",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Obsidian MarkDown/TODO.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "2f33c1d91321287e",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "0a428be340d5ad52",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Obsidian MarkDown/TODO.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:퀵 스위처 열기": false,
+      "graph:그래프 뷰 열기": false,
+      "canvas:새 캔버스 만들기": false,
+      "daily-notes:오늘의 데일리 노트 열기": false,
+      "templates:템플릿 삽입": false,
+      "command-palette:명령어 팔레트 열기": false
+    }
+  },
+  "active": "8dcca8b15d8ceb31",
+  "lastOpenFiles": [
+    "VUE_client/Project/dist/workbox-db5fc017.js",
+    "VUE_client/Project/dist/workbox-db5fc017.js.map",
+    "VUE_client/Project/dist/service-worker.js",
+    "VUE_client/Project/dist/service-worker.js.map",
+    "VUE_client/Project/dist/index.html",
+    "VUE_client/Project/dist/img/icons/safari-pinned-tab.svg",
+    "VUE_client/Project/dist/img/icons/mstile-150x150.png",
+    "VUE_client/Project/dist/img/icons/msapplication-icon-144x144.png",
+    "VUE_client/Project/dist/img/icons/favicon-16x16.png",
+    "VUE_client/Project/dist/img/icons/favicon-32x32.png",
+    "VUE_client/Project/dist/img/icons/apple-touch-icon.png",
+    "VUE_client/Project/dist/img/icons/apple-touch-icon-76x76.png",
+    "VUE_client/Project/dist/img/icons/apple-touch-icon-180x180.png",
+    "VUE_client/Project/dist/img/icons/apple-touch-icon-60x60.png",
+    "VUE_client/Project/dist/img/icons/apple-touch-icon-152x152.png",
+    "VUE_client/Project/dist/img/icons",
+    "VUE_client/Project/dist/img",
+    "VUE_client/Project/dist/manifest.json",
+    "VUE_client/Project/dist/js/chunk-vendors.eabbb57c.js.map",
+    "VUE_client/Project/dist/js/chunk-vendors.eabbb57c.js",
+    "VUE_client/Project/dist/js/app.31f5ebb5.js.map"
+  ]
+}
