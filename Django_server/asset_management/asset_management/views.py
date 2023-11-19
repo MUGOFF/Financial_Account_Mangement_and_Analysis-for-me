@@ -76,3 +76,17 @@ class ApiMapRouter(DefaultRouter):
 
 # router = DocumentedRouter()
 # router.register(r'items', ItemsViewSet)
+
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from django.contrib.auth.models import User 
+from rest_framework.views import APIView
+
+class CheckUsernameValidation(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get(self, request, format=None):
+        email = request.GET.get('username', "admin")
+        user = User.objects.filter(username = username)
+        if user:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

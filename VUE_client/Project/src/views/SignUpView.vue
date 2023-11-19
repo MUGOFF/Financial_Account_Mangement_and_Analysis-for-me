@@ -13,13 +13,19 @@
                 placeholder="username@email.com"
                 class="form-control"
               />
-              <button
-                class="btn btn-outline-primary"
-                type="button"
-                @click="CheckDuplicateID"
-              >
-                중복 확인하기
-              </button>
+              <transition name="slide-fade">
+                <button
+                  class="btn btn-outline-primary"
+                  type="button"
+                  v-if="!isUsernameChecked"
+                  @click="CheckDuplicateID"
+                >
+                  중복 확인하기
+                </button>
+                <button class="btn btn-primary" type="button" v-else>
+                  <i class="fa-solid fa-check"></i>
+                </button>
+              </transition>
             </div>
             <label for="password" class="form-label">패스워드</label>
             <div class="form-control">
@@ -73,6 +79,7 @@ export default {
     return {
       id_email: "",
       pasword: "",
+      try_signup: false,
       isUsernameChecked: false,
       isPasswordVisible: true,
       isRePasswordVisible: true,
@@ -85,6 +92,7 @@ export default {
   },
   methods: {
     async signup() {
+      this.try_signup = true;
       if (!this.isUsernameChecked) {
         alert("중복 아이디를 체크하십시오");
         return;
@@ -99,27 +107,27 @@ export default {
           username: this.id_email,
           password: this.password,
         })
-        .then(alert("가입되었습니다."))
+        .then(() => {
+          alert("가입되었습니다.");
+          this.$router.push({
+            name: "home",
+          });
+        })
         .catch((error) => {
           console.error(error);
         });
     },
     async CheckDuplicateID() {
       // 임시 비번
-      const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      const randomnumber = Math.floor(Math.random() * 10);
-      const randomIndex = charset[Math.floor(Math.random() * charset.length)];
-      const seed = Date.now();
-      const hash = Math.abs(Math.sin(seed)).toString(36).substring(2);
-      let temp_password = randomIndex + hash + randomnumber;
+      // const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      // const randomnumber = Math.floor(Math.random() * 10);
+      // const randomIndex = charset[Math.floor(Math.random() * charset.length)];
+      // const seed = Date.now();
+      // const hash = Math.abs(Math.sin(seed)).toString(36).substring(2);
+      // let temp_password = randomIndex + hash + randomnumber;
       await axios
-        .post("/auth/users/", {
-          email: this.id_email,
-          username: this.id_email,
-          password: temp_password,
-        })
+        .get("/auth/valdiation/?username=" + this.id_email)
         .then(() => {
-          axios.delete("/auth/users/" + this.id_email + "/");
           this.isUsernameChecked = true;
         })
         .catch(() => {
@@ -155,5 +163,16 @@ export default {
 .password-bar:focus {
   width: 90%;
   outline: 0;
+}
+.slide-fade-enter-active {
+  transition: all 0.5s ease;
+}
+.slide-fade-leave-active {
+  transition: all 0.5s cubic-bezier(1, 0.5, 0.8, 1);
+}
+.slide-fade-enter,
+.slide-fade-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
 }
 </style>
