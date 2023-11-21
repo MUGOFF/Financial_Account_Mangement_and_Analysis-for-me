@@ -1,6 +1,6 @@
 <!-- calendar -->
 <template>
-  <div class="container">
+  <div class="w-100" id="calender-box">
     <DatePicker
       v-if="isDatepicker"
       :initial-page="{ month: date_now.month, year: date_now.year }"

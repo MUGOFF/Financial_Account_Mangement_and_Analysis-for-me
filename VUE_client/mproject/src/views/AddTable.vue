@@ -54,6 +54,7 @@
           <div
             v-if="!tableON"
             class="d-flex drop-file-zone justify-content-evenly align-items-center px-3"
+            id="table-file-drop-zone"
             @drop="dragfile"
             @dragover.prevent
           >

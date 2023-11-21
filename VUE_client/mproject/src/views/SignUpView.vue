@@ -1,33 +1,69 @@
 <template>
   <div id="signup-page">
     <div class="w-100 h-100">
-      <div class="w-25 h-50 position-absolute top-50 start-50 translate-middle">
+      <div
+        class="h-50 position-absolute top-50 start-50 translate-middle"
+        style="width: 500px"
+      >
         <div class="w-100 h-100 p-3 rounded shadow text-start" id="signup-box">
           <div class="w-100 h-75">
-            <label for="email-id" class="form-label">아이디</label>
+            <label for="email-id" class="form-label content-title"
+              >아이디</label
+            >
             <div class="input-group">
               <input
                 type="text"
                 id="email-id"
-                v-model="id_email"
-                placeholder="username@email.com"
-                class="form-control"
+                v-model="id_email_head"
+                :disabled="isUsernameChecked"
+                placeholder="username"
+                class="form-control col-4"
               />
-              <transition name="slide-fade">
-                <button
-                  class="btn btn-outline-primary"
-                  type="button"
-                  v-if="!isUsernameChecked"
-                  @click="CheckDuplicateID"
-                >
-                  중복 확인하기
-                </button>
-                <button class="btn btn-primary" type="button" v-else>
-                  <i class="fa-solid fa-check"></i>
-                </button>
-              </transition>
+              <span class="input-group-text text-center">@</span>
+              <input
+                type="text"
+                id="email-site"
+                :disabled="isUsernameChecked"
+                v-model="id_email_site"
+                placeholder="email.com"
+                class="form-control col-4"
+              />
+              <button
+                class="col-4 btn btn-primary"
+                :class="{
+                  disabled: EmailTextCombined == '@' || isUsernameChecked,
+                }"
+                type="button"
+                v-if="!isUsernameChecked"
+                @click="CheckDuplicateID"
+              >
+                <!-- 'btn-primary': isUsernameChecked, -->
+                <!-- 'btn-outline-primary': !isUsernameChecked, -->
+                <!-- <transition name="slide-fade">
+                  <div v-if="!isUsernameChecked">
+                    <span>중복 확인하기</span>
+                  </div>
+                  <div v-else>
+                    <i class="fa-solid fa-check"></i>
+                  </div>
+                </transition> -->
+                <span>중복 확인하기</span>
+              </button>
+
+              <div class="col-4 btn btn-primary" v-else>
+                <Transition name="bounce">
+                  <div v-if="!isUsernameChecked">
+                    <span>중복 확인하기</span>
+                  </div>
+                  <div v-else>
+                    <i class="fa-solid fa-check"></i>
+                  </div>
+                </Transition>
+              </div>
             </div>
-            <label for="password" class="form-label">패스워드</label>
+            <label for="password" class="form-label content-title"
+              >패스워드</label
+            >
             <div class="form-control">
               <input
                 :type="isPasswordVisible ? 'password' : 'text'"
@@ -40,7 +76,7 @@
                 <i v-else class="fa-solid fa-eye"></i>
               </button>
             </div>
-            <label for="retype-password" class="form-label"
+            <label for="retype-password" class="form-label content-title"
               >패스워드 재입력</label
             >
             <div class="form-control">
@@ -58,8 +94,12 @@
                 <i v-if="isRePasswordVisible" class="fa-solid fa-eye-slash"></i>
                 <i v-else class="fa-solid fa-eye"></i>
               </button>
-              <span v-if="!isPasswordMatch">패스워드가 일치하지 않습니다.</span>
             </div>
+            <span
+              v-if="!isPasswordMatch && retype_password !== ''"
+              class="text-danger"
+              >패스워드가 일치하지 않습니다.</span
+            >
           </div>
           <div class="w-100 h-25 pt-4 text-center">
             <button class="btn w-75 btn-primary" type="button" @click="signup">
@@ -77,8 +117,10 @@ import axios from "axios";
 export default {
   data() {
     return {
-      id_email: "",
-      pasword: "",
+      id_email_head: "",
+      id_email_site: "",
+      password: "",
+      retype_password: "",
       try_signup: false,
       isUsernameChecked: false,
       isPasswordVisible: true,
@@ -88,6 +130,9 @@ export default {
   computed: {
     isPasswordMatch() {
       return this.password === this.retype_password;
+    },
+    EmailTextCombined() {
+      return this.id_email_head + "@" + this.id_email_site;
     },
   },
   methods: {
@@ -103,8 +148,8 @@ export default {
       }
       await axios
         .post("/auth/users/", {
-          email: this.id_email,
-          username: this.id_email,
+          email: this.EmailTextCombined,
+          username: this.EmailTextCombined,
           password: this.password,
         })
         .then(() => {
@@ -125,8 +170,18 @@ export default {
       // const seed = Date.now();
       // const hash = Math.abs(Math.sin(seed)).toString(36).substring(2);
       // let temp_password = randomIndex + hash + randomnumber;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const validateEmail = emailRegex.test(this.EmailTextCombined);
+      if (!validateEmail) {
+        alert("이메일을 입력해주세요");
+        return;
+      }
+      if (this.isUsernameChecked) {
+        alert("이미 확인 했습니다");
+        return;
+      }
       await axios
-        .get("/auth/valdiation/?username=" + this.id_email)
+        .get("/auth/valdiation/?username=" + this.EmailTextCombined)
         .then(() => {
           this.isUsernameChecked = true;
         })
@@ -164,15 +219,18 @@ export default {
   width: 90%;
   outline: 0;
 }
-.slide-fade-enter-active {
-  transition: all 0.5s ease;
+.bounce-enter-active {
+  animation: bounce-in 0.5s;
 }
-.slide-fade-leave-active {
-  transition: all 0.5s cubic-bezier(1, 0.5, 0.8, 1);
+.content-title {
+  margin-top: 1vh;
 }
-.slide-fade-enter,
-.slide-fade-leave-to {
-  transform: translateX(-100%);
-  opacity: 0;
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1.5);
+  }
 }
 </style>

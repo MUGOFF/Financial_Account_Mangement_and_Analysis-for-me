@@ -1,7 +1,9 @@
 <template>
   <div class="home" v-if="this.$store.state.isAuthenticated">
-    <img alt="Vue logo" :src="require('@/assets/logo.png')" />
-    <!-- <HelloWorld msg="Welcome to Your Vue.js App" /> -->
+    <div class="w-100 h-100">
+      <img alt="Vue logo" :src="require('@/assets/logo.png')" />
+      <!-- <HelloWorld msg="Welcome to Your Vue.js App" /> -->
+    </div>
   </div>
   <div class="home-unsigned" @keyup.enter="submitLoginForm" v-else>
     <!-- <img :src="require('@/assets/BG.png')" alt="background" class="bg" /> -->

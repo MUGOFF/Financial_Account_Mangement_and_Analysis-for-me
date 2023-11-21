@@ -1,7 +1,7 @@
 <!-- calendar -->
 <template>
-  <Calendar />
-  <DatePicker v-model="date" />
+  <Calendar class="w-100" />
+  <DatePicker class="w-100" v-model="date" />
 </template>
 
 <script>
