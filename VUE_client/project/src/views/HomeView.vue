@@ -5,7 +5,7 @@
       <!-- <HelloWorld msg="Welcome to Your Vue.js App" /> -->
     </div>
   </div>
-  <div class="home-unsigned" @keyup.enter="submitLoginForm" v-else>
+  <div class="home unsigned" @keyup.enter="submitLoginForm" v-else>
     <!-- <img :src="require('@/assets/BG.png')" alt="background" class="bg" /> -->
     <div class="w-100 h-100 d-flex align-items-center justify-content-center">
       <div id="login-box" class="p-2">

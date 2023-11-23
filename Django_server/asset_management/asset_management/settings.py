@@ -120,7 +120,7 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'sep1234',
+        'NAME': 'test_new',
         'USER': 'adminF',
         'PASSWORD': '0223',
         'HOST': 'localhost',

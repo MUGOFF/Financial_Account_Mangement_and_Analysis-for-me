@@ -1,23 +1,19 @@
 {
-  "name": "manual_project",
+  "name": "project",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve --host localhost",
+    "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@popperjs/core": "^2.11.7",
-    "axios": "^1.3.1",
-    "bootstrap": "^5.2.3",
-    "bootstrap-vue": "^2.23.1",
-    "chart.js": "^4.3.0",
+    "@popperjs/core": "^2.11.8",
+    "axios": "^1.6.2",
+    "chart.js": "^4.4.0",
     "core-js": "^3.8.3",
-    "jquery": "^3.6.4",
     "register-service-worker": "^1.7.2",
-    "v-calendar": "^3.0.3",
+    "v-calendar": "^3.1.2",
     "vue": "^3.2.13",
     "vue-chartjs": "^5.2.0",
     "vue-router": "^4.0.3",
@@ -31,21 +27,15 @@
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-plugin-pwa": "~5.0.0",
     "@vue/cli-plugin-router": "~5.0.0",
-    "@vue/cli-plugin-unit-jest": "~5.0.0",
     "@vue/cli-plugin-vuex": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
-    "@vue/test-utils": "^2.0.0-0",
-    "@vue/vue3-jest": "^27.0.0-alpha.1",
-    "babel-jest": "^27.0.6",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-vue": "^8.0.3",
-    "jest": "^27.0.5",
     "prettier": "^2.4.1",
     "sass": "^1.32.7",
-    "sass-loader": "^12.0.0",
-    "vue-cli-plugin-vuetify": "~2.5.8"
+    "sass-loader": "^12.0.0"
   },
   "eslintConfig": {
     "root": true,
@@ -60,26 +50,12 @@
     "parserOptions": {
       "parser": "@babel/eslint-parser"
     },
-    "rules": {},
-    "overrides": [
-      {
-        "files": [
-          "**/__tests__/*.{j,t}s?(x)",
-          "**/tests/unit/**/*.spec.{j,t}s?(x)"
-        ],
-        "env": {
-          "jest": true
-        }
-      }
-    ]
+    "rules": {}
   },
   "browserslist": [
     "> 1%",
     "last 2 versions",
     "not dead",
     "not ie 11"
-  ],
-  "jest": {
-    "preset": "@vue/cli-plugin-unit-jest"
-  }
+  ]
 }
