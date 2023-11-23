@@ -57,9 +57,7 @@
             class="sns-button btn mx-3"
             style="background: rgb(193, 24, 24)"
           ></button>
-          <div class="sns-button" style="align-content: center">
-            <SymbolS :plus="true" :size="2" />
-          </div>
+          <div class="sns-button"></div>
           <button class="btn btn-dark mx-3" id="signup-button">
             <router-link id="signup-ahref" to="/signup">
               계정생성하기</router-link
@@ -73,14 +71,12 @@
 
 <script>
 import axios from "axios";
-import SymbolS from "@/components/SymbolComponent.vue";
 // @ is an alias to /src
 // import HelloWorld from "@/components/HelloWorld.vue";
 
 export default {
   name: "HomeView",
   components: {
-    SymbolS,
     // HelloWorld,
   },
   data() {
