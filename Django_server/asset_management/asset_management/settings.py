@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     # 'financial_company',
     'financial_account',
     'acc_record',
-    'book'
+    'book',
+    'temp_admin',
 ]
 
 REST_FRAMEWORK = {
@@ -120,7 +121,7 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'test_new',
+        'NAME': 'admpwnsdd',
         'USER': 'adminF',
         'PASSWORD': '0223',
         'HOST': 'localhost',

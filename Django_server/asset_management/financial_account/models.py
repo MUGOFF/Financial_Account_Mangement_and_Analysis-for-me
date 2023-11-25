@@ -1,7 +1,7 @@
 from django.db import models
 import uuid
 from datetime import date
-
+from django.contrib.auth.models import User
 # Create your models here.
 class Financialaccount(models.Model):
     id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
@@ -14,6 +14,7 @@ class Financialaccount(models.Model):
     account_expireddate = models.DateField(blank=True, null=True) #6
     assetamount = models.IntegerField(default=0) #7
     description = models.TextField(blank=True, default="") #8
+    owner = models.ForeignKey(User,on_delete=models.CASCADE,related_name='Account_ownership', default=1) #9,default='admin'
     
     
     def __str__(self):
@@ -46,6 +47,7 @@ class Cardaccount(models.Model):
     bankconnect = models.ForeignKey(Financialaccount, on_delete=models.CASCADE, related_name='connectcard', null=True, blank=True)
     expiredmonth = models.DateField(default=date.today)
     description = models.TextField(blank=True)
+    owner = models.ForeignKey(User,on_delete=models.CASCADE,related_name='Card_ownership', default=1)
     
     def __str__(self):
         return self.nickname
@@ -57,6 +59,7 @@ class Payaccount(models.Model):
     description = models.TextField(blank=True)
     bankconnection = models.ManyToManyField('Financialaccount', related_name='connectpay', blank=True)
     cardconnection = models.ManyToManyField('Cardaccount', related_name='connectpay', blank=True)
+    owner = models.ForeignKey(User,on_delete=models.CASCADE,related_name='Payment_ownership', default=1)
     
     def __str__(self):
         return self.nickname

@@ -47,13 +47,7 @@ class PayInfo(serializers.ModelSerializer):
     class Meta:
         model = Payaccount
         fields = (
-            'id',
-            'nickname',
-            'corpname',
-            'assetamount',
-            'description',
-            'bankconnection',
-            'cardconnection',
+            '__all__',
         )
 
 class AccountTrans(serializers.ModelSerializer):

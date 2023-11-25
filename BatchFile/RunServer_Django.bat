@@ -21,4 +21,4 @@ call python manage.py migrate
 start "Django server Volatile" python manage.py runserver
 
 @REM export DJANGO_SUPERUSER_PASSWORD=edroth0116
-call python manage.py createsuperuser --username=admin --email=admin@example.com 
+@REM call python manage.py createsuperuser --username=admin --email=admin@example.com 
