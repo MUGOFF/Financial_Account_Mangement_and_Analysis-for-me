@@ -217,6 +217,11 @@
               {{ heading }}
             </option>
           </select>
+          <select class="form-select rounded" v-model="time_format">
+            <option value="KOR" selected>YYYY-mm-DDTHH:MM:SS</option>
+            <option value="EU">DD-mm-YYYYTHH:MM:SS</option>
+            <option value="USA">mm-DD-YYYYTHH:MM:SS</option>
+          </select>
           <!-- <span class="input-group-text">날짜형식</span>
           <input v-model="form.format" class="form-control" /> -->
         </div>
@@ -322,7 +327,7 @@ export default {
       },
       form: {
         time: "",
-        // format: "YYYY-mm-DDTHH:MM:SS",
+        time_format: "YYYY-mm-DDTHH:MM:SS",
         bank: "",
         card: null,
         corp: "",

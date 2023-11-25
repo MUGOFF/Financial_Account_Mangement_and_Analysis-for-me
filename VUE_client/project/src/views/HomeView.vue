@@ -49,15 +49,6 @@
           </div>
         </div>
         <div class="mt-3 border-top p-4">
-          <button
-            class="sns-button btn mx-3"
-            style="background: rgb(237, 237, 35)"
-          ></button>
-          <button
-            class="sns-button btn mx-3"
-            style="background: rgb(193, 24, 24)"
-          ></button>
-          <div class="sns-button"></div>
           <button class="btn btn-dark mx-3" id="signup-button">
             <router-link id="signup-ahref" to="/signup">
               계정생성하기</router-link

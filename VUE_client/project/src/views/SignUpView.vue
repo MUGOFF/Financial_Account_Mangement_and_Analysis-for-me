@@ -24,10 +24,15 @@
                 type="text"
                 id="email-site"
                 :disabled="isUsernameChecked"
+                list="mail_list"
                 v-model="id_email_site"
                 placeholder="email.com"
                 class="form-control col-4"
               />
+              <datalist id="mail_list">
+                <option>gmail.com</option>
+                <option>naver.com</option>
+              </datalist>
               <button
                 class="col-4 btn btn-primary"
                 :class="{
