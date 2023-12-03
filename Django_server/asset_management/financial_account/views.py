@@ -23,14 +23,40 @@ from .serializers import *
     #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     # def put(self,)
 class AccountBase(ModelViewSet):
-    queryset = Financialaccount.objects.all()
+    # queryset = Financialaccount.objects.all()
     serializer_class = AccountInfo
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            # Admin sees all instances
+            return Financialaccount.objects.all()
+        else:
+            # Regular user sees only their instances
+            return Financialaccount.objects.filter(owner=user)
+        
 class CardBase(ModelViewSet):
-    queryset = Cardaccount.objects.all()
+    # queryset = Cardaccount.objects.all()
     serializer_class = CardInfo
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            # Admin sees all instances
+            return Cardaccount.objects.all()
+        else:
+            # Regular user sees only their instances
+            return Cardaccount.objects.filter(owner=user)
+        
 class PayBase(ModelViewSet):
-    queryset = Payaccount.objects.all()
+    # queryset = Payaccount.objects.all()
     serializer_class = PayInfo
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            # Admin sees all instances
+            return Payaccount.objects.all()
+        else:
+            # Regular user sees only their instances
+            return Payaccount.objects.filter(owner=user)
 
 class Account_Book_Bookmark(APIView):
     # 전 기록 추출

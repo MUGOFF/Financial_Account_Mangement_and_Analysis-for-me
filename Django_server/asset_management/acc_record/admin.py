@@ -13,6 +13,6 @@ class Main_CategoryAdmin(admin.ModelAdmin):
 admin.site.register(Main_Category, Main_CategoryAdmin)
 admin.site.register(Tag_Category)
 
-class Company_Category_CorrelationAdmin(admin.ModelAdmin):
-    list_display = ("company_accountname", "company_commonname", "category_hook")
-admin.site.register(Company_Category_Correlation,Company_Category_CorrelationAdmin)
+# class Company_Category_CorrelationAdmin(admin.ModelAdmin):
+#     list_display = ("company_accountname", "company_commonname", "category_hook")
+# admin.site.register(Company_Category_Correlation,Company_Category_CorrelationAdmin)

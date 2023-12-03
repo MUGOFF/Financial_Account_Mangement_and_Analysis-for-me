@@ -35,14 +35,14 @@ class TagSerializer(serializers.ModelSerializer):
         id_list = [transaction.id for transaction in transcations]
         return id_list
         
-class CompanyCorrelationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Company_Category_Correlation
-        fields = (
-            'company_accountname',
-            'company_commonname',
-            'category_hook',
-        )
+# class CompanyCorrelationSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Company_Category_Correlation
+#         fields = (
+#             'company_accountname',
+#             'company_commonname',
+#             'category_hook',
+#         )
 
         
 class TransactionAllSerializer(serializers.ModelSerializer):

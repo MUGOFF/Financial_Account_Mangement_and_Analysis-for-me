@@ -31,6 +31,7 @@ urlpatterns = [
     path('auth/', include('djoser.urls.authtoken')),
     path('auth/', include('djoser.urls.jwt')),    
     path('auth/valdiation/', views.CheckUsernameValidation.as_view()),    
+    path('auth/valdiation/token/', views.CheckTokenValidation.as_view()),    
     # path('api/', include('financial_company.urls')),
     path('api/v1/', include('financial_account.urls')),
     path('api/v1/', include('acc_record.urls')),

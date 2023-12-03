@@ -214,7 +214,7 @@ export default {
     async get_transaction(year, month) {
       this.$store.commit("setIsLoading", true);
       await axios
-        .get("api/v1/account_transaction/" + year + "/" + month + "/")
+        .get("api/v1/transaction_info/" + year + "/" + month + "/")
         .then((response) => {
           this.transaction_all = response.data;
           // console.log(response.data);
@@ -227,7 +227,7 @@ export default {
     async get_yearly_transaction(year) {
       this.$store.commit("setIsLoading", true);
       await axios
-        .get("api/v1/account_transaction/" + year + "/")
+        .get("api/v1/transaction_info/" + year + "/")
         .then((response) => {
           this.transaction_all = response.data;
           // console.log(response.data);

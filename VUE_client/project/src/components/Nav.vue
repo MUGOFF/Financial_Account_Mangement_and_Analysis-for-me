@@ -130,7 +130,7 @@ export default {
         .then(() => {
           alert("Log Out");
           axios.defaults.headers.common["Authorization"] = "";
-          this.$store.commit("removeToken");
+          this.$store.commit("removeItems");
           this.$router.push({ path: "/" });
         })
         .catch((error) => {

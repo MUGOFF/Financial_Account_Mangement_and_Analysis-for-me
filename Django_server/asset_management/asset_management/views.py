@@ -6,6 +6,7 @@ from rest_framework.reverse import reverse
 from collections import OrderedDict
 from django.urls import NoReverseMatch
 from rest_framework.routers import DefaultRouter, APIRootView
+from rest_framework.permissions import IsAdminUser
 
 # Create your views here.
 # def HomeView(request):
@@ -19,6 +20,8 @@ class ApiRootMapView(APIRootView):
     """
     API route full mapping
     """
+    permission_classes = [IsAdminUser]
+    
     def get(self, request, *args, **kwargs):
         # Return a plain {"name": "hyperlink"} response.
         router_map = OrderedDict()
@@ -79,6 +82,7 @@ class ApiMapRouter(DefaultRouter):
 
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 from rest_framework import status 
 from rest_framework.views import APIView
 
@@ -91,3 +95,12 @@ class CheckUsernameValidation(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+class CheckTokenValidation(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request, format=None):
+        key = request.GET.get('token')
+        token = Token.objects.filter(key = key)
+        if token:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)

@@ -34,13 +34,13 @@ class Tag_Category(models.Model):
     def __str__(self):
         return self.sub_category
     
-class Company_Category_Correlation(models.Model):
-    company_accountname = models.CharField(max_length=250, unique=True, primary_key=True)
-    company_commonname = models.CharField(max_length=250, blank=True)
-    category_hook = models.ForeignKey("Main_Category", on_delete=models.CASCADE, verbose_name="category_id" ,related_name="hooked_company", blank=True, null=True)
+# class Company_Category_Correlation(models.Model):
+#     company_accountname = models.CharField(max_length=250, unique=True, primary_key=True)
+#     company_commonname = models.CharField(max_length=250, blank=True)
+#     category_hook = models.ForeignKey("Main_Category", on_delete=models.CASCADE, verbose_name="category_id" ,related_name="hooked_company", blank=True, null=True)
     
-    def __str__(self):
-        return  self.company_accountname + " : " + self.company_commonname
+#     def __str__(self):
+#         return  self.company_accountname + " : " + self.company_commonname
 # #소비 항목
 # class Cosume_category(models.Model):
 #     main_category = models.CharField(max_length=50)

@@ -530,7 +530,7 @@ export default {
         .all(
           forms.map((form) =>
             axios.post(
-              "api/v1/account_transaction/" + this.form.bank + "/",
+              "api/v1/transaction_management/" + this.form.bank + "/",
               form,
               {
                 headers: {

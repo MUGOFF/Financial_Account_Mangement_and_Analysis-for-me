@@ -18,15 +18,9 @@ from django.urls import path, include
 from . import views
 
 router = DefaultRouter()
-router.register('Transaction_All', views.TransactionAll, basename='transaction')
-router.register('Category', views.Category, basename='category')
-# router.register('Company_nickname', views.Company_Nickname, basename='companyname')
-router.register('Hashtag', views.Hashtag, basename='tag')
+router.register('Company_nickname', views.Company_Nickname, basename='companyname')
+
 urlpatterns = [
-    path('account_record/', include(router.urls), name='account-record'),
-    path('hashtag/', views.HashTagControlAPI.as_view()),
-    path('transaction_info/<year>/<month>/', views.MonthlyTransaction.as_view()),
-    path('transaction_info/<year>/', views.YearlyTransaction.as_view()),
-    path('transaction_info/rangedate/', views.DateRangeTransaction.as_view()),
-    path('transaction_management/<accountnumber>/',views.TransactionBasics.as_view()),
+    path('user_setting/', include(router.urls), name='personal-settings'),
+    path('budgetsetting/<year>/<month>/', views.MonthBudgetAPI.as_view())
 ]

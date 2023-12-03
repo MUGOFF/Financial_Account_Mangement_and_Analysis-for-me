@@ -18,5 +18,5 @@ from django.urls import path, include
 from . import views
 
 urlpatterns = [
-    path('booksetting/<year>/<month>/', views.MonthBookAPI.as_view())
+    # path('booksetting/<year>/<month>/', views.MonthBookAPI.as_view())
 ]

@@ -26,10 +26,13 @@ export default {
   components: {
     NavBar,
   },
-  beforeCreate() {
+  async beforeCreate() {
     this.$store.commit("initializeStore");
+    // 토큰 유효 체크
+    if (this.$store.state.token) {
+      await this.$store.dispatch("checkTokenValidity");
+    }
     const token = this.$store.state.token;
-
     if (token) {
       axios.defaults.headers.common["Authorization"] = "Token " + token;
     } else {

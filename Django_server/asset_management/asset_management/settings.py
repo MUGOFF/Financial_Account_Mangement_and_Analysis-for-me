@@ -63,9 +63,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication'
         # 'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_PERMISSIONS_CLASSES' : (
+    'DEFAULT_PERMISSION_CLASSES' : (
         'rest_framework.permissions.IsAuthenticated',
-        'rest_framework.permissions.IsAdminUser',
+        # 'rest_framework.permissions.IsAdminUser',
     ),
     "DEFAULT_PARSER_CLASSES": (
         "rest_framework.parsers.JSONParser",
@@ -121,7 +121,7 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'admpwnsdd',
+        'NAME': 'noc1234',
         'USER': 'adminF',
         'PASSWORD': '0223',
         'HOST': 'localhost',

@@ -14,9 +14,9 @@ class TransactionAll(ModelViewSet):
 class Category(ModelViewSet):
     queryset = Main_Category.objects.all()
     serializer_class = MoneyCategorySerializer
-class Company_Nickname(ModelViewSet):
-    queryset = Company_Category_Correlation.objects.all()
-    serializer_class = CompanyCorrelationSerializer
+# class Company_Nickname(ModelViewSet):
+#     queryset = Company_Category_Correlation.objects.all()
+#     serializer_class = CompanyCorrelationSerializer
 class Hashtag(ModelViewSet):
     queryset = Tag_Category.objects.all()
     serializer_class = TagSerializer

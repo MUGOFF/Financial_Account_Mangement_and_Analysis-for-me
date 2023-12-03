@@ -5,7 +5,7 @@
       <!-- <HelloWorld msg="Welcome to Your Vue.js App" /> -->
     </div>
   </div>
-  <div class="home unsigned" @keyup.enter="submitLoginForm" v-else>
+  <div class="home-unsigned" @keyup.enter="submitLoginForm" v-else>
     <!-- <img :src="require('@/assets/BG.png')" alt="background" class="bg" /> -->
     <div class="w-100 h-100 d-flex align-items-center justify-content-center">
       <div id="login-box" class="p-2">
@@ -49,11 +49,11 @@
           </div>
         </div>
         <div class="mt-3 border-top p-4">
-          <button class="btn btn-dark mx-3" id="signup-button">
-            <router-link id="signup-ahref" to="/signup">
-              계정생성하기</router-link
-            >
-          </button>
+          <router-link to="/signup">
+            <button class="btn btn-dark w-100" id="signup-button">
+              계정생성하기
+            </button>
+          </router-link>
         </div>
       </div>
     </div>
@@ -97,9 +97,11 @@ export default {
           this.userId - null;
           this.userPassword = null;
           this.$store.commit("setToken", token);
+          this.$store.commit("setUsername", this.userId);
           axios.defaults.headers.common["Authorization"] = "Token " + token;
 
           localStorage.setItem("token", token);
+          localStorage.setItem("username", this.userId);
         })
         .catch(() => {
           this.login_error = true;
@@ -146,10 +148,6 @@ export default {
 #signup-button {
   border-radius: 2.4rem;
   height: 2.4rem;
-}
-#signup-ahref {
-  text-decoration: none;
-  color: white;
   font-weight: bold;
 }
 /* .grayfilter {

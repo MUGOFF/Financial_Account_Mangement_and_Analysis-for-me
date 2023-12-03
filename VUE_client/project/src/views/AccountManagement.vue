@@ -46,13 +46,19 @@
               <td>{{ index + 1 }}</td>
               <td>{{ account.nickname }}</td>
               <td>{{ account.bankname }}</td>
-              <td>{{ account.accountnumber }}</td>
+              <td>
+                {{ account.accountnumber }}
+                <i
+                  class="fa-regular fa-copy fa-xs"
+                  @click="copy_number(account.accountnumber)"
+                ></i>
+              </td>
               <td>{{ account.account_type }}</td>
               <td>
                 <input
                   class="form-check-input"
                   type="checkbox"
-                  :value="{ 0: account.accountnumber, 1: 'bank' }"
+                  :value="{ 0: account.id, 1: 'bank' }"
                   v-model="delete_candidate"
                 />
               </td>
@@ -88,7 +94,13 @@
               <td>{{ index + 1 }}</td>
               <td>{{ account.nickname }}</td>
               <td>{{ account.corpname }}</td>
-              <td>{{ account.cardnumber }}</td>
+              <td>
+                {{ account.cardnumber
+                }}<i
+                  class="fa-regular fa-copy fa-xs"
+                  @click="copy_number(account.cardnumber)"
+                ></i>
+              </td>
               <td>{{ account.card_type }}</td>
               <td>{{ account.expiredmonth }}</td>
               <td>{{ account.bankconnect }}</td>
@@ -96,7 +108,7 @@
                 <input
                   class="form-check-input"
                   type="checkbox"
-                  :value="{ 0: account.cardnumber, 1: 'card' }"
+                  :value="{ 0: account.id, 1: 'card' }"
                   v-model="delete_candidate"
                 />
               </td>
@@ -243,7 +255,7 @@
                   size="20"
                   maxlength="20"
                   v-model="account_form.accountnumber"
-                  placeholder="'-' 제외"
+                  placeholder="'-' 제외 숫자만"
                   required
                 />
               </div>
@@ -557,6 +569,7 @@ export default {
             if (this.fi_type === "bank") {
               axios
                 .post("api/v1/account_management/bank_account/", {
+                  username: this.$store.state.username,
                   nickname: this.account_form.name,
                   bankname: this.account_form.corp,
                   accountnumber: this.account_form.accountnumber,
@@ -574,6 +587,7 @@ export default {
             } else if (this.fi_type === "card") {
               axios
                 .post("api/v1/account_management/card_account/", {
+                  username: this.$store.state.username,
                   nickname: this.account_form.name,
                   corpname: this.account_form.corp,
                   cardnumber: this.account_form.accountnumber,
@@ -592,6 +606,7 @@ export default {
             } else {
               axios
                 .post("api/v1/account_management/pay_account/", {
+                  username: this.$store.state.username,
                   nickname: this.account_form.name,
                   corpname: this.account_form.corp,
                   assetamount: this.account_form.accountnumber,
@@ -640,6 +655,15 @@ export default {
           });
       }
     },
+    copy_number(account_number) {
+      const textarea = document.createElement("textarea");
+      textarea.value = account_number;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      alert("복사되었습니다");
+    },
   },
 };
 </script>
@@ -649,5 +673,8 @@ dialog {
   border: 0;
   box-shadow: 0 12px 24px gray;
   border-radius: 20px;
+}
+.fa-copy:hover {
+  cursor: pointer;
 }
 </style>
