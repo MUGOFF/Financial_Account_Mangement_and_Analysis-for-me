@@ -9,7 +9,7 @@ class Transaction(models.Model):
     transaction_time = models.DateTimeField()
     transaction_from = models.ForeignKey(Financialaccount,on_delete=models.CASCADE,related_name='transaction',blank=True,null=True)
     transaction_from_card = models.ForeignKey(Cardaccount,on_delete=models.CASCADE,related_name='transaction',blank=True,null=True)
-    transaction_to_name = models.ForeignKey('Company_Category_Correlation',on_delete=models.CASCADE,related_name='transaction', default ="현금",blank=True,null=True)
+    # transaction_to_name = models.ForeignKey('Company_Category_Correlation',on_delete=models.CASCADE,related_name='transaction', default ="현금",blank=True,null=True)
     deposit_amount = models.IntegerField(default=0)
     withdrawal_amount = models.IntegerField(default=0)
     main_category = models.CharField(max_length=250, default='미지정')
@@ -18,14 +18,29 @@ class Transaction(models.Model):
     description = models.TextField(blank=True)
     
     def __str__(self):
-        return str(self.transaction_time.strftime("%Y-%m-%d %H Hour")) +'|from: ' + str(self.transaction_from) + '|to: ' + str(self.transaction_to_name)
-#항목 통합
-class Main_Category(models.Model):
-    flow_category = models.CharField(max_length=50)
-    main_category = models.CharField(max_length=50)
+        return str(self.transaction_time.strftime("%Y-%m-%d %H Hour"))
+    
+class Investment(models.Model):
+    written_datetime = models.DateTimeField(auto_now_add=True) #작성일
+    updated_datetime = models.DateTimeField(auto_now=True) #작성 날짜
+    invest_time = models.DateTimeField()
+    security_account = models.ForeignKey(Financialaccount,on_delete=models.CASCADE,related_name='transaction',blank=True,null=True)
+    deal_price = models.IntegerField(default=0)
+    item_amount = models.IntegerField(default=0)
+    item_category = models.CharField(max_length=250, default='미지정')
+    invest_target_symbol = models.CharField(max_length=250, default='미지정')
+    invest_target = models.CharField(max_length=250, default='미지정')
+    description = models.TextField(blank=True)
     
     def __str__(self):
-        return self.flow_category + " : " + self.main_category
+        return str(self.invest_time.strftime("%Y-%m-%d %H Hour"))
+#항목 통합
+# class Main_Category(models.Model):
+#     flow_category = models.CharField(max_length=50)
+#     main_category = models.CharField(max_length=50)
+    
+#     def __str__(self):
+#         return self.flow_category + " : " + self.main_category
 
 class Tag_Category(models.Model):
     # upper_clas_category = models.ForeignKey("Main_Category", on_delete=models.CASCADE, verbose_name="category_id" ,related_name="sub_category")

@@ -1,0 +1,604 @@
+
+
+
+
+
+
+
+
+
+
+
+
+<html>
+<head>
+<style type="text/css">
+td.num {letter-spacing: -0.5px;}
+.ta_r {text-align: right !important;}
+</style>
+
+
+<!---BEGIN_ENC--->
+</head>
+<body>
+
+	<!-- 계좌조회시 노출 -->
+	<h2>전체거래내역 </h2>
+	<table  style="width: 1300px" border="1">
+		<!--  20230418 caption 삭제 -->
+         <colgroup>
+             <col width="20%">
+             <col width="30%">
+             <col width="20%">
+             <col width="30%">
+         </colgroup>
+         <tbody>
+             <tr>
+                 <th scope="row">계좌정보</th>
+                 <td colspan="3">80773361-01 (문의곤)</td>
+             </tr>
+
+             <tr>
+                 <th scope="row">상품유형</th>
+                 <td id="srchPdt">전체</td>
+                 <th scope="row">업무구분</th>
+                 <td id="trdType">전체(펀드거래)</td>
+             </tr>
+             <tr>
+                 <th scope="row">조회기간</th>
+                 <td id="fromTo">2015.12.31 ~ 2020.01.01</td>
+                 <th scope="row">조회기준 일시</th>
+                 <td id="srchTime">2023.12.17 23:32:47</td>
+             </tr>
+
+         </tbody>
+     </table>
+	<table style="width: 1300px">
+        <tr>
+            <td>&nbsp;</td>
+        </tr>
+    </table>
+    
+	<table  style="width: 1300px" border="1">
+		<!--  20230418 caption 삭제 -->
+		<colgroup>
+			
+            <col width="6%" />
+            <col width="15%" />
+            <col width='*' span="6" />
+            <col width="7%" />
+            
+        </colgroup>        
+        <thead>
+	        <tr style="border-top: 1px solid #ffffff;border-left: 1px solid #ffffff;border-right: 1px solid #ffffff">
+	        	<td colspan="9" align="right">(단위: 원)</td>
+	        </tr>
+	        <tr>
+	            <th scope="col">거래일</th>
+	            <th scope="col">종목명</th>
+	            <th scope="col">거래수량</th>
+	            <th scope="col">환율</th>
+	            <th scope="col">거래금액</th>
+	            <th scope="col">수수료</th>
+	            <th scope="col">유가잔고</th>
+	            <th scope="col">잔액</th>
+	            
+	            <th scope="col">상대계좌</th>
+	        </tr>
+	        <tr>
+	            <th scope="col">거래종류</th>
+	            <th scope="col">잔고번호</th>
+	            <th scope="col">거래단가</th>
+	            <th scope="col">외환잔액</th>
+	            <th scope="col">정산금액</th>
+	            <th scope="col">거래세</th>
+	            <th scope="col">세금</th>
+	            <th scope="col">부가세</th>
+	            
+	            <th scope="col">접속매체</th>
+	            
+	        </tr>        
+        </thead>				
+		<tbody>
+
+			<tr>
+                <td><span class="num">2018.01.26</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">150,000</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">150,000</span></td>
+                
+                <td><span class="num">은행발　　　　　　　 508124018619 은행발　　　　　　　</span></td>
+            </tr>
+            <tr>
+                <td>타사이체입금</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">150,000</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>대외기관</td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.03.05</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">26</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">150,026</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>예탁금이용료</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">26</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.06.04</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">113</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">150,129</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>예탁금이용료</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">103</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">10</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.07.02</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">500,000</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">650,129</span></td>
+                
+                <td><span class="num">대구　　　　　　　　 508124018619 대구　　　　　　　　</span></td>
+            </tr>
+            <tr>
+                <td>타사이체입금</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">500,000</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>대외기관</td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.07.04</span></td><!--거래일-->
+                <td>진로발효</td>
+                <td class="ta_r"><span class="num">4</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">121,400</span></td>
+                <td class="ta_r"><span class="num">10</span></td>
+                <td class="ta_r"><span class="num">4</span></td>
+                <td class="ta_r"><span class="num">528,719</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>Smart+코스닥주식매수</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">30,350</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">121,410</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>스마트폰</td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.07.05</span></td><!--거래일-->
+                <td>진로발효</td>
+                <td class="ta_r"><span class="num">10</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">303,000</span></td>
+                <td class="ta_r"><span class="num">40</span></td>
+                <td class="ta_r"><span class="num">14</span></td>
+                <td class="ta_r"><span class="num">225,679</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>Smart+코스닥주식매수</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">30,300</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">303,040</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>스마트폰</td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.07.26</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">32</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">225,711</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>수탁수수료환입</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">32</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.08.16</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">2,000,000</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">2,225,711</span></td>
+                
+                <td><span class="num">우윤희　　　　　　　 110286462347 우윤희　　　　　　　</span></td>
+            </tr>
+            <tr>
+                <td>타사이체입금</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">2,000,000</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>대외기관</td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.08.17</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>1,134.07</td>
+                <td class="ta_r"><span class="num">881.77</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">1,225,723</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>Smart+외화실시간직접매수환전 USD</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>881.77</td>
+                <td class="ta_r"><span class="num">999,988</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>스마트폰</td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.08.18</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">500,000</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">1,725,723</span></td>
+                
+                <td><span class="num">내통　　　　　　　　 508124018619 내통　　　　　　　　</span></td>
+            </tr>
+            <tr>
+                <td>타사이체입금</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">500,000</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>대외기관</td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.08.21</span></td><!--거래일-->
+                <td>KODEX 200</td>
+                <td class="ta_r"><span class="num">20</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">579,300</span></td>
+                <td class="ta_r"><span class="num">29</span></td>
+                <td class="ta_r"><span class="num">20</span></td>
+                <td class="ta_r"><span class="num">1,146,394</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>Smart+거래소주식매수</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">28,965</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">579,329</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>스마트폰</td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.08.22</span></td><!--거래일-->
+                <td>엑슨모빌</td>
+                <td class="ta_r"><span class="num">10</span></td>
+                <td>1,118.20</td>
+                <td class="ta_r"><span class="num">780</span></td>
+                <td class="ta_r"><span class="num">5.62</span></td>
+                <td class="ta_r"><span class="num">10</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>해외증권매수 USD</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">78</span></td>
+                <td>96.15</td>
+                <td class="ta_r"><span class="num">785.62</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.09.03</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">305</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">1,146,659</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>예탁금이용료</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">265</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">40</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.10.01</span></td><!--거래일-->
+                <td>KODEX 200</td>
+                <td class="ta_r"><span class="num">20</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">601,700</span></td>
+                <td class="ta_r"><span class="num">31</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">1,748,328</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>Smart+거래소주식매도</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">30,085</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">601,669</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>스마트폰</td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.10.18</span></td><!--거래일-->
+                <td>KODEX 200</td>
+                <td class="ta_r"><span class="num">20</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">557,600</span></td>
+                <td class="ta_r"><span class="num">28</span></td>
+                <td class="ta_r"><span class="num">20</span></td>
+                <td class="ta_r"><span class="num">1,190,700</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>Smart+거래소주식매수</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">27,880</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">557,628</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>스마트폰</td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.11.02</span></td><!--거래일-->
+                <td>삼성 KODEX200 증권상장지수투자신탁[주식]</td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">1,600</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">1,192,300</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>ETF분배금입금</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">1,600</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.12.03</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">2,075</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">1,194,065</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>예탁금이용료</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">1,765</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">310</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2018.12.11</span></td><!--거래일-->
+                <td>엑슨모빌</td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>1,124.70</td>
+                <td class="ta_r"><span class="num">8.2</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">1,194,065</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>해외증권배당금입금 USD</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>103.12</td>
+                <td class="ta_r"><span class="num">6.97</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">1.23</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2019.01.31</span></td><!--거래일-->
+                <td></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>1,115.84</td>
+                <td class="ta_r"><span class="num">448.09</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">694,069</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>Smart+외화실시간직접매수환전 USD</td>
+                <td><span class="num"></span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>551.21</td>
+                <td class="ta_r"><span class="num">499,996</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td>스마트폰</td>
+                
+            </tr>
+			
+		</tbody>
+	</table>
+
+<!---END_ENC--->      
+
+</body>
+</html>                                                                                                                                                                                                   

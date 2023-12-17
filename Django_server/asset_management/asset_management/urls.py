@@ -36,6 +36,7 @@ urlpatterns = [
     path('api/v1/', include('financial_account.urls')),
     path('api/v1/', include('acc_record.urls')),
     path('api/v1/', include('book.urls')),
+    path('api/v1/', include('user_personal_setting.urls')),
     # path('', views.HomeView, name='home'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

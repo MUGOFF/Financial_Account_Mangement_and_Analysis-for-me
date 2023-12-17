@@ -5,9 +5,13 @@ from .models import *
 
 
 class MonthlyBookSettingAdmin(admin.ModelAdmin):
-    list_display = ("owner","year", "month")
+    list_display = ("owner",)
 admin.site.register(MonthlyBudgetSetting, MonthlyBookSettingAdmin)
 
 class Company_Category_CorrelationAdmin(admin.ModelAdmin):
     list_display = ("owner", "company_accountname", "company_commonname", "category_hook")
 admin.site.register(Company_Category_Correlation,Company_Category_CorrelationAdmin)
+
+class CategorySettingAdmin(admin.ModelAdmin):
+    list_display = ("owner",)
+admin.site.register(CategorySetting, CategorySettingAdmin)

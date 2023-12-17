@@ -1,6 +1,7 @@
 from django.apps import apps
 from acc_record.urls import router as record_router 
 from financial_account.urls import router as account_router 
+from user_personal_setting.urls import router as user_setting_router 
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from collections import OrderedDict
@@ -63,6 +64,10 @@ class ApiMapRouter(DefaultRouter):
         api_root_dict['account_management'] = OrderedDict()
         for prefix, viewset, basename in account_router.registry:
             api_root_dict['account_management'][prefix] = list_name.format(basename=basename)
+        #유저 설정 라우터
+        api_root_dict['user_setting'] = OrderedDict()
+        for prefix, viewset, basename in user_setting_router.registry:
+            api_root_dict['user_setting'][prefix] = list_name.format(basename=basename)
         return self.APIRootView.as_view(api_root_dict=api_root_dict)
     
 # router.register(r'items', ItemsViewSet)

@@ -11,9 +11,9 @@ from datetime import date
 class TransactionAll(ModelViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionAllSerializer
-class Category(ModelViewSet):
-    queryset = Main_Category.objects.all()
-    serializer_class = MoneyCategorySerializer
+# class Category(ModelViewSet):
+#     queryset = Main_Category.objects.all()
+#     serializer_class = MoneyCategorySerializer
 # class Company_Nickname(ModelViewSet):
 #     queryset = Company_Category_Correlation.objects.all()
 #     serializer_class = CompanyCorrelationSerializer

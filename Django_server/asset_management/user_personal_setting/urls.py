@@ -18,9 +18,12 @@ from django.urls import path, include
 from . import views
 
 router = DefaultRouter()
-router.register('Company_nickname', views.Company_Nickname, basename='companyname')
+router.register('Company_nickname', views.Company_Nickname, basename='nickname')
+router.register('Category', views.Category, basename='category')
+# router.register(r'Budget_setting/(?P<year>\d+)/(?P<month>\d+)', views.MonthBudgetAPI, basename='budget')
 
 urlpatterns = [
     path('user_setting/', include(router.urls), name='personal-settings'),
-    path('budgetsetting/<year>/<month>/', views.MonthBudgetAPI.as_view())
+    path('budget_setting/', views.MonthBudgetAPI.as_view()),
+    path('budget_setting/default/', views.MonthBudgetAPI.as_view())
 ]

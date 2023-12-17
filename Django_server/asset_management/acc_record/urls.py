@@ -19,7 +19,7 @@ from . import views
 
 router = DefaultRouter()
 router.register('Transaction_All', views.TransactionAll, basename='transaction')
-router.register('Category', views.Category, basename='category')
+# router.register('Category', views.Category, basename='category')
 # router.register('Company_nickname', views.Company_Nickname, basename='companyname')
 router.register('Hashtag', views.Hashtag, basename='tag')
 urlpatterns = [

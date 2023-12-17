@@ -3,13 +3,13 @@ from .models import *
 from financial_account.models import Financialaccount
 
         
-class MoneyCategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Main_Category
-        fields = (
-            'flow_category',
-            'main_category',
-        )
+# class MoneyCategorySerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Main_Category
+#         fields = (
+#             'flow_category',
+#             'main_category',
+#         )
         
 class TagBaseSerializer(serializers.ModelSerializer):
     

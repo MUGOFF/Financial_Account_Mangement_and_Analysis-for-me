@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'financial_account',
     'acc_record',
     'book',
+    'user_personal_setting',
     'temp_admin',
 ]
 
@@ -121,7 +122,7 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'noc1234',
+        'NAME': 'dec1234',
         'USER': 'adminF',
         'PASSWORD': '0223',
         'HOST': 'localhost',

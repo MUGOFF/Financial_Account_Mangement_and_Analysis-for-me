@@ -1,0 +1,604 @@
+
+
+
+
+
+
+
+
+
+
+
+
+<html>
+<head>
+<style type="text/css">
+td.num {letter-spacing: -0.5px;}
+.ta_r {text-align: right !important;}
+</style>
+
+
+<!---BEGIN_ENC--->
+</head>
+<body>
+
+	<!-- 계좌조회시 노출 -->
+	<h2>전체거래내역 </h2>
+	<table  style="width: 1300px" border="1">
+		<!--  20230418 caption 삭제 -->
+         <colgroup>
+             <col width="20%">
+             <col width="30%">
+             <col width="20%">
+             <col width="30%">
+         </colgroup>
+         <tbody>
+             <tr>
+                 <th scope="row">계좌정보</th>
+                 <td colspan="3">80870592-21 (문의곤)</td>
+             </tr>
+
+             <tr>
+                 <th scope="row">상품유형</th>
+                 <td id="srchPdt">전체</td>
+                 <th scope="row">업무구분</th>
+                 <td id="trdType">전체(펀드거래)</td>
+             </tr>
+             <tr>
+                 <th scope="row">조회기간</th>
+                 <td id="fromTo">2019.12.31 ~ 2024.01.01</td>
+                 <th scope="row">조회기준 일시</th>
+                 <td id="srchTime">2023.12.17 23:33:53</td>
+             </tr>
+
+         </tbody>
+     </table>
+	<table style="width: 1300px">
+        <tr>
+            <td>&nbsp;</td>
+        </tr>
+    </table>
+    
+	<table  style="width: 1300px" border="1">
+		<!--  20230418 caption 삭제 -->
+		<colgroup>
+			
+            <col width="6%" />
+            <col width="15%" />
+            <col width='*' span="6" />
+            <col width="7%" />
+            
+        </colgroup>        
+        <thead>
+	        <tr style="border-top: 1px solid #ffffff;border-left: 1px solid #ffffff;border-right: 1px solid #ffffff">
+	        	<td colspan="9" align="right">(단위: 원)</td>
+	        </tr>
+	        <tr>
+	            <th scope="col">거래일</th>
+	            <th scope="col">종목명</th>
+	            <th scope="col">거래수량</th>
+	            <th scope="col">환율</th>
+	            <th scope="col">거래금액</th>
+	            <th scope="col">수수료</th>
+	            <th scope="col">유가잔고</th>
+	            <th scope="col">잔액</th>
+	            
+	            <th scope="col">상대계좌</th>
+	        </tr>
+	        <tr>
+	            <th scope="col">거래종류</th>
+	            <th scope="col">잔고번호</th>
+	            <th scope="col">거래단가</th>
+	            <th scope="col">외환잔액</th>
+	            <th scope="col">정산금액</th>
+	            <th scope="col">거래세</th>
+	            <th scope="col">세금</th>
+	            <th scope="col">부가세</th>
+	            
+	            <th scope="col">접속매체</th>
+	            
+	        </tr>        
+        </thead>				
+		<tbody>
+
+			<tr>
+                <td><span class="num">2019.12.31</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,631</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,632</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,632</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매도</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,632</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2019.12.31</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,632</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,632</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,632</span></td>
+                <td class="ta_r"><span class="num">51,632</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매수</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,632</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.01</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,632</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,633</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,633</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매도</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,633</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.01</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,633</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,633</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,633</span></td>
+                <td class="ta_r"><span class="num">51,633</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매수</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,633</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.02</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,633</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,634</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,634</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매도</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,634</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.02</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,634</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,634</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,634</span></td>
+                <td class="ta_r"><span class="num">51,634</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매수</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,634</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.03</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,634</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,635</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,635</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매도</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,635</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.03</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,635</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,635</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,635</span></td>
+                <td class="ta_r"><span class="num">51,635</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매수</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,635</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.04</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,635</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,636</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,636</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매도</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,636</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.04</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,636</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,636</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,636</span></td>
+                <td class="ta_r"><span class="num">51,636</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매수</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,636</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.05</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,636</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,637</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,637</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매도</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,637</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.05</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,637</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,637</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,637</span></td>
+                <td class="ta_r"><span class="num">51,637</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매수</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,637</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.06</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,637</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,638</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,638</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매도</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,638</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.06</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,638</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,638</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,638</span></td>
+                <td class="ta_r"><span class="num">51,638</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매수</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,638</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.07</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,638</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,639</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,639</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매도</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,639</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.07</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,639</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,639</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,639</span></td>
+                <td class="ta_r"><span class="num">51,639</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매수</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,639</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.08</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,639</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,640</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,640</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매도</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,640</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.08</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,640</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,640</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,640</span></td>
+                <td class="ta_r"><span class="num">51,640</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매수</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,640</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+
+			<tr>
+                <td><span class="num">2020.01.09</span></td><!--거래일-->
+                <td>발행어음형 CMA</td>
+                <td class="ta_r"><span class="num">51,640</span></td>
+                <td>0.00</td>
+                <td class="ta_r"><span class="num">51,641</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">51,641</span></td>
+                
+                <td><span class="num"></span></td>
+            </tr>
+            <tr>
+                <td>CMA매도</td>
+                <td><span class="num">0001</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td>0</td>
+                <td class="ta_r"><span class="num">51,641</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                <td class="ta_r"><span class="num">0</span></td>
+                
+                <td></td>
+                
+            </tr>
+			
+		</tbody>
+	</table>
+
+<!---END_ENC--->      
+
+</body>
+</html>                                                                                                                                                                                                   
