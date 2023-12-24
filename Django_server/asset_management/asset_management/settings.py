@@ -45,12 +45,12 @@ INSTALLED_APPS = [
     'djoser',
     
     #custom app
-    # 'financial_company',
     'financial_account',
     'acc_record',
-    'book',
     'user_personal_setting',
     'temp_admin',
+    # 'financial_company',
+    # 'book',
 ]
 
 REST_FRAMEWORK = {

@@ -1,15 +1,20 @@
 from rest_framework import serializers
 from .models import *
-from financial_account.models import Financialaccount
+from financial_account.models import *
 
+#Transacrion 전체 필드
+class TransactionSerailizer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Transaction
+        fields = ('__all__') 
         
-# class MoneyCategorySerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Main_Category
-#         fields = (
-#             'flow_category',
-#             'main_category',
-#         )
+#Investment 전체 필드
+class InvestmentSerailizer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Investment
+        fields = ('__all__') 
         
 class TagBaseSerializer(serializers.ModelSerializer):
     
@@ -35,14 +40,6 @@ class TagSerializer(serializers.ModelSerializer):
         id_list = [transaction.id for transaction in transcations]
         return id_list
         
-# class CompanyCorrelationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Company_Category_Correlation
-#         fields = (
-#             'company_accountname',
-#             'company_commonname',
-#             'category_hook',
-#         )
 
         
 class TransactionAllSerializer(serializers.ModelSerializer):
@@ -92,3 +89,18 @@ class TransactionShowSerializer(serializers.ModelSerializer):
             'main_category',
             'sub_category',
         )
+# class MoneyCategorySerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Main_Category
+#         fields = (
+#             'flow_category',
+#             'main_category',
+# class CompanyCorrelationSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Company_Category_Correlation
+#         fields = (
+#             'company_accountname',
+#             'company_commonname',
+#             'category_hook',
+#         )
+#         )

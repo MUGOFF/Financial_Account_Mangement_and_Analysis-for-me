@@ -9,14 +9,28 @@ from datetime import date
 
 
 class TransactionAll(ModelViewSet):
-    queryset = Transaction.objects.all()
+    # queryset = Transaction.objects.all()
     serializer_class = TransactionAllSerializer
-# class Category(ModelViewSet):
-#     queryset = Main_Category.objects.all()
-#     serializer_class = MoneyCategorySerializer
-# class Company_Nickname(ModelViewSet):
-#     queryset = Company_Category_Correlation.objects.all()
-#     serializer_class = CompanyCorrelationSerializer
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            # Admin sees all instances
+            return Transaction.objects.all()
+        else:
+            # Regular user Can't use
+            return Transaction.objects.none()
+class InvestmentAll(ModelViewSet):
+    # queryset = Investment.objects.all()
+    serializer_class = InvestmentSerailizer  
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            # Admin sees all instances
+            return Investment.objects.all()
+        else:
+            # Regular user Can't use
+            return Investment.objects.none()
+    
 class Hashtag(ModelViewSet):
     queryset = Tag_Category.objects.all()
     serializer_class = TagSerializer
@@ -34,6 +48,7 @@ class HashTagControlAPI(APIView):
     
 class MonthlyTransaction(APIView):
     def get(self, request, year, month, format=None):
+        user = self.request.user
         account = Transaction.objects.filter(transaction_time__year=year, transaction_time__month=month).order_by('transaction_time')
         # account = Transaction.objects.filter(transaction_from=accountname)
         # account = Transaction.objects.filter(transaction_from_str=accountname)
@@ -42,6 +57,7 @@ class MonthlyTransaction(APIView):
     
 class YearlyTransaction(APIView):
     def get(self, request, year, format=None):
+        user = self.request.user
         account = Transaction.objects.filter(transaction_time__year=year).order_by('transaction_time')
         # account = Transaction.objects.filter(transaction_from=accountname)
         # account = Transaction.objects.filter(transaction_from_str=accountname)
@@ -50,6 +66,7 @@ class YearlyTransaction(APIView):
 
 class DateRangeTransaction(APIView):
     def get(self, request, format=None):
+        user = self.request.user
         startdate = request.GET.get('start', '2015-01-01')
         enddate = request.GET.get('end', date.today())
         account = Transaction.objects.filter(transaction_time__range=[startdate, enddate]).order_by('transaction_time')
@@ -115,3 +132,10 @@ class TransactionBasics(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+# class Category(ModelViewSet):
+#     queryset = Main_Category.objects.all()
+#     serializer_class = MoneyCategorySerializer
+# class Company_Nickname(ModelViewSet):
+#     queryset = Company_Category_Correlation.objects.all()
+#     serializer_class = CompanyCorrelationSerializer

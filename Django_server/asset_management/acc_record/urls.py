@@ -19,8 +19,7 @@ from . import views
 
 router = DefaultRouter()
 router.register('Transaction_All', views.TransactionAll, basename='transaction')
-# router.register('Category', views.Category, basename='category')
-# router.register('Company_nickname', views.Company_Nickname, basename='companyname')
+router.register('Investment_All', views.InvestmentAll, basename='investment')
 router.register('Hashtag', views.Hashtag, basename='tag')
 urlpatterns = [
     path('account_record/', include(router.urls), name='account-record'),
@@ -30,3 +29,6 @@ urlpatterns = [
     path('transaction_info/rangedate/', views.DateRangeTransaction.as_view()),
     path('transaction_management/<accountnumber>/',views.TransactionBasics.as_view()),
 ]
+
+# router.register('Category', views.Category, basename='category')
+# router.register('Company_nickname', views.Company_Nickname, basename='companyname')

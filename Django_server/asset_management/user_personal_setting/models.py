@@ -15,7 +15,7 @@ class MonthlyBudgetSetting(models.Model):
         return str(self.owner) + "예산 설정"
     
 class Company_Category_Correlation(models.Model):
-    company_accountname = models.CharField(max_length=250, unique=True, primary_key=True)
+    company_accountname = models.CharField(max_length=250)
     company_commonname = models.CharField(max_length=250, blank=True)
     # category_hook = models.ForeignKey("Main_Category", on_delete=models.CASCADE, verbose_name="category_id" ,related_name="hooked_company", blank=True, null=True)
     category_hook = models.CharField(max_length=250, blank=True, null=True)
