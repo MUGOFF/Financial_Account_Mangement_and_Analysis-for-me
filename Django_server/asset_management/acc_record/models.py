@@ -9,6 +9,7 @@ class Transaction(models.Model):
     transaction_time = models.DateTimeField()
     transaction_from = models.ForeignKey(Financialaccount,on_delete=models.CASCADE,related_name='transaction')
     transaction_from_card = models.ForeignKey(Cardaccount,on_delete=models.CASCADE,related_name='transaction',blank=True,null=True)
+    transaction_to = models.CharField(max_length=250, default ="현금")
     deposit_amount = models.IntegerField(default=0)
     withdrawal_amount = models.IntegerField(default=0)
     main_category = models.CharField(max_length=250, default='미지정')

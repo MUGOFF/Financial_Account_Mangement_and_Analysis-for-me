@@ -25,5 +25,5 @@ urlpatterns = [
     path('account_management/', include(router.urls), name='account-mangement'),
     # path('account_list/', views.AccountBase.as_view({'get': 'list'})),
     # path('account_ret/', views.AccountBase.as_view({'get': 'retrieve'})),
-    path('money_account_list/', views.Account_Book_Bookmark.as_view()),
+    # path('money_account_list/', views.Account_Book_Bookmark.as_view()),
 ]

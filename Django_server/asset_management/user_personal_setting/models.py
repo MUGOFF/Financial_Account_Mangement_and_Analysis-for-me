@@ -7,7 +7,7 @@ import json
 Budget_default = {"default": {}, "list_set": []} 
 class MonthlyBudgetSetting(models.Model):
     budget_json_string = models.TextField(default=json.dumps(Budget_default))
-    owner = models.ForeignKey(User,on_delete=models.CASCADE,related_name='MonthlyBookSetting_ownership', default=1) #9,default='admin'
+    owner = models.OneToOneField(User,on_delete=models.CASCADE,related_name='MonthlyBookSetting_ownership', default=1) #9,default='admin'
     # year = models.IntegerField()
     # month = models.IntegerField()
     
@@ -28,7 +28,7 @@ class Company_Category_Correlation(models.Model):
 Category_default = {"수입":["급여소득", "용돈", "금융소득"], "소비":["식비","주거비","통신비","생활비","미용비","의료비","문화비","교통비","세금","카드대금","보험","기타",], "이체":["내계좌이체", "계좌이체", "저축", "투자"]} 
 class CategorySetting(models.Model):
     category_json_string = models.TextField(default=json.dumps(Category_default))
-    owner = models.ForeignKey(User,on_delete=models.CASCADE,related_name='CategorySetting_ownership', default=1) #9,default='admin'
+    owner = models.OneToOneField(User,on_delete=models.CASCADE,related_name='CategorySetting_ownership', default=1) #9,default='admin'
     
     def __str__(self):
         return str(self.owner) + "카테고리 설정"

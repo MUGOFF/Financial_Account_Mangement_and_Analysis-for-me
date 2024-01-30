@@ -27,7 +27,7 @@ urlpatterns = [
     path('transaction_info/<year>/<month>/', views.MonthlyTransaction.as_view()),
     path('transaction_info/<year>/', views.YearlyTransaction.as_view()),
     path('transaction_info/rangedate/', views.DateRangeTransaction.as_view()),
-    path('transaction_management/<accountnumber>/',views.TransactionBasics.as_view()),
+    # path('transaction_management/<accountnumber>/',views.TransactionBasics.as_view()),
 ]
 
 # router.register('Category', views.Category, basename='category')

@@ -12,7 +12,7 @@ class Financialaccount(models.Model):
     account_type = models.CharField(max_length=50, default="입출금계좌") #4
     account_founddate = models.DateField(default=date(2016,1,1)) #5
     account_expireddate = models.DateField(blank=True, null=True) #6
-    assetamount = models.IntegerField(default=0) #7
+    account_balance = models.IntegerField(default=0) #7
     description = models.TextField(blank=True, default="") #8
     owner = models.ForeignKey(User,on_delete=models.CASCADE,related_name='Account_ownership', default=1) #9,default='admin'
     

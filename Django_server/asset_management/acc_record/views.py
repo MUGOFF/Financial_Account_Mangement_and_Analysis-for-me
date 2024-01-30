@@ -49,7 +49,7 @@ class HashTagControlAPI(APIView):
 class MonthlyTransaction(APIView):
     def get(self, request, year, month, format=None):
         user = self.request.user
-        account = Transaction.objects.filter(transaction_time__year=year, transaction_time__month=month).order_by('transaction_time')
+        account = Transaction.objects.filter(transaction_time__year = year, transaction_time__month = month, transaction_from__owner = user).order_by('transaction_time')
         # account = Transaction.objects.filter(transaction_from=accountname)
         # account = Transaction.objects.filter(transaction_from_str=accountname)
         serializer = TransactionAllSerializer(account, many=True, context={"request": request})
@@ -58,7 +58,7 @@ class MonthlyTransaction(APIView):
 class YearlyTransaction(APIView):
     def get(self, request, year, format=None):
         user = self.request.user
-        account = Transaction.objects.filter(transaction_time__year=year).order_by('transaction_time')
+        account = Transaction.objects.filter(transaction_time__year=year, transaction_from__owner = user).order_by('transaction_time')
         # account = Transaction.objects.filter(transaction_from=accountname)
         # account = Transaction.objects.filter(transaction_from_str=accountname)
         serializer = TransactionAllSerializer(account, many=True, context={"request": request})
@@ -69,69 +69,69 @@ class DateRangeTransaction(APIView):
         user = self.request.user
         startdate = request.GET.get('start', '2015-01-01')
         enddate = request.GET.get('end', date.today())
-        account = Transaction.objects.filter(transaction_time__range=[startdate, enddate]).order_by('transaction_time')
+        account = Transaction.objects.filter(transaction_time__range=[startdate, enddate], transaction_from__owner = user).order_by('transaction_time')
         # account = Transaction.objects.filter(transaction_from=accountname)
         # account = Transaction.objects.filter(transaction_from_str=accountname)
         serializer = TransactionAllSerializer(account, many=True, context={"request": request})
         return Response(serializer.data)
     
     
-class TransactionBasics(APIView):
-    def get(self, request, accountnumber, format=None):
-        account = Transaction.objects.filter(transaction_from=accountnumber).order_by('transaction_time')
-        # account = Transaction.objects.filter(transaction_from=accountname)
-        # account = Transaction.objects.filter(transaction_from_str=accountname)
-        serializer = TransactionAllSerializer(account, many=True, context={"request": request})
-        return Response(serializer.data)
-    def post(self, request, accountnumber, format=None):
-        # uses the double asterisk (**) syntax to unpack the dictionary of data
-        data=[]
-        data = dict(**request.data)
-        keys = list(data.keys())
-        for key in keys:
-            data[key] = data[key][0]
-            if data[key] == "":
-                del data[key]
-        check_transaction = Transaction.objects.filter(**data)
-        if not check_transaction.exists():
-            corpname = Company_Category_Correlation.objects.filter(company_accountname = request.data['transaction_to_name'])
-            if len(corpname) == 0:
-                relation_data = {'company_accountname':request.data['transaction_to_name'],'company_commonname':request.data['transaction_to_name']}
-                preworkserializer = CompanyCorrelationSerializer(data=relation_data)
-                if(preworkserializer.is_valid()):
-                    try:
-                        preworkserializer.save()
-                    except:
-                        print("already exist corpname")
-            post_serializer = TransactionAllSerializer(data=request.data)
-            if(post_serializer.is_valid()):
-                post_serializer.save()
-                return Response(post_serializer.data, status=status.HTTP_201_CREATED) #client에게 JSON response 전달
-            else:
-                return Response(post_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            print("already exist transaction")
-            return Response(status=status.HTTP_204_NO_CONTENT)
-    def delete(self,request, accountnumber, formatter=None):
-        id = int(request.GET.get('id',1))
-        contest_list = Transaction.objects.filter(transaction_from=accountnumber) & Transaction.objects.filter(id = id)
-        if contest_list != None: 
-            contest_list.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-    def put(self,request, accountnumber, formatters=None):
-        id = int(request.GET.get('id',1))
-        contest_list = Transaction.objects.filter(transaction_from=accountnumber) & Transaction.objects.filter(id = id)
-        if contest_list != None: 
-            update_content = TransactionAllSerializer(contest_list, data=request.data)
-            if update_content.is_valid():
-                update_content.save()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+# class TransactionBasics(APIView):
+#     def get(self, request, accountnumber, format=None):
+#         account = Transaction.objects.filter(transaction_from=accountnumber).order_by('transaction_time')
+#         # account = Transaction.objects.filter(transaction_from=accountname)
+#         # account = Transaction.objects.filter(transaction_from_str=accountname)
+#         serializer = TransactionAllSerializer(account, many=True, context={"request": request})
+#         return Response(serializer.data)
+#     def post(self, request, accountnumber, format=None):
+#         # uses the double asterisk (**) syntax to unpack the dictionary of data
+#         data=[]
+#         data = dict(**request.data)
+#         keys = list(data.keys())
+#         for key in keys:
+#             data[key] = data[key][0]
+#             if data[key] == "":
+#                 del data[key]
+#         check_transaction = Transaction.objects.filter(**data)
+#         if not check_transaction.exists():
+#             corpname = Company_Category_Correlation.objects.filter(company_accountname = request.data['transaction_to_name'])
+#             if len(corpname) == 0:
+#                 relation_data = {'company_accountname':request.data['transaction_to_name'],'company_commonname':request.data['transaction_to_name']}
+#                 preworkserializer = CompanyCorrelationSerializer(data=relation_data)
+#                 if(preworkserializer.is_valid()):
+#                     try:
+#                         preworkserializer.save()
+#                     except:
+#                         print("already exist corpname")
+#             post_serializer = TransactionAllSerializer(data=request.data)
+#             if(post_serializer.is_valid()):
+#                 post_serializer.save()
+#                 return Response(post_serializer.data, status=status.HTTP_201_CREATED) #client에게 JSON response 전달
+#             else:
+#                 return Response(post_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         else:
+#             print("already exist transaction")
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+#     def delete(self,request, accountnumber, formatter=None):
+#         id = int(request.GET.get('id',1))
+#         contest_list = Transaction.objects.filter(transaction_from=accountnumber) & Transaction.objects.filter(id = id)
+#         if contest_list != None: 
+#             contest_list.delete()
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+#         else:
+#             return Response(status=status.HTTP_400_BAD_REQUEST)
+#     def put(self,request, accountnumber, formatters=None):
+#         id = int(request.GET.get('id',1))
+#         contest_list = Transaction.objects.filter(transaction_from=accountnumber) & Transaction.objects.filter(id = id)
+#         if contest_list != None: 
+#             update_content = TransactionAllSerializer(contest_list, data=request.data)
+#             if update_content.is_valid():
+#                 update_content.save()
+#                 return Response(status=status.HTTP_204_NO_CONTENT)
+#             else:
+#                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         else:
+#             return Response(status=status.HTTP_400_BAD_REQUEST)
         
 # class Category(ModelViewSet):
 #     queryset = Main_Category.objects.all()
