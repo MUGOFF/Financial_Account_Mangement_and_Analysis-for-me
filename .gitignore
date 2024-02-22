@@ -1,3 +1,8 @@
 MD asset/xlsx/
 
 *.drawio
+*.bkp
+
+# git rm -r --cached .
+# git add .
+# git commit -m "clear git cache"
