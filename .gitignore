@@ -6,3 +6,5 @@ MD asset/xlsx/
 # git rm -r --cached .
 # git add .
 # git commit -m "clear git cache"
+
+disposal/
