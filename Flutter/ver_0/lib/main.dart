@@ -4,6 +4,7 @@ import 'package:ver_0/pages/investment.dart';
 import 'package:ver_0/pages/stats.dart';
 import 'package:ver_0/widgets/tab_bar.dart';
 import 'package:ver_0/widgets/drawer_end.dart';
+// import 'package:ver_0/widgets/database_admin.dart';
 // import 'package:my_flutter_app/sub_pages/page2.dart';
 
 void main() {
@@ -66,6 +67,35 @@ class _HomePageState extends State<HomePage> {
       _selectedIndex = index;
     });
   }
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _checkFirstLaunch();
+  // }
+
+  // void _checkFirstLaunch() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   if (!prefs.containsKey('settings')) {
+  //     Map<String, dynamic> defaultSettings = {
+  //       'user_settings': {
+  //         'Category_user': {
+  //           "수입": ["급여소득", "용돈", "금융소득"],
+  //           "소비": ["식비","주거비","통신비","생활비","미용비","의료비","문화비","교통비","세금","카드대금","보험","기타",],
+  //           "이체": ["내계좌이체", "계좌이체", "저축", "투자"],
+  //         }, 
+  //       },
+  //       'fi_data': {
+  //         'asset_accounts': [],
+  //         'money_transactions': [],
+  //         'invest_accounts': [],
+  //         'invest_transactions': [],
+  //       },
+  //     };
+  //     // await prefs.setString('settings', json.encode(defaultSettings));
+  //     await prefs.setString('settings', defaultSettings);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

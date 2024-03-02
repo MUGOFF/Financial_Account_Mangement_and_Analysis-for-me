@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ver_0/widgets/drawer_end.dart';
+import 'package:ver_0/widgets/database_admin.dart';
+import 'package:ver_0/widgets/models/money_transaction.dart';
 import 'package:ver_0/pages/book_add.dart';
 
 class Book extends StatelessWidget {
@@ -41,13 +43,39 @@ class Book extends StatelessWidget {
         ],
       ),
       endDrawer: const AppDrawer(),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('This is Page 1'),
-          ],
-        ),
+      body: FutureBuilder<List<MoneyTransaction>>( // 변경된 FutureBuilder
+        future: DatabaseAdmin().getTransactionsByMonth(DateTime.now().year, DateTime.now().month), // 현재 연도와 월에 해당하는 거래 가져오기
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else {
+            List<MoneyTransaction>? transactions = snapshot.data;
+            if (transactions != null && transactions.isNotEmpty) {
+              return ListView.builder(
+                itemCount: transactions.length,
+                itemBuilder: (context, index) {
+                  MoneyTransaction transaction = transactions[index];
+                  return ListTile(
+                    title: Text(transaction.goods),
+                    subtitle: Text(transaction.amount.toString()),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookAdd(moneyTransaction: transactions[index]),
+                        ),
+                      );
+                    }, 
+                  );
+                },
+              );
+            } else {
+              return const Center(child: Text('금월 데이터가 없습니다'));
+            }
+          }
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -56,7 +84,7 @@ class Book extends StatelessWidget {
             MaterialPageRoute(builder: (context) => const BookAdd()),
           );
         },
-        tooltip: 'Add new transaction',
+        tooltip: '기록 데이터 추가',
         child: const Icon(Icons.add),
       ),//
     );
