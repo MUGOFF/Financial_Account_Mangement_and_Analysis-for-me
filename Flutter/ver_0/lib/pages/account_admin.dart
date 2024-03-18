@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/pages/account_add.dart';
+import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/widgets/models/bank_account.dart';
 import 'package:ver_0/widgets/models/card_account.dart';
 
@@ -36,7 +36,7 @@ class _AccountListPageState extends State<AccountListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('계좌 목록'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.onInverseSurface,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

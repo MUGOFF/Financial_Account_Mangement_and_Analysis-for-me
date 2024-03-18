@@ -60,8 +60,7 @@ class TimePicker extends StatelessWidget  {
         );
 
         if (picked != null) {
-          final period = picked.period == DayPeriod.am ? '오전' : '오후';
-          controller.text = '$period ${picked.hourOfPeriod}:${picked.minute.toString().padLeft(2, '0')}'; // 선택된 날짜를 텍스트 필드에 표시
+          controller.text = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}'; // 선택된 날짜를 텍스트 필드에 표시
           if (onTimeSelected != null) {
             onTimeSelected!(picked); // 선택된 날짜를 콜백으로 전달
           }

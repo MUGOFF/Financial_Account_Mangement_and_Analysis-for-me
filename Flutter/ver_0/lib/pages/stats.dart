@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/widgets/drawer_end.dart';
 
 class StatisticsView extends StatelessWidget {
@@ -9,26 +10,27 @@ class StatisticsView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('통계'),
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.settings),
-        //     onPressed: () {
-        //       // Handle settings button press
-        //     },
-        //   ),
-        //   IconButton(
-        //     icon: const Icon(Icons.info),
-        //     onPressed: () {
-        //       // Handle info button press
-        //     },
-        //   ),
-        //   IconButton(
-        //     icon: const Icon(Icons.help),
-        //     onPressed: () {
-        //       // Handle help button press
-        //     },
-        //   ),
-        // ],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.remove_circle),
+            onPressed: () {
+              // Handle settings button press
+              DatabaseAdmin().clearTable('current_holdings');
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.info),
+            onPressed: () {
+              // Handle info button press
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.help),
+            onPressed: () {
+              // Handle help button press
+            },
+          ),
+        ],
       ),
       endDrawer: const AppDrawer(),
       body: const Center(

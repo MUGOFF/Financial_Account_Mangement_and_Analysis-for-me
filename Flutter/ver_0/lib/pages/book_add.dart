@@ -6,6 +6,7 @@ import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/widgets/models/money_transaction.dart';
 import 'package:ver_0/widgets/models/bank_account.dart';
 import 'package:ver_0/widgets/models/card_account.dart';
+import 'package:ver_0/widgets/models/transaction_category.dart';
 import 'package:intl/intl.dart';
 
 class BookAdd extends StatefulWidget {
@@ -27,6 +28,7 @@ class _BookAddState extends State<BookAdd> {
   final TextEditingController _targetgoodsController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _memoController = TextEditingController();
+  String currentCategory = "소비";
   late String _pageType;
   int _selectedButton = 1; // Initially, the first button is selected
 
@@ -54,9 +56,8 @@ class _BookAddState extends State<BookAdd> {
       _categoryController.text = widget.moneyTransaction!.category;
       _memoController.text = widget.moneyTransaction!.description ?? '';
     } else {
-      final initialperiod = TimeOfDay.now().period == DayPeriod.am ? '오전' : '오후';
       _dateController = TextEditingController(text: DateFormat('yyyy년 MM월 dd일').format(DateTime.now()));
-      _timeController = TextEditingController(text:'$initialperiod ${TimeOfDay.now().hourOfPeriod}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}');
+      _timeController = TextEditingController(text:'${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}');
     }
   }
 
@@ -75,7 +76,7 @@ class _BookAddState extends State<BookAdd> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  buildRadioButton(1, '지출', Colors.red),
+                  buildRadioButton(1, '소비', Colors.red),
                   buildRadioButton(2, '수입', Colors.green),
                   buildRadioButton(3, '이체', Colors.grey),
                 ],
@@ -114,7 +115,29 @@ class _BookAddState extends State<BookAdd> {
                 ],
               ),
               buildRow("거래대상", _targetgoodsController),
-              buildRow("거래분류", _categoryController),
+              Row(
+                children: [
+                  const Expanded(
+                    flex: 1,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("거래분류"),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      readOnly: true,
+                      controller: _categoryController,
+                      onTap: () {
+                        _showCategoryModal(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
               buildRow("메모", _memoController),
               const SizedBox(height: 16.0), // Add spacing between buttons
               if(_pageType == "수정")
@@ -276,6 +299,53 @@ class _BookAddState extends State<BookAdd> {
     );
   }
 
+  void _showCategoryModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return FutureBuilder<List<TransactionCategory>>(
+          future: DatabaseAdmin().getAllTransactionCategories(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator(); // 데이터 로딩 중이면 로딩 인디케이터 표시
+            }
+            if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            }
+            List<TransactionCategory> fetchedCategorys = snapshot.data!;
+            return Container(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.3), // 원하는 최대 높이로 설정
+              child:SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                      ...fetchedCategorys.expand((category) {
+                      if (category.name == currentCategory) {
+                        return category.itemList!.map((item) {
+                          return ListTile(
+                            title: Text(item),
+                            onTap: () {
+                              setState(() {
+                                _categoryController.text = item;
+                              });
+                              Navigator.pop(context);
+                            },
+                          );
+                        }).toList();
+                      } else {
+                        return [];
+                      }
+                    }),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget buildRow(String label, TextEditingController controller, {String fieldType = 'text', TextEditingController? secondController}) {
     switch (fieldType) {
       case 'numeric':
@@ -398,6 +468,7 @@ class _BookAddState extends State<BookAdd> {
       onPressed: () {
         setState(() {
           _selectedButton = value;
+          currentCategory = text;
         });
       },
       style: ButtonStyle(
@@ -430,7 +501,7 @@ class _BookAddState extends State<BookAdd> {
   }
 
   void insertDataToDatabase() {
-    _amountController.text = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    _amountController.text = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.]'), '');
     final MoneyTransaction transaction = MoneyTransaction(
       transactionTime: '${_dateController.text}T${_timeController.text}', // 여기서는 현재 시간을 사용할 수 있습니다. 
       account: _accountController.text,
@@ -446,7 +517,7 @@ class _BookAddState extends State<BookAdd> {
   }
 
   void updateDataToDatabase() {
-    _amountController.text = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    _amountController.text = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.]'), '');
     // 은행 계좌 정보 생성
     MoneyTransaction transaction = MoneyTransaction(
       id: int.parse(_idController.text),
