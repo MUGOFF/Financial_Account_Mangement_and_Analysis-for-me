@@ -109,7 +109,9 @@ class _BookState extends State<Book> {
                               MaterialPageRoute(
                                 builder: (context) => BookAdd(moneyTransaction: transactions[index]),
                               ),
-                            );
+                            ).then((result) {
+                              setState(() {});
+                            });
                           }, 
                         );
                       },
@@ -128,7 +130,9 @@ class _BookState extends State<Book> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const BookAdd()),
-          );
+          ).then((result) {
+            setState(() {});
+          });
         },
         tooltip: '기록 데이터 추가',
         child: const Icon(Icons.add),

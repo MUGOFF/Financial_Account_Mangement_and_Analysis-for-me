@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:logger/logger.dart';
 import 'package:ver_0/widgets/models/bank_account.dart';
 import 'package:ver_0/widgets/models/card_account.dart';
 import 'package:ver_0/widgets/models/money_transaction.dart';
@@ -9,6 +10,7 @@ import 'package:ver_0/widgets/models/nonexpiration_investment.dart';
 import 'package:ver_0/widgets/models/current_holdings.dart';
 
 class DatabaseAdmin {
+  final Logger logger = Logger();
   static final DatabaseAdmin _instance = DatabaseAdmin._internal();
   factory DatabaseAdmin() => _instance;
 
@@ -427,15 +429,15 @@ class DatabaseAdmin {
 
   Future<int> deletionUpdateCurrentHoldingNonex(dynamic updatedInvestment) async {
     final db = await database;
-
+    logger.d(updatedInvestment);
     final currentData = await db.query(
       'current_holdings',
       where: 'investment = ?',
-      whereArgs: [updatedInvestment.investment],
+      whereArgs: [updatedInvestment['investment']],
     );
 
     final double oldTotalAmount = currentData.isNotEmpty ? currentData.first['totalAmount'] as double : 0;
-    final double newTotalAmount = oldTotalAmount - updatedInvestment.amount;
+    final double newTotalAmount = oldTotalAmount - updatedInvestment['amount'];
 
     int updateResult;
 
@@ -443,10 +445,10 @@ class DatabaseAdmin {
       updateResult = await db.insert(
         'current_holdings',
         {
-          'investment': updatedInvestment.investment,
-          'totalAmount': updatedInvestment.amount,
-          'investcategory': updatedInvestment.investcategory,
-          'currency': updatedInvestment.currency,
+          'investment': updatedInvestment['investment'],
+          'totalAmount': updatedInvestment['amount'],
+          'investcategory': updatedInvestment['investcategory'],
+          'currency': updatedInvestment['currency'],
         },
       );
     } else {
@@ -454,14 +456,14 @@ class DatabaseAdmin {
         'current_holdings',
         {'totalAmount': newTotalAmount},
         where: 'investment = ?',
-        whereArgs: [updatedInvestment.investment],
+        whereArgs: [updatedInvestment['investment']],
       );
 
       if (newTotalAmount == 0) {
         await db.delete(
           'current_holdings',
           where: 'investment = ?',
-          whereArgs: [updatedInvestment.investment],
+          whereArgs: [updatedInvestment['investment']],
         );
       }
     }
@@ -572,7 +574,7 @@ class DatabaseAdmin {
   Future<List<NonexpirationInvestment>> getNonExInvestmentsByDateRange(DateTime start, DateTime end) async {
     final db = await database;
     final List<Map<String, dynamic>> invesmentMaps = await db.query(
-      'investments_expiration',
+      'investments_nonexpiration',
       where:
         """
           substr(investTime, 1, 4) || '-' || 

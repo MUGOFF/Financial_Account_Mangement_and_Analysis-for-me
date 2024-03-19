@@ -27,7 +27,7 @@ class MoneyTransaction {
       'account': account,
       'amount': amount,
       'goods': goods,
-      'category': category,
+      'category': category=="" ? category : "미분류",
       'description': description,
     };
   }

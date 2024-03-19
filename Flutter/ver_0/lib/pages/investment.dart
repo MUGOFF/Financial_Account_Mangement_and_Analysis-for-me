@@ -6,63 +6,16 @@ import 'package:ver_0/widgets/models/current_holdings.dart';
 import 'package:ver_0/widgets/models/expiration_investment.dart';
 import 'package:ver_0/widgets/models/nonexpiration_investment.dart';
 
-class Invest extends StatelessWidget {
+class Invest extends StatefulWidget {
   const Invest({super.key});
 
-  
   @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2, // 탭의 수를 지정합니다. 여기서는 두 개의 탭이 있으므로 2로 설정합니다.
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('투자정보'),
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        ),
-        endDrawer: const AppDrawer(),
-        body: const Column(
-          children: [
-            TabBar(
-              tabs: <Widget>[
-                Tab(text: '투자 상태'),
-                Tab(text: '리스트'),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                children: <Widget>[
-                  Center(child: InvestHolingsPage()),
-                  Center(child: InvestListPage()),
-                ],
-              ),
-            ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const InvestAdd()),
-            );
-          },
-          tooltip: '투자 정보 추가',
-          child: const Icon(Icons.add),
-        ),
-      ),
-    );
-  }
+  State<Invest> createState() => _InvestState();
 }
 
-class InvestHolingsPage extends StatefulWidget {
-  const InvestHolingsPage({super.key});
-
-  @override
-  State<InvestHolingsPage> createState() => _InvestHolingsPageState();
-}
-
-class _InvestHolingsPageState extends State<InvestHolingsPage> {
-    List<Holdings> currentHoldings = [];
-    List<String> investCategories = [];
+class _InvestState extends State<Invest> {
+  List<Holdings> fetchedCurrentHoldings = [];
+  List<String> fetchedInvestCategories = [];
 
   @override
   void initState() {
@@ -73,10 +26,61 @@ class _InvestHolingsPageState extends State<InvestHolingsPage> {
   Future<void> _fetchHoldings() async {
     List<Holdings> fetchedHoldings = await DatabaseAdmin().getCurrentHoldInvestments();
     setState(() {
-      currentHoldings = fetchedHoldings;
-      investCategories = currentHoldings.map((holding) => holding.investcategory).toList();
+      fetchedCurrentHoldings = fetchedHoldings;
+      fetchedInvestCategories = fetchedCurrentHoldings.map((holding) => holding.investcategory).toList();
     });
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2, // 탭의 수를 지정합니다. 여기서는 두 개의 탭이 있으므로 2로 설정합니다.
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('투자정보'),
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        ),
+        endDrawer: const AppDrawer(),
+        body: Column(
+          children: [
+            const TabBar(
+              tabs: <Widget>[
+                Tab(text: '투자 상태'),
+                Tab(text: '리스트'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: <Widget>[
+                  Center(child: InvestHolingsPage(currentHoldings: fetchedCurrentHoldings, investCategories: fetchedInvestCategories)),
+                  const Center(child: InvestListPage()),
+                ],
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const InvestAdd()),
+            ).then((result) {
+              _fetchHoldings();
+              setState((){});
+            });
+          },
+          tooltip: '투자 정보 추가',
+          child: const Icon(Icons.add),
+        ),
+      ),
+    );
+  }
+}
+
+class InvestHolingsPage extends StatelessWidget{
+  final List<Holdings> currentHoldings;
+  final List<String> investCategories;
+  const InvestHolingsPage({required this.currentHoldings, required this.investCategories, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -249,7 +253,47 @@ class _InvestListPageState extends State<InvestListPage> {
                               MaterialPageRoute(
                                 builder: (context) => InvestAdd(expirationInvestment: transactions[index]),
                               ),
-                            );
+                            ).then((result) {
+                              setState(() {});
+                            });
+                          }, 
+                        );
+                      },
+                    );
+                  } else {
+                  return const Center(child: Text('해당기간 투자 데이터가 없습니다'));
+                  }
+                }
+              },
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<NonexpirationInvestment>>( // 변경된 FutureBuilder
+              future: DatabaseAdmin().getNonExInvestmentsByDateRange(startDate, endDate), // 현재 연도와 월에 해당하는 거래 가져오기
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else {
+                  List<NonexpirationInvestment>? transactions = snapshot.data;
+                  if (transactions != null && transactions.isNotEmpty) {
+                    return ListView.builder(
+                      itemCount: transactions.length,
+                      itemBuilder: (context, index) {
+                        NonexpirationInvestment transaction = transactions[index];
+                        return ListTile(
+                          title: Text(transaction.investment),
+                          subtitle: Text(transaction.amount.toString()),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => InvestAdd(nonExpirationInvestment: transactions[index]),
+                              ),
+                            ).then((result) {
+                              setState(() {});
+                            });
                           }, 
                         );
                       },

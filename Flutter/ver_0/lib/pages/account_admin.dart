@@ -60,7 +60,9 @@ class _AccountListPageState extends State<AccountListPage> {
                   MaterialPageRoute(
                     builder: (context) => const AccountEditPage(),
                   ),
-                );
+                ).then((result) {
+                  setState(() {});
+                });
               },
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
@@ -108,7 +110,9 @@ class _AccountListPageState extends State<AccountListPage> {
               MaterialPageRoute(
                 builder: (context) => accounts[index] is BankAccount ? AccountEditPage(bankAccount: accounts[index]): AccountEditPage(cardAccount: accounts[index]),
               ),
-            );
+            ).then((result) {
+              setState(() {});
+            });
           },
         );
       },

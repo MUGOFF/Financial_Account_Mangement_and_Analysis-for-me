@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:ver_0/widgets/database_admin.dart';
-import 'package:ver_0/pages/account_admin.dart';
 import 'package:ver_0/widgets/models/bank_account.dart';
 import 'package:ver_0/widgets/models/card_account.dart';
 
@@ -243,10 +242,6 @@ class _AccountEditPageState extends State<AccountEditPage> {
                                   onPressed: () {
                                     Navigator.pop(context);
                                     deleteDataFromDatabase(); // Delete data
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const AccountListPage()),
-                                    ); // Close the dialog
                                   },
                                   child: const Text('삭제'),
                                 ),
@@ -282,10 +277,6 @@ class _AccountEditPageState extends State<AccountEditPage> {
                           // Save data when Save button is pressed
                           updateDataToDatabase();
                           Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const AccountListPage()),
-                          );
                         }
                       }: null,
                       style: ElevatedButton.styleFrom(
@@ -327,10 +318,6 @@ class _AccountEditPageState extends State<AccountEditPage> {
                           // Save data when Save button is pressed
                           insertDataToDatabase();
                           Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const AccountListPage()),
-                          );
                         }
                       }: null,
                       style: ElevatedButton.styleFrom(

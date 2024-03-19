@@ -19,6 +19,13 @@ class StatisticsView extends StatelessWidget {
             },
           ),
           IconButton(
+            icon: const Icon(Icons.remove_done),
+            onPressed: () {
+              // Handle settings button press
+              DatabaseAdmin().clearTable('money_transactions');
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.info),
             onPressed: () {
               // Handle info button press

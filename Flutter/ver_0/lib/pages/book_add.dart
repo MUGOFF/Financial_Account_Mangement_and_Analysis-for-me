@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ver_0/pages/book.dart';
 import 'package:ver_0/widgets/date_picker.dart';
 import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/widgets/models/money_transaction.dart';
@@ -155,12 +154,8 @@ class _BookAddState extends State<BookAdd> {
                             actions: [
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pop(context);
                                   deleteDataFromDatabase(); // Delete data
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const Book()),
-                                  ); // Close the dialog
+                                  Navigator.pop(context);
                                 },
                                 child: const Text('삭제'),
                               ),
@@ -183,10 +178,6 @@ class _BookAddState extends State<BookAdd> {
                         // Save data when Save button is pressed
                         updateDataToDatabase();
                         Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const Book()),
-                        );
                       }
                     },
                     child: const Text('수정'),
@@ -210,10 +201,6 @@ class _BookAddState extends State<BookAdd> {
                         // Save data when Save button is pressed
                         insertDataToDatabase();
                         Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const Book()),
-                        );
                       }
                     },
                     child: const Text('저장'),
