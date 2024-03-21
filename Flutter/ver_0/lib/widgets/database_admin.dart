@@ -177,6 +177,7 @@ class DatabaseAdmin {
   }
   Future<int> insertMoneyTransaction(MoneyTransaction moneyTransaction) async {
     final db = await database;
+    updateAccountBalance(moneyTransaction);
     return await db.insert('money_transactions', moneyTransaction.toMap());
   }
 
@@ -195,7 +196,7 @@ class DatabaseAdmin {
   Future<void> _insertDefaultCategories(Database db) async {
     Map<String, List<String>> defaultCategories = {
       "수입": ["급여소득", "용돈", "금융소득"],
-      "소비": ["식비", "주거비", "통신비", "생활비", "미용비", "의료비", "문화비", "교통비", "세금", "카드대금", "보험", "기타"],
+      "소비": ["식비", "주거비", "통신비", "생활비", "미용비", "의료비", "문화비", "교통비", "세금", "카드대금", "보험", "기타", '특별예산'],
       "이체": ["내계좌송금", "타계좌송금", "내계좌수신", "저축", "투자", "충전"]
     };
 
@@ -284,6 +285,7 @@ class DatabaseAdmin {
 
   Future<int> updateMoneyTransaction(MoneyTransaction updatedTransaction) async {
     final db = await database;
+    updateAccountBalance(updatedTransaction);
     return await db.update(
       'money_transactions',
       updatedTransaction.toMap(),
@@ -300,6 +302,54 @@ class DatabaseAdmin {
       where: 'name  = ?',
       whereArgs: [name],
     );
+  }
+
+  Future<int> updateAccountBalance(MoneyTransaction updatedTransaction) async {
+    final db = await database;
+
+    var currentData = await db.query(
+      'bank_accounts',
+      where: 'bankName = ?',
+      whereArgs: [updatedTransaction.account],
+    );
+
+    int updateResult = 0;
+
+    if (currentData.isEmpty) {
+      var currentCardData = await db.query(
+        'card_accounts',
+        where: 'cardName = ?',
+        whereArgs: [updatedTransaction.account],
+      );
+
+      currentData = await db.query(
+        'bank_accounts',
+        where: 'id = ?',
+        whereArgs: [currentCardData.first['cardIssuer']],
+      );
+      if (currentData.isNotEmpty) {
+        final double oldTotalAmount = currentData.first['balance'] as double;
+        final double newTotalAmount = oldTotalAmount + updatedTransaction.amount;
+
+        updateResult = await db.update(
+          'bank_accounts',
+          {'balance': newTotalAmount},
+          where: 'id = ?',
+          whereArgs: [currentCardData.first['cardIssuer']],
+        );
+      }
+    } else {
+      final double oldTotalAmount = currentData.first['balance'] as double;
+      final double newTotalAmount = oldTotalAmount + updatedTransaction.amount;
+      updateResult = await db.update(
+        'bank_accounts',
+        {'balance': newTotalAmount},
+        where: 'bankName = ?',
+        whereArgs: [updatedTransaction.account],
+      );
+    }
+
+    return updateResult;
   }
 
   Future<int> updateExpirationInvestment(ExpirationInvestment updatedInvestment) async {
@@ -390,11 +440,64 @@ class DatabaseAdmin {
 
   Future<int> deleteMoneyTransaction(int id) async {
     final db = await database;
+    List<Map<String, dynamic>> transactions = await db.query(
+      'money_transactions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    deletionUpdateAccountBalance(transactions.first);
     return await db.delete(
       'money_transactions',
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<int> deletionUpdateAccountBalance(dynamic updatedTransaction) async {
+    final db = await database;
+    var currentData = await db.query(
+      'bank_accounts',
+      where: 'bankName = ?',
+      whereArgs: [updatedTransaction['account']],
+    );
+    
+    int updateResult = 0;
+
+    if (currentData.isEmpty) {
+      var currentCardData = await db.query(
+        'card_accounts',
+        where: 'cardName = ?',
+        whereArgs: [updatedTransaction['account']],
+      );
+
+      currentData = await db.query(
+        'bank_accounts',
+        where: 'id = ?',
+        whereArgs: [currentCardData.first['cardIssuer']],
+      );
+      if (currentData.isNotEmpty) {
+        final double oldTotalAmount = currentData.first['balance'] as double;
+        final double newTotalAmount = oldTotalAmount - updatedTransaction['amount'];
+
+        updateResult = await db.update(
+          'bank_accounts',
+          {'balance': newTotalAmount},
+          where: 'id = ?',
+          whereArgs: [currentCardData.first['cardIssuer']],
+        );
+      }
+    } else {
+      final double oldTotalAmount = currentData.first['balance'] as double;
+      final double newTotalAmount = oldTotalAmount - updatedTransaction['amount'];
+      updateResult = await db.update(
+        'bank_accounts',
+        {'balance': newTotalAmount},
+        where: 'bankName = ?',
+        whereArgs: [updatedTransaction['account']],
+      );
+    }
+
+    return updateResult;
   }
 
   Future<int> deleteExpirationInvestment(int id) async {
@@ -429,7 +532,6 @@ class DatabaseAdmin {
 
   Future<int> deletionUpdateCurrentHoldingNonex(dynamic updatedInvestment) async {
     final db = await database;
-    logger.d(updatedInvestment);
     final currentData = await db.query(
       'current_holdings',
       where: 'investment = ?',

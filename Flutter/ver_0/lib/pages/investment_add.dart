@@ -1,11 +1,11 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:math';
+import 'package:intl/intl.dart';
 import 'package:ver_0/widgets/date_picker.dart';
 import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/widgets/models/expiration_investment.dart';
 import 'package:ver_0/widgets/models/nonexpiration_investment.dart';
-import 'package:intl/intl.dart';
 
 
 class InvestAdd extends StatefulWidget {
@@ -101,7 +101,7 @@ class _InvestAddState extends State<InvestAdd> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('투자 입력'),
+        title: Text('투자 $_pageType'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -446,6 +446,7 @@ class _InvestAddState extends State<InvestAdd> {
                                     actions: [
                                       TextButton(
                                         onPressed: () {
+                                          Navigator.pop(context);
                                           deleteDataFromDatabase();
                                           Navigator.pop(context);
                                         },
@@ -644,7 +645,10 @@ class _InvestAddState extends State<InvestAdd> {
                         if (value == null || value.isEmpty) {
                           return 'required';
                         }
-                        if(DateFormat('yyyy년 MM월 dd일THH:mm').parse('${_endDateController.text}T$value').isBefore(DateFormat('yyyy년 MM월 dd일THH:mm').parse('${_startDateController.text}T${_startTimeController.text}'))  ) {
+                        if(
+                          DateFormat('yyyy년 MM월 dd일THH:mm').parse('${_endDateController.text}T$value').isBefore(DateFormat('yyyy년 MM월 dd일THH:mm').parse('${_startDateController.text}T${_startTimeController.text}'))||
+                          DateFormat('yyyy년 MM월 dd일THH:mm').parse('${value}T${_endTimeController.text}').isAtSameMomentAs(DateFormat('yyyy년 MM월 dd일THH:mm').parse('${_startDateController.text}T${_startTimeController.text}'))
+                          ) {
                           return '같거나 이전입니다';
                         }
                         return null;
@@ -899,7 +903,8 @@ class _InvestAddState extends State<InvestAdd> {
       expirationTime: '${_endDateController.text}T${_endTimeController.text}',
       interestRate: double.parse(_interestRateController.text),
       account: _accountController.text,
-      amount: currentCategory == "매도"? double.parse(_amountController.text)*-1 : double.parse(_amountController.text),
+      amount:currentCategory == "매도"? double.parse(_amountController.text).abs()*-1 :
+             currentCategory == "매수"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
       valuePrice: double.parse(_valuePriceController.text),
       cost: double.parse(_costController.text),
       investment: _investmentController.text,
@@ -914,7 +919,8 @@ class _InvestAddState extends State<InvestAdd> {
       NonexpirationInvestment newInvestment = NonexpirationInvestment(
         investTime: '${_startDateController.text}T${_startTimeController.text}',
         account: _accountController.text,
-        amount: currentCategory == "매도"? double.parse(_amountController.text)*-1 : double.parse(_amountController.text),
+        amount:currentCategory == "매도"? double.parse(_amountController.text).abs()*-1 :
+               currentCategory == "매수"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
         valuePrice: double.parse(_valuePriceController.text),
         cost: double.parse(_costController.text),
         investment: _investmentController.text,
@@ -939,7 +945,8 @@ class _InvestAddState extends State<InvestAdd> {
         expirationTime: '${_endDateController.text}T${_endTimeController.text}',
         interestRate: double.parse(_interestRateController.text),
         account: _accountController.text,
-        amount: currentCategory == "매도"? double.parse(_amountController.text)*-1 : double.parse(_amountController.text),
+        amount:currentCategory == "매도"? double.parse(_amountController.text).abs()*-1 :
+               currentCategory == "매수"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
         valuePrice: double.parse(_valuePriceController.text),
         cost: double.parse(_costController.text),
         investment: _investmentController.text,
@@ -955,7 +962,8 @@ class _InvestAddState extends State<InvestAdd> {
         id: int.parse(_idController.text), // 이 부분은 적절한 정보로 수정해야 합니다.
         investTime: '${_startDateController.text}T${_startTimeController.text}',
         account: _accountController.text,
-        amount: currentCategory == "매도"? double.parse(_amountController.text)*-1 : double.parse(_amountController.text),
+        amount:currentCategory == "매도"? double.parse(_amountController.text).abs()*-1 :
+               currentCategory == "매수"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
         valuePrice: double.parse(_valuePriceController.text),
         cost: double.parse(_costController.text),
         investment: _investmentController.text,

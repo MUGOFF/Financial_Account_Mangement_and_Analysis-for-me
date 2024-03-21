@@ -31,6 +31,15 @@ class _AccountListPageState extends State<AccountListPage> {
     });
   }
 
+  Future<String> _buildTrailingText(dynamic account) async {
+    if (account is BankAccount) {
+      return '계좌 잔액: ${account.balance.toString()}';
+    } else {
+      var issuerBankAccount = await DatabaseAdmin().getBankAccountById(account.cardIssuer);
+      return '연동 계좌: ${issuerBankAccount?.bankName ?? "미존재"}';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,7 +70,9 @@ class _AccountListPageState extends State<AccountListPage> {
                     builder: (context) => const AccountEditPage(),
                   ),
                 ).then((result) {
-                  setState(() {});
+                  setState(() {
+                    _fetchAccounts();
+                  });
                 });
               },
               child: const Padding(
@@ -103,6 +114,16 @@ class _AccountListPageState extends State<AccountListPage> {
         return ListTile(
           title: Text(accounts[index] is BankAccount ? accounts[index].bankName: accounts[index].cardName),
           subtitle: Text(accounts[index] is BankAccount ? accounts[index].accountNumber: accounts[index].cardNumber),
+          trailing: FutureBuilder<String>(
+            future: _buildTrailingText(accounts[index]),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator(); // 데이터가 로드될 때까지 로딩 표시기 표시
+              } else {
+                return Text(snapshot.data!, style: const TextStyle(fontSize: 20));
+              }
+            },
+          ),
           // 계좌 정보를 탭하면 수정하는 기능을 추가할 수 있습니다.
           onTap: () {
             Navigator.push(
@@ -111,9 +132,12 @@ class _AccountListPageState extends State<AccountListPage> {
                 builder: (context) => accounts[index] is BankAccount ? AccountEditPage(bankAccount: accounts[index]): AccountEditPage(cardAccount: accounts[index]),
               ),
             ).then((result) {
-              setState(() {});
+              setState(() {
+                _fetchAccounts();
+              });
             });
           },
+
         );
       },
     );

@@ -27,7 +27,7 @@ class _AppBottomNavBarState extends State<AppBottomNavBar> {
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.monetization_on),
-          label: 'Coins',
+          label: 'Invests',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.insert_chart),

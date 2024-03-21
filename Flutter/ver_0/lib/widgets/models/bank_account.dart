@@ -18,6 +18,7 @@ class BankAccount {
     return {
       'bankName': bankName,
       'accountNumber': accountNumber,
+      'balance': balance,
       'memo': memo,
     };
   }

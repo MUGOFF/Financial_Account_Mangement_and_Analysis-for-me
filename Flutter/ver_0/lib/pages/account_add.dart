@@ -23,7 +23,8 @@ class _AccountEditPageState extends State<AccountEditPage> {
   final TextEditingController _issuerdisplayController = TextEditingController();
   final TextEditingController _numberController = TextEditingController();
   final TextEditingController _memoController = TextEditingController();
-  late String _pageType; 
+  final TextEditingController _balanceController = TextEditingController();
+  late String _pageType;
 
 
   @override
@@ -44,6 +45,7 @@ class _AccountEditPageState extends State<AccountEditPage> {
       _idController.text = widget.bankAccount!.id.toString();
       _nameController.text = widget.bankAccount!.bankName;
       _numberController.text = widget.bankAccount!.accountNumber ?? '';
+      _balanceController.text = widget.bankAccount!.balance.toString();
       _memoController.text = widget.bankAccount!.memo ?? '';
     } else if (widget.cardAccount != null) {
       _typeController.text = '카드';
@@ -52,7 +54,7 @@ class _AccountEditPageState extends State<AccountEditPage> {
       _issuerController.text = widget.cardAccount!.cardIssuer.toString();
       if (widget.cardAccount!.cardIssuer != null) {
         var issuerBankAccount = await DatabaseAdmin().getBankAccountById(widget.cardAccount!.cardIssuer ?? 0);
-        _issuerdisplayController.text = issuerBankAccount!.bankName;
+        _issuerdisplayController.text = issuerBankAccount != null ? issuerBankAccount.bankName : "미존재";
       } 
       _numberController.text = widget.cardAccount!.cardNumber ?? '';
       _memoController.text = widget.cardAccount!.memo ?? '';
@@ -100,6 +102,9 @@ class _AccountEditPageState extends State<AccountEditPage> {
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Field is required';
+                        }
+                        if (value == "미설정") {
+                          return '종류를 정해주세요';
                         }
                         return null;
                       },
@@ -242,6 +247,7 @@ class _AccountEditPageState extends State<AccountEditPage> {
                                   onPressed: () {
                                     Navigator.pop(context);
                                     deleteDataFromDatabase(); // Delete data
+                                    Navigator.pop(context);
                                   },
                                   child: const Text('삭제'),
                                 ),
@@ -271,14 +277,14 @@ class _AccountEditPageState extends State<AccountEditPage> {
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 0.4, // 화면의 40%를 차지하도록 조절
                     child: ElevatedButton(
-                      onPressed: _accountFormKey.currentState?.validate() ?? false? () {
+                      onPressed: () {
                         // Handle Save button press
                         if (_accountFormKey.currentState?.validate() ?? false) {
                           // Save data when Save button is pressed
                           updateDataToDatabase();
                           Navigator.pop(context);
                         }
-                      }: null,
+                      },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0), // 원하는 모양으로 조절
@@ -313,12 +319,8 @@ class _AccountEditPageState extends State<AccountEditPage> {
                     width: MediaQuery.of(context).size.width * 0.4, // 화면의 40%를 차지하도록 조절
                     child: ElevatedButton(
                       onPressed: _accountFormKey.currentState?.validate() ?? false? () {
-                        // Handle Save button press
-                        if (_accountFormKey.currentState?.validate() ?? false) {
-                          // Save data when Save button is pressed
-                          insertDataToDatabase();
-                          Navigator.pop(context);
-                        }
+                        insertDataToDatabase();
+                        Navigator.pop(context);
                       }: null,
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -347,18 +349,14 @@ class _AccountEditPageState extends State<AccountEditPage> {
             ListTile(
               title: const Text('은행 계좌'),
               onTap: () {
-                setState(() {
-                  _typeController.text = '은행';
-                });
+                _typeController.text = '은행';
                 Navigator.pop(context);
               },
             ),
             ListTile(
               title: const Text('카드 계좌'),
               onTap: () {
-                setState(() {
-                  _typeController.text = '카드';
-                });
+                _typeController.text = '카드';
                 Navigator.pop(context);
               },
             ),
@@ -435,7 +433,8 @@ class _AccountEditPageState extends State<AccountEditPage> {
       BankAccount bankAccount = BankAccount(
         id: int.parse(_idController.text),
         bankName: _nameController.text,
-        accountNumber: _numberController.text, // 이 부분은 적절한 정보로 수정해야 합니다.
+        accountNumber: _numberController.text,
+        balance: double.parse(_balanceController.text),
         memo: _memoController.text,
       );
       // 데이터베이스에 은행 계좌 정보 장장

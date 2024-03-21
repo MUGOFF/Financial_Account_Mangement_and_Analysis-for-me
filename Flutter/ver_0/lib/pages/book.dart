@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:ver_0/widgets/drawer_end.dart';
 import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/widgets/models/money_transaction.dart';
@@ -15,8 +14,24 @@ class Book extends StatefulWidget {
 class _BookState extends State<Book> {
   int year = DateTime.now().year;
   int month = DateTime.now().month;
-  // DateTime StartDate = DateTime.now();
-  // DateTime EndDate = DateTime.now();
+
+  String formatterK(num number) {
+    late String fString;
+    late String addon;
+    if(number.toString().contains('.')) {
+      fString = number.toString().split('.')[0];
+      addon = ".${number.toString().split('.')[1]}";
+    } else {
+      fString = number.toString();
+      addon = "";
+    }
+
+    final String newText = fString.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match match) => '${match[1]},',
+    );
+    return '$newText$addon';
+  }
 
 
   @override
@@ -100,19 +115,43 @@ class _BookState extends State<Book> {
                       itemCount: transactions.length,
                       itemBuilder: (context, index) {
                         MoneyTransaction transaction = transactions[index];
-                        return ListTile(
-                          title: Text(transaction.goods),
-                          subtitle: Text(transaction.amount.toString()),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => BookAdd(moneyTransaction: transactions[index]),
-                              ),
-                            ).then((result) {
-                              setState(() {});
-                            });
-                          }, 
+                        return Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: transaction.amount > 0 ? [Colors.red.shade200, Colors.red.shade50] : [Colors.blue.shade200, Colors.blue.shade50],
+                              begin: Alignment.centerRight,
+                              end: Alignment.centerLeft,
+                            ),
+                          ),
+                          child: ListTile(
+                            title: Text(transaction.goods),
+                            subtitle: Text(transaction.category),
+                            trailing: Text(formatterK(transaction.amount.abs()), style: const TextStyle(fontSize: 20)),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation, secondaryAnimation) => BookAdd(moneyTransaction: transactions[index]),
+                                  transitionsBuilder:
+                                    (context, animation, secondaryAnimation, child) {
+                                    const begin = Offset(1.0, 0.0);
+                                    const end = Offset.zero;
+                                    const curve = Curves.ease;
+
+                                    var tween = Tween(begin: begin, end: end)
+                                        .chain(CurveTween(curve: curve));
+
+                                    return SlideTransition(
+                                      position: animation.drive(tween),
+                                      child: child,
+                                    );
+                                  },
+                                ),
+                              ).then((result) {
+                                setState(() {});
+                              });
+                            }, 
+                          ),
                         );
                       },
                     );
@@ -129,7 +168,23 @@ class _BookState extends State<Book> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const BookAdd()),
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const BookAdd(),
+              transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(begin: begin, end: end)
+                    .chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            ),
           ).then((result) {
             setState(() {});
           });

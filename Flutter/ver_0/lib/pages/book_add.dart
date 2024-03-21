@@ -64,7 +64,7 @@ class _BookAddState extends State<BookAdd> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('가계부 입력'),
+        title: Text('가계부 $_pageType'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -154,6 +154,7 @@ class _BookAddState extends State<BookAdd> {
                             actions: [
                               TextButton(
                                 onPressed: () {
+                                  Navigator.pop(context);
                                   deleteDataFromDatabase(); // Delete data
                                   Navigator.pop(context);
                                 },
@@ -492,7 +493,7 @@ class _BookAddState extends State<BookAdd> {
     final MoneyTransaction transaction = MoneyTransaction(
       transactionTime: '${_dateController.text}T${_timeController.text}', // 여기서는 현재 시간을 사용할 수 있습니다. 
       account: _accountController.text,
-      amount: double.parse(_amountController.text),
+      amount: currentCategory == "소비"? double.parse(_amountController.text).abs()*-1 : currentCategory == "수입"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
       goods: _targetgoodsController.text,
       category: _categoryController.text,
       description: _memoController.text,
@@ -510,7 +511,7 @@ class _BookAddState extends State<BookAdd> {
       id: int.parse(_idController.text),
       transactionTime: '${_dateController.text}T${_timeController.text}', // 여기서는 현재 시간을 사용할 수 있습니다. 
       account: _accountController.text,
-      amount: double.parse(_amountController.text),
+      amount: currentCategory == "소비"? double.parse(_amountController.text).abs()*-1 : currentCategory == "수입"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
       goods: _targetgoodsController.text,
       category: _categoryController.text,
       description: _memoController.text,

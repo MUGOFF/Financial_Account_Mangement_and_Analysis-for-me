@@ -687,7 +687,7 @@ class _ForthPageState extends State<ForthPage> {
 
   void insertDatasToDatabase(List<List<dynamic>> dataRows) {
     for (var row in dataRows) {
-      String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm:ss').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
+      String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
       try {
           MoneyTransaction transaction = MoneyTransaction(
             transactionTime: formattedDatetime,

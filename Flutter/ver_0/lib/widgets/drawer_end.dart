@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/pages/account_admin.dart';
 import 'package:ver_0/pages/book_category_admin.dart';
 import 'package:ver_0/pages/external_data_inout.dart';
-import 'package:ver_0/pages/debug_test.dart';
+// import 'package:ver_0/pages/debug_test.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -12,18 +13,51 @@ class AppDrawer extends StatelessWidget {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
-        children: <Widget>[ const
+        children: <Widget>[ 
           DrawerHeader(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.blue,
             ),
-            child: Text(
-              'Menu',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-              ),
-            ),
+            child: Row(
+              children: [
+                const Text(
+                  'Menu',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.remove_circle),
+                  onPressed: () {
+                    // Handle settings button press
+                    DatabaseAdmin().clearTable('current_holdings');
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.remove_circle),
+                  onPressed: () {
+                    // Handle settings button press
+                    DatabaseAdmin().clearTable('investments_expiration');
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.remove_circle),
+                  onPressed: () {
+                    // Handle settings button press
+                    DatabaseAdmin().clearTable('investments_nonexpiration');
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.remove_circle),
+                  onPressed: () {
+                    // Handle settings button press
+                    DatabaseAdmin().clearTable('money_transactions');
+                  },
+                ),
+              ],
+            )
+            
           ),
           ListTile(
             title: const Text('가계부 계좌/카드 관리'),
@@ -55,16 +89,16 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
-          ListTile(
-            title: const Text('테스트 페이지'),
-            onTap: () {
-              // Handle menu item 2 tap
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const TestBed()),
-              );
-            },
-          ),
+          // ListTile(
+          //   title: const Text('테스트 페이지'),
+          //   onTap: () {
+          //     // Handle menu item 2 tap
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => const TestBed()),
+          //     );
+          //   },
+          // ),
         ],
       ),
     );

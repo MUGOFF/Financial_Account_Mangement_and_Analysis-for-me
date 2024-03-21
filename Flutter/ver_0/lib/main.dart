@@ -4,7 +4,8 @@ import 'package:ver_0/pages/investment.dart';
 import 'package:ver_0/pages/stats.dart';
 import 'package:ver_0/widgets/tab_bar.dart';
 import 'package:ver_0/widgets/drawer_end.dart';
-// import 'package:ver_0/widgets/database_admin.dart';
+import 'package:ver_0/widgets/database_admin.dart';
+import 'package:ver_0/widgets/models/current_holdings.dart';
 // import 'package:my_flutter_app/sub_pages/page2.dart';
 
 void main() {
@@ -38,13 +39,13 @@ class DemoApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 0, 255, 190)),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: const MainPage(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -56,10 +57,10 @@ class HomePage extends StatefulWidget {
   // always marked "final".
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
@@ -67,35 +68,6 @@ class _HomePageState extends State<HomePage> {
       _selectedIndex = index;
     });
   }
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _checkFirstLaunch();
-  // }
-
-  // void _checkFirstLaunch() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   if (!prefs.containsKey('settings')) {
-  //     Map<String, dynamic> defaultSettings = {
-  //       'user_settings': {
-  //         'Category_user': {
-  //           "수입": ["급여소득", "용돈", "금융소득"],
-  //           "소비": ["식비","주거비","통신비","생활비","미용비","의료비","문화비","교통비","세금","카드대금","보험","기타",],
-  //           "이체": ["내계좌이체", "계좌이체", "저축", "투자"],
-  //         }, 
-  //       },
-  //       'fi_data': {
-  //         'asset_accounts': [],
-  //         'money_transactions': [],
-  //         'invest_accounts': [],
-  //         'invest_transactions': [],
-  //       },
-  //     };
-  //     // await prefs.setString('settings', json.encode(defaultSettings));
-  //     await prefs.setString('settings', defaultSettings);
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -131,8 +103,38 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class HomePageCotent extends StatelessWidget {
+class HomePageCotent extends StatefulWidget {
   const HomePageCotent({super.key});
+
+  @override
+  State<HomePageCotent> createState() => _HomePageCotentState();
+}
+
+class _HomePageCotentState extends State<HomePageCotent> {
+  late PageController _pageController;
+  List<Holdings> currentHoldings = [];
+  List<String> investCategories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHoldings();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchHoldings() async {
+    List<Holdings> fetchedHoldings = await DatabaseAdmin().getCurrentHoldInvestments();
+    setState(() {
+      currentHoldings = fetchedHoldings;
+      investCategories = currentHoldings.map((holding) => holding.investcategory).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,31 +149,78 @@ class HomePageCotent extends StatelessWidget {
         title: const Text('Flutter Demo Home Page'),
       ),
       endDrawer: const AppDrawer(),
-      body: const Center(
+      body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'HOME PAGE',
-            ),
-          ],
-        ),
+        child: PageView(
+            controller: _pageController,
+            children: [
+              InvestHolingsPage(currentHoldings: currentHoldings, investCategories: investCategories),
+            ],
+          ),
       ),
+    );
+  }
+}
+
+class InvestHolingsPage extends StatelessWidget {
+  final List<Holdings> currentHoldings;
+  final List<String> investCategories;
+  const InvestHolingsPage({required this.currentHoldings, required this.investCategories, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+
+    Map<String, List<Holdings>> groupedHoldings = {};
+    for (var holding in currentHoldings) {
+      if (!groupedHoldings.containsKey(holding.investcategory)) {
+        groupedHoldings[holding.investcategory] = [];
+      }
+      groupedHoldings[holding.investcategory]!.add(holding);
+    }
+
+    if (currentHoldings.isEmpty) {
+      return const Center(
+        child: Text(
+          '투자 데이터가 없습니다',
+          style: TextStyle(fontSize: 18),
+        ),
+      );
+    }
+
+    return ListView(
+      children: groupedHoldings.entries.map((entry) {
+        String category = entry.key;
+        List<Holdings> holdings = entry.value;
+
+        // 카테고리별 보유 정보 리스트를 출력하는 위젯을 생성합니다.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                category, // 카테고리 이름 출력
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: holdings.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(holdings[index].investment),
+                  subtitle: Text(holdings[index].totalAmount.toString()),
+                );
+              },
+            ), 
+          ],
+        );
+      }).toList(),
     );
   }
 }

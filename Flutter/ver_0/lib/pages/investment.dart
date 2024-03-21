@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
+import 'package:intl/intl.dart';
 import 'package:ver_0/pages/investment_add.dart';
 import 'package:ver_0/widgets/drawer_end.dart';
 import 'package:ver_0/widgets/database_admin.dart';
-import 'package:ver_0/widgets/models/current_holdings.dart';
 import 'package:ver_0/widgets/models/expiration_investment.dart';
 import 'package:ver_0/widgets/models/nonexpiration_investment.dart';
 
@@ -14,298 +15,375 @@ class Invest extends StatefulWidget {
 }
 
 class _InvestState extends State<Invest> {
-  List<Holdings> fetchedCurrentHoldings = [];
-  List<String> fetchedInvestCategories = [];
+  Logger logger = Logger();
+  DateTime endDate = DateTime.now();
+  DateTime startDate = DateTime.now().subtract(const Duration(days: 1));
+  bool selectRange = false;
+  final TextEditingController _startDateController = TextEditingController();
+  final TextEditingController _endDateController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchHoldings();
-  }
-  
-  Future<void> _fetchHoldings() async {
-    List<Holdings> fetchedHoldings = await DatabaseAdmin().getCurrentHoldInvestments();
-    setState(() {
-      fetchedCurrentHoldings = fetchedHoldings;
-      fetchedInvestCategories = fetchedCurrentHoldings.map((holding) => holding.investcategory).toList();
-    });
+    _startDateController.text = DateFormat('yyyy년 MM월 dd일').format(startDate);
+    _endDateController.text = DateFormat('yyyy년 MM월 dd일').format(endDate);
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2, // 탭의 수를 지정합니다. 여기서는 두 개의 탭이 있으므로 2로 설정합니다.
-      child: Scaffold(
+    return  Scaffold(
         appBar: AppBar(
           title: const Text('투자정보'),
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         ),
         endDrawer: const AppDrawer(),
         body: Column(
-          children: [
-            const TabBar(
-              tabs: <Widget>[
-                Tab(text: '투자 상태'),
-                Tab(text: '리스트'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children:[
+          Container(
+            color: Colors.grey[200],
+            child:Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                TextButton(
+                  onPressed: (){
+                    setState(() {
+                      endDate = DateTime.now();
+                      startDate = DateTime.now().subtract(const Duration(days: 1));
+                      _startDateController.text = DateFormat('yyyy년 MM월 dd일').format(startDate);
+                      _endDateController.text = DateFormat('yyyy년 MM월 dd일').format(endDate);
+                      selectRange = false;
+                    });
+                  }, 
+                  child: const Text('1일')
+                ),
+                TextButton(
+                  onPressed: (){
+                    setState(() {
+                      endDate = DateTime.now();
+                      startDate = DateTime(DateTime.now().year, DateTime.now().month - 3, DateTime.now().day);
+                      _startDateController.text = DateFormat('yyyy년 MM월 dd일').format(startDate);
+                      _endDateController.text = DateFormat('yyyy년 MM월 dd일').format(endDate);
+                      selectRange = false;
+                    });
+                  }, 
+                  child: const Text('3개월')
+                ),
+                TextButton(
+                  onPressed: (){
+                    setState(() {
+                      endDate = DateTime.now();
+                      startDate = DateTime(DateTime.now().year);
+                      _startDateController.text = DateFormat('yyyy년 MM월 dd일').format(startDate);
+                      _endDateController.text = DateFormat('yyyy년 MM월 dd일').format(endDate);
+                      selectRange = false;
+                    });
+                  }, 
+                  child: const Text('YTD')
+                ),
+                TextButton(
+                  onPressed: (){
+                    setState(() {
+                      selectRange = true;
+                    });
+                  }, 
+                  child: const Text('기간 설정')
+                ),
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                children: <Widget>[
-                  Center(child: InvestHolingsPage(currentHoldings: fetchedCurrentHoldings, investCategories: fetchedInvestCategories)),
-                  const Center(child: InvestListPage()),
-                ],
-              ),
+          ),
+          if(selectRange == true)
+          const SizedBox(height: 3),
+          if(selectRange == true)
+          Container(
+            color: Colors.grey[200],
+            child:Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                TextButton(
+                  onPressed: () async {
+                    DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().subtract(const Duration(days: 1)),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime(2100),
+                    );
+
+                    if (picked != null && picked.isBefore(endDate)) {
+                      setState(() {
+                        _startDateController.text = DateFormat('yyyy년 MM월 dd일').format(picked);
+                        startDate = picked;
+                      });
+                    } else {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${DateFormat('yyyy년 MM월 dd일').format(endDate)} 이전의 날짜를 선택해주세요'),
+                          duration: const Duration(seconds: 2), // Adjust duration as needed
+                        ),
+                      );
+                    }
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                  ),  
+                  child: Text( _startDateController.text)
+                ),
+                const Text('~'),
+                TextButton(
+                  onPressed: () async {
+                    DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime(2100),
+                    );
+
+                    if (picked != null && picked.isAfter(startDate)) {
+                      setState(() {
+                        _endDateController.text = DateFormat('yyyy년 MM월 dd일').format(picked);
+                        endDate = picked;
+                      });
+                    } else {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${DateFormat('yyyy년 MM월 dd일').format(startDate)} 이후의 날짜를 선택해주세요'),
+                          duration: const Duration(seconds: 2), // Adjust duration as needed
+                        ),
+                      );
+                    }
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                  ), 
+                  child: Text( _endDateController.text)
+                ),
+              ],
             ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const InvestAdd()),
-            ).then((result) {
-              _fetchHoldings();
-              setState((){});
-            });
-          },
-          tooltip: '투자 정보 추가',
-          child: const Icon(Icons.add),
-        ),
+          ),
+          FutureBuilder<List<dynamic>>(
+            future: Future.wait([
+              DatabaseAdmin().getExInvestmentsByDateRange(startDate, endDate),
+              DatabaseAdmin().getNonExInvestmentsByDateRange(startDate, endDate),
+            ]),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else {
+                List<ExpirationInvestment> fetchedExInvestments = snapshot.data?[0] ?? [];
+                List<NonexpirationInvestment> fetchedNonExInvestments = snapshot.data?[1] ?? [];
+                if (fetchedExInvestments.isEmpty && fetchedNonExInvestments.isEmpty) {
+                  return const Expanded(child: Center(child: Text('해당기간 투자 데이터가 없습니다')));
+                } else {
+                  List<dynamic> mergedInvestments = [];
+                  for (var investments in fetchedExInvestments) {
+                    mergedInvestments.add(investments);
+                  }
+                  for (var investments in fetchedNonExInvestments) {
+                    mergedInvestments.add(investments);
+                  }
+                  mergedInvestments.sort((previos, next) => DateFormat('yyyy년 MM월 dd일THH:mm').parse(next.investTime).compareTo(DateFormat('yyyy년 MM월 dd일THH:mm').parse(previos.investTime)));
+                  return Expanded(
+                    child: Column(
+                      children: [
+                        ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: mergedInvestments.length,
+                          itemBuilder: (context, index) {
+                            dynamic transaction = mergedInvestments[index];
+                            return Column(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: transaction.amount > 0 ? [Colors.red.shade200, Colors.red.shade50] : [Colors.blue.shade200, Colors.blue.shade50],
+                                      begin: Alignment.centerRight,
+                                      end: Alignment.centerLeft,
+                                    ),
+                                  ),
+                                  child: investmentListItem(
+                                    transaction.investTime,
+                                    transaction.investment,
+                                    transaction.valuePrice,
+                                    transaction.amount.abs(),
+                                    transaction.currency,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        PageRouteBuilder(
+                                          pageBuilder: (context, animation, secondaryAnimation) => 
+                                            transaction is ExpirationInvestment
+                                              ? InvestAdd(expirationInvestment: transaction)
+                                              : InvestAdd(nonExpirationInvestment: transaction),
+                                          transitionsBuilder:
+                                            (context, animation, secondaryAnimation, child) {
+                                            const begin = Offset(1.0, 0.0);
+                                            const end = Offset.zero;
+                                            const curve = Curves.ease;
+
+                                            var tween = Tween(begin: begin, end: end)
+                                                .chain(CurveTween(curve: curve));
+
+                                            return SlideTransition(
+                                              position: animation.drive(tween),
+                                              child: child,
+                                            );
+                                          },
+                                        ),
+                                      ).then((result) {
+                                        setState(() {});
+                                      });
+                                    },
+                                  ),
+                                ), 
+                                const Divider(),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+        ]
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const InvestAdd(),
+              transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(begin: begin, end: end)
+                    .chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            ),
+          ).then((result) {
+            setState((){});
+          });
+        },
+        tooltip: '투자 정보 추가',
+        child: const Icon(Icons.add),
       ),
     );
   }
-}
 
-class InvestHolingsPage extends StatelessWidget{
-  final List<Holdings> currentHoldings;
-  final List<String> investCategories;
-  const InvestHolingsPage({required this.currentHoldings, required this.investCategories, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-
-    Map<String, List<Holdings>> groupedHoldings = {};
-    for (var holding in currentHoldings) {
-      if (!groupedHoldings.containsKey(holding.investcategory)) {
-        groupedHoldings[holding.investcategory] = [];
+  Widget investmentListItem(String invetmentTime, String invetmentName, double invetmentAmount, double invetmentPerprice, String invetmentCurrency, {GestureTapCallback? onTap}) {
+    
+    String getCurrencySymbol(String currency) {
+      if (currency == 'KRW') {
+        return '₩';
+      } else if (currency == 'USD') {
+        return '\$';
+      } else if (currency == 'JPY') {
+        return '¥';
+      } else if (currency == 'EUR') {
+        return '€';
+      } else {
+        return '?';
       }
-      groupedHoldings[holding.investcategory]!.add(holding);
     }
 
-    if (currentHoldings.isEmpty) {
-      return const Center(
-        child: Text(
-          '투자 데이터가 없습니다',
-          style: TextStyle(fontSize: 18),
-        ),
+    String formatterK(num number) {
+      late String fString;
+      late String addon;
+      if(number.toString().contains('.')) {
+        fString = number.toString().split('.')[0];
+        addon = ".${number.toString().split('.')[1]}";
+      } else {
+        fString = number.toString();
+        addon = "";
+      }
+
+      final String newText = fString.replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match match) => '${match[1]},',
       );
+      return '$newText$addon';
     }
 
-    return ListView(
-      children: groupedHoldings.entries.map((entry) {
-        String category = entry.key;
-        List<Holdings> holdings = entry.value;
-
-        // 카테고리별 보유 정보 리스트를 출력하는 위젯을 생성합니다.
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child:Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                category, // 카테고리 이름 출력
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.3,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Text(invetmentName, style: const TextStyle(fontWeight: FontWeight.bold,  fontSize: 18.0),),
+                      const SizedBox(height: 5),
+                      Text(invetmentTime, style: const TextStyle(color: Colors.grey,  fontSize: 12.0),),
+                    ]
+                  ),
                 ),
-              ),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.2,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(formatterK(invetmentAmount), style: const TextStyle( fontSize: 16.0),),
+                      const SizedBox(height: 5),
+                      Text('${getCurrencySymbol(invetmentCurrency)}    ${formatterK(invetmentPerprice)}', style: const TextStyle(fontSize: 16.0),),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.1,
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10.0),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color:invetmentCurrency=="KRW" ? Colors.green.shade800:
+                                  invetmentCurrency=="USD" ? Colors.lime.shade400:
+                                  invetmentCurrency=="JPY" ? Colors.grey: Colors.black, 
+                            width: 3),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          getCurrencySymbol(invetmentCurrency), 
+                          style: TextStyle(
+                            fontSize: 24.0,
+                            color:invetmentCurrency=="KRW" ? Colors.green.shade800:
+                                  invetmentCurrency=="USD" ? Colors.lime.shade400:
+                                  invetmentCurrency=="JPY" ? Colors.grey: Colors.black
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: holdings.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(holdings[index].investment),
-                  subtitle: Text(holdings[index].totalAmount.toString()),
-                );
-              },
-            ), 
           ],
-        );
-      }).toList(),
+        )
+      )
     );
-  }
-}
-
-class InvestListPage extends StatefulWidget {
-  const InvestListPage({super.key});
-
-  @override
-  State<InvestListPage> createState() => _InvestListPageState();
-}
-
-class _InvestListPageState extends State<InvestListPage> {
-  List<ExpirationInvestment> expirationInvestments = [];
-  List<NonexpirationInvestment> nonexpirationInvestments = [];
-  DateTime endDate = DateTime.now().add(const Duration(days: 10));
-  DateTime startDate = DateTime.now().subtract(const Duration(days: 10));
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchInvestments();
-  }
-
-  Future<void> _fetchInvestments() async {
-    List<ExpirationInvestment> fetchedexpirationInvestments = await DatabaseAdmin().getExInvestmentsByDateRange(startDate, endDate);
-    List<NonexpirationInvestment> fetchednonexpirationInvestments = await DatabaseAdmin().getNonExInvestmentsByDateRange(startDate, endDate);
-    setState(() {
-      expirationInvestments = fetchedexpirationInvestments;
-      nonexpirationInvestments = fetchednonexpirationInvestments;
-    });
-  }
-
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children:[
-          // Container(
-          //   color: Colors.grey[200],
-          //   child:Row(
-          //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //     children: <Widget>[
-          //       IconButton(
-          //         icon: const Icon(Icons.keyboard_double_arrow_left),
-          //         onPressed: () {
-          //           setState(() {
-          //             year = year - 1;
-          //           });
-          //           // 이전 월로 이동하는 로직
-          //         },
-          //       ),
-          //       IconButton(
-          //         icon: const Icon(Icons.arrow_back_ios_new),
-          //         onPressed: () {
-          //           setState(() {
-          //             month = month - 1;
-          //             if(month == 0) {
-          //               month = 12;
-          //               year = year - 1;
-          //             }
-          //           });
-          //           // 이전 월로 이동하는 로직
-          //         },
-          //       ),
-          //       GestureDetector(
-          //         child: Text(' $year 년 $month 월'),
-          //       ),
-          //       IconButton(
-          //         icon: const Icon(Icons.arrow_forward_ios),
-          //         onPressed: () {
-          //           setState(() {
-          //             month = month + 1;
-          //             if(month == 13) {
-          //               month = 1;
-          //               year = year + 1;
-          //             }
-          //           });
-          //           // 다음 월로 이동하는 로직
-          //         },
-          //       ),
-          //       IconButton(
-          //         icon: const Icon(Icons.keyboard_double_arrow_right),
-          //         onPressed: () {
-          //           setState(() {
-          //             year = year + 1;
-          //           });
-          //           // 다음 월로 이동하는 로직
-          //         },
-          //       ),
-          //     ],
-          //   ),
-          // ),
-          Container(),
-          Expanded(
-            child: FutureBuilder<List<ExpirationInvestment>>( // 변경된 FutureBuilder
-              future: DatabaseAdmin().getExInvestmentsByDateRange(startDate, endDate), // 현재 연도와 월에 해당하는 거래 가져오기
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else {
-                  List<ExpirationInvestment>? transactions = snapshot.data;
-                  if (transactions != null && transactions.isNotEmpty) {
-                    return ListView.builder(
-                      itemCount: transactions.length,
-                      itemBuilder: (context, index) {
-                        ExpirationInvestment transaction = transactions[index];
-                        return ListTile(
-                          title: Text(transaction.investment),
-                          subtitle: Text(transaction.amount.toString()),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => InvestAdd(expirationInvestment: transactions[index]),
-                              ),
-                            ).then((result) {
-                              setState(() {});
-                            });
-                          }, 
-                        );
-                      },
-                    );
-                  } else {
-                  return const Center(child: Text('해당기간 투자 데이터가 없습니다'));
-                  }
-                }
-              },
-            ),
-          ),
-          Expanded(
-            child: FutureBuilder<List<NonexpirationInvestment>>( // 변경된 FutureBuilder
-              future: DatabaseAdmin().getNonExInvestmentsByDateRange(startDate, endDate), // 현재 연도와 월에 해당하는 거래 가져오기
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else {
-                  List<NonexpirationInvestment>? transactions = snapshot.data;
-                  if (transactions != null && transactions.isNotEmpty) {
-                    return ListView.builder(
-                      itemCount: transactions.length,
-                      itemBuilder: (context, index) {
-                        NonexpirationInvestment transaction = transactions[index];
-                        return ListTile(
-                          title: Text(transaction.investment),
-                          subtitle: Text(transaction.amount.toString()),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => InvestAdd(nonExpirationInvestment: transactions[index]),
-                              ),
-                            ).then((result) {
-                              setState(() {});
-                            });
-                          }, 
-                        );
-                      },
-                    );
-                  } else {
-                  return const Center(child: Text('해당기간 투자 데이터가 없습니다'));
-                  }
-                }
-              },
-            ),
-          ),
-        ]
-      );
   }
 }
