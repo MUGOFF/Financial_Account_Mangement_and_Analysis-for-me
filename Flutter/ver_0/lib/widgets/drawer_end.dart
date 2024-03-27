@@ -20,15 +20,16 @@ class AppDrawer extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Text(
-                  'Menu',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                  ),
-                ),
+                // const Text(
+                //   'Menu',
+                //   style: TextStyle(
+                //     color: Colors.white,
+                //     fontSize: 24,
+                //   ),
+                // ),
                 IconButton(
                   icon: const Icon(Icons.remove_circle),
+                  color: Colors.red,
                   onPressed: () {
                     // Handle settings button press
                     DatabaseAdmin().clearTable('current_holdings');
@@ -36,6 +37,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.remove_circle),
+                  color: Colors.white,
                   onPressed: () {
                     // Handle settings button press
                     DatabaseAdmin().clearTable('investments_expiration');
@@ -43,6 +45,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.remove_circle),
+                  color: Colors.white,
                   onPressed: () {
                     // Handle settings button press
                     DatabaseAdmin().clearTable('investments_nonexpiration');
@@ -50,9 +53,17 @@ class AppDrawer extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.remove_circle),
+                  color: Colors.black,
                   onPressed: () {
                     // Handle settings button press
                     DatabaseAdmin().clearTable('money_transactions');
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.change_circle),
+                  onPressed: () {
+                    // Handle settings button press
+                    DatabaseAdmin().updateAllTable('bank_accounts', 'balance', 0);
                   },
                 ),
               ],

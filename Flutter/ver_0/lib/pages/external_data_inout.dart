@@ -376,7 +376,7 @@ class _ThirdPageState extends State<ThirdPage> {
             selectedAccount = findMatchingColumn('account', '계좌', 2);
             selectedGoods = findMatchingColumn('goods', '상품', 3);
             selectedCategory = findMatchingColumn('category', '카테고리', 4);
-            selectedDescription = findMatchingColumn('memo', '비고', 5);
+            selectedDescription = findMatchingColumn('memo', '메모', 5);
           }); 
         }
       }
@@ -623,22 +623,23 @@ class _ForthPageState extends State<ForthPage> {
                 ),
                 const SizedBox(height: 20),
                 const Text('계좌 선택', style: TextStyle(fontSize: 20)),
-                ListView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: widget.setData.length,
-                  itemBuilder: (context, index) {
-                    return buildTextDropdown(widget.setData[index].toString(), relationColumnandValue![index], (newValue) {
-                        setState(() {
-                          try {
-                            relationColumnandValue![index] = newValue;
-                          } catch (e) {
-                            logger.e("error: $e");
-                          }
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: widget.setData.length,
+                    itemBuilder: (context, index) {
+                      return buildTextDropdown(widget.setData[index].toString(), relationColumnandValue![index], (newValue) {
+                          setState(() {
+                            try {
+                              relationColumnandValue![index] = newValue;
+                            } catch (e) {
+                              logger.e("error: $e");
+                            }
+                          });
                         });
-                      });
-                    // return Text(widget.setData[index].toString());
-                  },
+                      // return Text(widget.setData[index].toString());
+                    },
+                  ),
                 ),
               ],
             ),
@@ -695,7 +696,7 @@ class _ForthPageState extends State<ForthPage> {
             account: accountNames[widget.setData.indexOf(row[columnNames.indexOf(widget.modelColumnrelations[2])])],
             goods: row[columnNames.indexOf(widget.modelColumnrelations[3])],
             category: widget.modelColumnrelations[4] != null ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "",
-            description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])] : "",
+            description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
           );
           try {
             DatabaseAdmin().insertMoneyTransaction(transaction);

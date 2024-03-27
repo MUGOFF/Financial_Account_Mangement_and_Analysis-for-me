@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:logger/logger.dart';
 import 'package:ver_0/widgets/drawer_end.dart';
 import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/widgets/models/money_transaction.dart';
@@ -12,8 +14,34 @@ class Book extends StatefulWidget {
 }
 
 class _BookState extends State<Book> {
+  Logger logger = Logger();
+  final ScrollController _scrollController = ScrollController();
+  bool _isVisible = true; // 플로팅 버튼이 보이는지 여부를 나타내는 변수
   int year = DateTime.now().year;
   int month = DateTime.now().month;
+  List<MoneyTransaction> transactions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAccounts();
+    _scrollController.addListener(_scrollListener);
+    // logger.d(transactions);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+  
+  Future<void> _fetchAccounts() async {
+    List<MoneyTransaction> fetchedTransactions = await DatabaseAdmin().getTransactionsByMonth(year, month);
+    setState(() {
+      transactions = fetchedTransactions;
+    });
+  }
 
   String formatterK(num number) {
     late String fString;
@@ -33,6 +61,17 @@ class _BookState extends State<Book> {
     return '$newText$addon';
   }
 
+  void _scrollListener() {
+    if (_scrollController.position.userScrollDirection == ScrollDirection.forward || _scrollController.offset == _scrollController.position.minScrollExtent) {
+      setState(() {
+        _isVisible = true;
+      });
+    } else if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
+      setState(() {
+        _isVisible = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,8 +94,8 @@ class _BookState extends State<Book> {
                   onPressed: () {
                     setState(() {
                       year = year - 1;
+                      _fetchAccounts();
                     });
-                    // 이전 월로 이동하는 로직
                   },
                 ),
                 IconButton(
@@ -68,8 +107,8 @@ class _BookState extends State<Book> {
                         month = 12;
                         year = year - 1;
                       }
+                      _fetchAccounts();
                     });
-                    // 이전 월로 이동하는 로직
                   },
                 ),
                 GestureDetector(
@@ -84,8 +123,8 @@ class _BookState extends State<Book> {
                         month = 1;
                         year = year + 1;
                       }
+                      _fetchAccounts();
                     });
-                    // 다음 월로 이동하는 로직
                   },
                 ),
                 IconButton(
@@ -93,105 +132,101 @@ class _BookState extends State<Book> {
                   onPressed: () {
                     setState(() {
                       year = year + 1;
+                      _fetchAccounts();
                     });
-                    // 다음 월로 이동하는 로직
                   },
                 ),
               ],
             ),
           ),
+          if (transactions.isNotEmpty) 
           Expanded(
-            child: FutureBuilder<List<MoneyTransaction>>( // 변경된 FutureBuilder
-              future: DatabaseAdmin().getTransactionsByMonth(year, month), // 현재 연도와 월에 해당하는 거래 가져오기
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else {
-                  List<MoneyTransaction>? transactions = snapshot.data;
-                  if (transactions != null && transactions.isNotEmpty) {
-                    return ListView.builder(
-                      itemCount: transactions.length,
-                      itemBuilder: (context, index) {
-                        MoneyTransaction transaction = transactions[index];
-                        return Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: transaction.amount > 0 ? [Colors.red.shade200, Colors.red.shade50] : [Colors.blue.shade200, Colors.blue.shade50],
-                              begin: Alignment.centerRight,
-                              end: Alignment.centerLeft,
-                            ),
-                          ),
-                          child: ListTile(
-                            title: Text(transaction.goods),
-                            subtitle: Text(transaction.category),
-                            trailing: Text(formatterK(transaction.amount.abs()), style: const TextStyle(fontSize: 20)),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) => BookAdd(moneyTransaction: transactions[index]),
-                                  transitionsBuilder:
-                                    (context, animation, secondaryAnimation, child) {
-                                    const begin = Offset(1.0, 0.0);
-                                    const end = Offset.zero;
-                                    const curve = Curves.ease;
+            child: ListView.builder(
+              shrinkWrap: true,
+              controller: _scrollController,
+              itemCount: transactions.length,
+              itemBuilder: (context, index) {
+                MoneyTransaction transaction = transactions[index];
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: transaction.amount > 0 ? [Colors.red.shade200, Colors.red.shade50] : [Colors.blue.shade200, Colors.blue.shade50],
+                      begin: Alignment.centerRight,
+                      end: Alignment.centerLeft,
+                    ),
+                  ),
+                  child: ListTile(
+                    title: Text(transaction.goods),
+                    subtitle: Text(transaction.category),
+                    trailing: Text(formatterK(transaction.amount.abs()), style: const TextStyle(fontSize: 20)),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) => BookAdd(moneyTransaction: transactions[index]),
+                          transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                            const begin = Offset(1.0, 0.0);
+                            const end = Offset.zero;
+                            const curve = Curves.ease;
 
-                                    var tween = Tween(begin: begin, end: end)
-                                        .chain(CurveTween(curve: curve));
+                            var tween = Tween(begin: begin, end: end)
+                                .chain(CurveTween(curve: curve));
 
-                                    return SlideTransition(
-                                      position: animation.drive(tween),
-                                      child: child,
-                                    );
-                                  },
-                                ),
-                              ).then((result) {
-                                setState(() {});
-                              });
-                            }, 
-                          ),
-                        );
-                      },
-                    );
-                  } else {
-                  return const Center(child: Text('금월 데이터가 없습니다'));
-                  }
-                }
-              },
-            ),
-          ),
-        ]
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const BookAdd(),
-              transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                const begin = Offset(1.0, 0.0);
-                const end = Offset.zero;
-                const curve = Curves.ease;
-
-                var tween = Tween(begin: begin, end: end)
-                    .chain(CurveTween(curve: curve));
-
-                return SlideTransition(
-                  position: animation.drive(tween),
-                  child: child,
+                            return SlideTransition(
+                              position: animation.drive(tween),
+                              child: child,
+                            );
+                          },
+                        ),
+                      ).then((result) {
+                        setState(() {
+                          _fetchAccounts();
+                        });
+                      });
+                    }, 
+                  ),
                 );
               },
             ),
-          ).then((result) {
-            setState(() {});
-          });
-        },
-        tooltip: '기록 데이터 추가',
-        child: const Icon(Icons.add),
-      ),//
+          ),
+          if (transactions.isEmpty)
+          const Center(child: Text('금월 데이터가 없습니다')),
+        ]
+      ),
+      floatingActionButton: Visibility(
+        visible: _isVisible,
+        child:  FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => const BookAdd(),
+                transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                  const begin = Offset(1.0, 0.0);
+                  const end = Offset.zero;
+                  const curve = Curves.ease;
+
+                  var tween = Tween(begin: begin, end: end)
+                      .chain(CurveTween(curve: curve));
+
+                  return SlideTransition(
+                    position: animation.drive(tween),
+                    child: child,
+                  );
+                },
+              ),
+            ).then((result) {
+              setState(() {
+                _fetchAccounts();
+              });
+            });
+          },
+          tooltip: '기록 데이터 추가',
+          child: const Icon(Icons.add),
+        ),
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ class MoneyTransaction {
   final double amount;
   final String goods;
   final String category;
+  final String categoryType;
   final String? description;
 
   MoneyTransaction({
@@ -16,10 +17,11 @@ class MoneyTransaction {
     required this.amount,
     required this.goods,
     this.category="미분류",
+    this.categoryType="미지정",
     this.description ="",
   });
 
-  // Transaction을 Map<String, dynamic>으로 변환하는 메서드
+  /// Transaction을 Map<String, dynamic>으로 변환하는 메서드
   Map<String, dynamic> toMap() {
     return {
       'updateTime': updateTime?.toIso8601String() ?? DateTime.now().toIso8601String(),
@@ -27,8 +29,17 @@ class MoneyTransaction {
       'account': account,
       'amount': amount,
       'goods': goods,
-      'category': category=="" ? category : "미분류",
-      'description': description,
+      'category': category!="" ? category : "미분류",
+      'categoryType': categoryType!="" ? categoryType : "미지정",
+      'description': description!="" ? description : " ",
+    };
+  }
+
+  /// Transactiondml 카데고리/ 상품명 일괄관리용
+  Map<String, dynamic> toMapforCategoryGoodsRelation() {
+    return {
+      'goods': goods,
+      'category': category!="" ? category : "미분류",
     };
   }
 }

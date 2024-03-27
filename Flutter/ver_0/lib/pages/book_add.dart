@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:ver_0/widgets/date_picker.dart';
 import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/widgets/models/money_transaction.dart';
 import 'package:ver_0/widgets/models/bank_account.dart';
 import 'package:ver_0/widgets/models/card_account.dart';
 import 'package:ver_0/widgets/models/transaction_category.dart';
-import 'package:intl/intl.dart';
 
 class BookAdd extends StatefulWidget {
   final MoneyTransaction? moneyTransaction;
@@ -137,7 +137,25 @@ class _BookAddState extends State<BookAdd> {
                   ),
                 ],
               ),
-              buildRow("메모", _memoController),
+              Row(
+                children: [
+                  const Expanded(
+                    flex: 1,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("메모"),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      controller: _memoController,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 16.0), // Add spacing between buttons
               if(_pageType == "수정")
               Row(
@@ -315,8 +333,34 @@ class _BookAddState extends State<BookAdd> {
                             onTap: () {
                               setState(() {
                                 _categoryController.text = item;
+                                Navigator.pop(context);
+                                if( _pageType == "수정") {
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text('삭제 확인'),
+                                        content: const Text('같은 대상을 일괄 변경하시겠습니까?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                            },
+                                            child: const Text('취소'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              DatabaseAdmin().updateCategorySearchAllTable(_targetgoodsController.text,item,currentCategory);
+                                            },
+                                            child: const Text('확인'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                } 
                               });
-                              Navigator.pop(context);
                             },
                           );
                         }).toList();
@@ -496,6 +540,7 @@ class _BookAddState extends State<BookAdd> {
       amount: currentCategory == "소비"? double.parse(_amountController.text).abs()*-1 : currentCategory == "수입"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
       goods: _targetgoodsController.text,
       category: _categoryController.text,
+      categoryType: currentCategory,
       description: _memoController.text,
     );
 
@@ -514,6 +559,7 @@ class _BookAddState extends State<BookAdd> {
       amount: currentCategory == "소비"? double.parse(_amountController.text).abs()*-1 : currentCategory == "수입"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
       goods: _targetgoodsController.text,
       category: _categoryController.text,
+      categoryType: currentCategory,
       description: _memoController.text,
     );
     // 데이터베이스에 은행 계좌 정보 장장

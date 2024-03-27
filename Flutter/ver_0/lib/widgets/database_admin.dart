@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:logger/logger.dart';
@@ -8,6 +9,7 @@ import 'package:ver_0/widgets/models/transaction_category.dart';
 import 'package:ver_0/widgets/models/expiration_investment.dart';
 import 'package:ver_0/widgets/models/nonexpiration_investment.dart';
 import 'package:ver_0/widgets/models/current_holdings.dart';
+import 'package:ver_0/widgets/models/budget_setting.dart';
 
 class DatabaseAdmin {
   final Logger logger = Logger();
@@ -28,7 +30,7 @@ class DatabaseAdmin {
     String path = join(await getDatabasesPath(), 'debug_app.db');
     return openDatabase(
       path,
-      version: 4,
+      version: 6,
       onCreate: (db, version) {
         _createBankAccountTable(db);
         _createCardAccountTable(db);
@@ -47,6 +49,13 @@ class DatabaseAdmin {
           _createCurrentHoldingTable(db);
           _insertInitialHoldings(db);
         }
+        if (oldVersion < 5) {
+          _addColumnToMoneyTransactionTable(db);
+          _addExtraBoolTransactionTable(db);
+        }
+        if (oldVersion < 6) {
+          _createBugetSettingTable(db);
+        }
       },
     );
   }
@@ -54,6 +63,20 @@ class DatabaseAdmin {
   Future<void> clearTable(String tableName) async {
     final db = await database;
     await db.delete(tableName);
+  }
+
+  Future<void> updateAllTable(String tableName,String parameterName, dynamic newValue) async {
+    final db = await database;
+    try { 
+      await db.transaction((txn) async {
+        await txn.update(
+          tableName,
+          {parameterName: newValue},
+        );
+      });
+    } catch (e){
+      logger.e(e);
+    }
   }
 
   void _createBankAccountTable(Database db) {
@@ -97,6 +120,24 @@ class DatabaseAdmin {
           category TEXT,
           description TEXT)
       """,
+    );
+  }
+
+  void _addColumnToMoneyTransactionTable(Database db) async  {
+    db.execute(
+      """
+      ALTER TABLE money_transactions
+      ADD COLUMN categoryType TEXT
+      """
+    );
+  }
+
+  void _addExtraBoolTransactionTable(Database db) async  {
+    db.execute(
+      """
+      ALTER TABLE money_transactions
+      ADD COLUMN extraBudget INTEGER INTEGER DEFAULT 0
+      """
     );
   }
 
@@ -165,6 +206,23 @@ class DatabaseAdmin {
       """,
     );
   }
+
+  void _createBugetSettingTable(Database db) {
+    db.execute(
+      """
+        CREATE TABLE budget_settings(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          year INTEGER,
+          month INTEGER,
+          budgetList TEXT)
+      """,
+    );
+  }
+
+
+
+  // insert 계열
+
 
   Future<int> insertBankAccount(BankAccount bankAccount) async {
     final db = await database;
@@ -261,8 +319,16 @@ class DatabaseAdmin {
     await batch.commit();
   }
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  Future<int> insertBugetSettingTable(BudgetSetting budgetSetting) async {
+    final db = await database;
+    return await db.insert('budget_settings', budgetSetting.toMap());
+  }
+
+
+
   //UPDATE 계열 편집
+
+
   Future<int> updateBankAccount(BankAccount updatedAccount) async {
     final db = await database;
     return await db.update(
@@ -294,6 +360,23 @@ class DatabaseAdmin {
     );
   }
 
+  ///특정 대상 카테고리 일괄 변경
+  Future<void> updateCategorySearchAllTable(String goodsname, String newValue, String newValueType) async {
+    final db = await database;
+    try { 
+      await db.transaction((txn) async {
+        await txn.update(
+          'money_transactions',
+          {'category': newValue, 'categoryType': newValueType},
+          where: 'goods  = ?',
+          whereArgs: [goodsname],
+        );
+      });
+    } catch (e){
+      logger.e(e);
+    }
+  }
+
   Future<int> updateTransactionCategoryItemList(String name, List<String> updatedItemList) async {
     final db = await database;
     return await db.update(
@@ -312,7 +395,7 @@ class DatabaseAdmin {
       where: 'bankName = ?',
       whereArgs: [updatedTransaction.account],
     );
-
+    // logger.d('currentData: $currentData');
     int updateResult = 0;
 
     if (currentData.isEmpty) {
@@ -322,11 +405,13 @@ class DatabaseAdmin {
         whereArgs: [updatedTransaction.account],
       );
 
+      // logger.d('currentCardData: $currentCardData'); 
       currentData = await db.query(
         'bank_accounts',
         where: 'id = ?',
         whereArgs: [currentCardData.first['cardIssuer']],
       );
+      // logger.d('currentData: $currentData'); 
       if (currentData.isNotEmpty) {
         final double oldTotalAmount = currentData.first['balance'] as double;
         final double newTotalAmount = oldTotalAmount + updatedTransaction.amount;
@@ -418,8 +503,21 @@ class DatabaseAdmin {
   return updateResult;
   }
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //DELETE 계열 편집
+  Future<int> updateBugetSettingTable(int year, int month, Map<String, double> updatedBudgetList) async {
+    final db = await database;
+    return await db.update(
+      'budget_settings',
+      {'budgetList': json.encode(updatedBudgetList)},
+      where: 'year  = ? AND month = ?',
+      whereArgs: [year, month],
+    );
+  }
+
+
+
+  //DELETE 계열 편집//
+
+
   Future<int> deleteBankAccount(int id) async {
     final db = await database;
     return await db.delete(
@@ -573,8 +671,10 @@ class DatabaseAdmin {
     return updateResult;
   }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Search 계열 편집
+
+//Search 계열 편집//
+
+  ///모든 은행 계좌 가져오기 
   Future<List<BankAccount>> getAllBankAccounts() async {
     final db = await database;
     final List<Map<String, dynamic>> bankAccountMaps = await db.query('bank_accounts');
@@ -589,6 +689,8 @@ class DatabaseAdmin {
     });
   }
 
+
+  ///은행 계좌 아이디로 가져오기
   Future<BankAccount?> getBankAccountById(int id) async {
     final db = await database;
     List<Map<String, dynamic>> bankAccountMaps = await db.query(
@@ -597,7 +699,7 @@ class DatabaseAdmin {
       whereArgs: [id],
     );
     if (bankAccountMaps.isEmpty) {
-      return null; // 해당 ID에 해당하는 은행 정보가 없을 경우 null을 반환합니다.
+      return null;
     }
     return BankAccount(
       id: bankAccountMaps[0]['id'],
@@ -608,6 +710,7 @@ class DatabaseAdmin {
     );
   }
 
+  ///모든 카드 계좌 가져오기
   Future<List<CardAccount>> getAllCardAccounts() async {
     final db = await database;
     final List<Map<String, dynamic>> cardAccountMaps = await db.query('card_accounts');
@@ -622,6 +725,7 @@ class DatabaseAdmin {
     });
   }
 
+  ///월간 거래내역 가져오기
   Future<List<MoneyTransaction>> getTransactionsByMonth(int year, int month) async {
     final db = await database;
     final List<Map<String, dynamic>> transactionMaps = await db.query(
@@ -640,6 +744,34 @@ class DatabaseAdmin {
         description: transactionMaps[i]['description'],
       );
     });
+  }
+
+  ///월간 거래내역(카테고리) 항목별 총합 가져오기
+  Future<List<Map<String, dynamic>>> getransactionsSUMBByGoodsCategoriesMonth(int year, int month, String category) async {
+    final db = await database;
+    final List<Map<String, dynamic>> transactionMaps = await db.query(
+      'money_transactions',
+      columns: ['goods', 'SUM(amount) * -1 as totalAmount'],
+      where: "substr(transactionTime,1,9) = ? AND category = ? AND amount < 0 AND categoryType = '소비'",
+      whereArgs: ['$year년 ${month.toString().padLeft(2, '0')}월', category],
+      groupBy: 'goods'
+    );
+
+    return transactionMaps;
+  }
+
+  ///카테고리별 월간 소비 총합 가져오기
+  Future<List<Map<String, dynamic>>> getTransactionsSUMByCategoryandDate(int year, int month) async {
+    final db = await database;
+    final List<Map<String, dynamic>> transactionMaps = await db.query(
+      'money_transactions',
+      columns: ['category', 'SUM(amount) * -1 as totalAmount'],
+      where: "substr(transactionTime,1,9) = ? AND amount < 0 AND categoryType = '소비'",
+      whereArgs: ['$year년 ${month.toString().padLeft(2, '0')}월'],
+      groupBy: 'category'
+    );
+    
+    return transactionMaps;
   }
 
   Future<List<ExpirationInvestment>> getExInvestmentsByDateRange(DateTime start, DateTime end) async {
@@ -724,6 +856,24 @@ class DatabaseAdmin {
         id: categoryMaps[i]['id'],
         name: categoryMaps[i]['name'],
         itemList: categoryMaps[i]['itemList'] != null ? List<String>.from(categoryMaps[i]['itemList'].split(',')) : [],
+      );
+    });
+  }
+
+  Future<List<BudgetSetting>> getMonthBugetList(int year, int month) async {
+    final db = await database;
+    final List<Map<String, dynamic>> budgetMaps = await db.query(
+      'budget_settings',
+      where:"year = ? AND month = ?",
+      whereArgs: [year, month],
+    );
+    
+    return List.generate(budgetMaps.length, (i) {
+      return BudgetSetting(
+        id: budgetMaps[i]['id'],
+        year: budgetMaps[i]['year'],
+        month: budgetMaps[i]['month'],
+        budgetList: budgetMaps[i]['budgetList'] != null ? Map<String, double>.from(json.decode(budgetMaps[i]['budgetList'])) : null,
       );
     });
   }
