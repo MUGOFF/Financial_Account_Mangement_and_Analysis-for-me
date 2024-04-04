@@ -8,6 +8,7 @@ class MoneyTransaction {
   final String category;
   final String categoryType;
   final String? description;
+  final bool extraBudget;
 
   MoneyTransaction({
     this.id,
@@ -19,6 +20,7 @@ class MoneyTransaction {
     this.category="미분류",
     this.categoryType="미지정",
     this.description ="",
+    this.extraBudget = false,
   });
 
   /// Transaction을 Map<String, dynamic>으로 변환하는 메서드
@@ -32,6 +34,7 @@ class MoneyTransaction {
       'category': category!="" ? category : "미분류",
       'categoryType': categoryType!="" ? categoryType : "미지정",
       'description': description!="" ? description : " ",
+      'extraBudget': extraBudget ? 1 : 0,
     };
   }
 

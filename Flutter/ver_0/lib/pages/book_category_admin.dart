@@ -16,8 +16,13 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
   String currentCategory = "수입"; // 기본 카테고리 설정
   String selectedCard  = ""; // 선택값  설정
   bool showFA  = true; // 선택값  설정
-  late PersistentBottomSheetController bottomSheetController;
+  PersistentBottomSheetController? bottomSheetController;
   final TextEditingController _textFieldController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,8 +138,16 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                       onPressed: () {
                         // Implement logic to add item to selected category
                         setState(() {
-                          itemList.add(_textFieldController.text);
-                          updateDataToDatabase();
+                          if(!itemList.contains(_textFieldController.text)) {
+                            itemList.add(_textFieldController.text);
+                            updateDataToDatabase();
+                          } else {
+                            const snackBar = SnackBar(
+                              content:  Text('중복된 카테고리 입니다.',style: TextStyle(fontSize: 16),),
+                              duration: Duration(seconds: 2),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                          }
                         });
                         _textFieldController.clear();
                         Navigator.of(context).pop();
@@ -162,8 +175,10 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
             currentCategory = value;
             selectedCard = "";
             showFA = true;
+            if (bottomSheetController != null) {
+              bottomSheetController!.close();
+            }
           });
-          bottomSheetController.close();
         },
         style: ButtonStyle(
           minimumSize: MaterialStateProperty.all<Size>(const Size(120, 30)),
@@ -220,7 +235,9 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                 width: MediaQuery.of(context).size.width * 0.4,
                 child: ElevatedButton(
                   onPressed: () {
-                    bottomSheetController.close();                    
+                    if (bottomSheetController != null) {
+                      bottomSheetController!.close();
+                    }                   
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
@@ -247,8 +264,16 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                                 onPressed: () {
                                   // Implement logic to add item to selected category
                                   setState(() {
-                                    itemList.remove(selectedCard);
-                                    updateDataToDatabase();
+                                    if(selectedCard != '특별 예산'){
+                                      itemList.remove(selectedCard);
+                                      updateDataToDatabase();
+                                    } else {
+                                      const snackBar = SnackBar(
+                                        content:  Text('삭제가 불가능한 카테고리 입니다',style: TextStyle(fontSize: 16),),
+                                        duration: Duration(seconds: 2),
+                                      );
+                                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                                    }
                                     selectedCard = "";
                                   });
                                   Navigator.of(context).pop();
@@ -277,7 +302,9 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                 width: MediaQuery.of(context).size.width * 0.4,
                 child:ElevatedButton(
                   onPressed: () {
-                    bottomSheetController.close();
+                    if (bottomSheetController != null) {
+                      bottomSheetController!.close();
+                    }
                     showFA = true;
                     _textFieldController.text = selectedCard;
                     showDialog(
@@ -309,11 +336,19 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                                   onPressed: () {
                                     // Implement logic to add item to selected category
                                     setState(() {
-                                      int itemIndex = itemList.indexOf(selectedCard);
-                                      if (_textFieldController.text.isNotEmpty && itemIndex != -1) {
-                                        itemList[itemIndex] = _textFieldController.text;
+                                      if(selectedCard != '특별 예산'){
+                                        int itemIndex = itemList.indexOf(selectedCard);
+                                        if (_textFieldController.text.isNotEmpty && itemIndex != -1) {
+                                          itemList[itemIndex] = _textFieldController.text;
+                                        }
+                                        updateDataToDatabase();
+                                      } else {
+                                        const snackBar = SnackBar(
+                                          content:  Text('수정이 불가능한 카테고리 입니다',style: TextStyle(fontSize: 16),),
+                                          duration: Duration(seconds: 2),
+                                        );
+                                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
                                       }
-                                      updateDataToDatabase();
                                       _textFieldController.clear();
                                       selectedCard = "";
                                       showFA = true;

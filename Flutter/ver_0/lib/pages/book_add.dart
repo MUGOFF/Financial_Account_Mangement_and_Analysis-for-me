@@ -1,5 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:logger/logger.dart';
 import 'package:intl/intl.dart';
 import 'package:ver_0/widgets/date_picker.dart';
 import 'package:ver_0/widgets/database_admin.dart';
@@ -17,6 +20,7 @@ class BookAdd extends StatefulWidget {
 }
 
 class _BookAddState extends State<BookAdd> {
+  Logger logger = Logger();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _idController = TextEditingController();
   late final TextEditingController _dateController;
@@ -29,7 +33,10 @@ class _BookAddState extends State<BookAdd> {
   final TextEditingController _memoController = TextEditingController();
   String currentCategory = "소비";
   late String _pageType;
-  int _selectedButton = 1; // Initially, the first button is selected
+  int _selectedButton = 1;
+  bool _isMemoEditing = true;
+  TextStyle normalStyle = const TextStyle(color: Colors.black, fontSize: 20);
+  TextStyle tagStyle = TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20, backgroundColor: Colors.yellow.shade100);
 
   @override
   void initState() {
@@ -42,6 +49,7 @@ class _BookAddState extends State<BookAdd> {
     _initializeControllers(); 
   }
 
+
   Future<void> _initializeControllers() async {
   // 페이지가 초기화될 때 받아온 정보를 사용하여 상태를 업데이트합니다.
     if (widget.moneyTransaction != null) {
@@ -51,6 +59,7 @@ class _BookAddState extends State<BookAdd> {
       _timeController = TextEditingController(text: parts[1].trim());
       _accountController.text = widget.moneyTransaction!.account.toString();
       _amountdisplayController.text = widget.moneyTransaction!.amount.toString();
+      _amountController.text = widget.moneyTransaction!.amount.toString();
       _targetgoodsController.text = widget.moneyTransaction!.goods;
       _categoryController.text = widget.moneyTransaction!.category;
       _memoController.text = widget.moneyTransaction!.description ?? '';
@@ -148,10 +157,30 @@ class _BookAddState extends State<BookAdd> {
                       ],
                     ),
                   ),
+                  if(_isMemoEditing)
                   Expanded(
                     flex: 3,
-                    child: TextFormField(
+                    child: 
+                    TextFormField(
                       controller: _memoController,
+                      autofocus: true,
+                      onEditingComplete: () {
+                        setState(() {
+                          _isMemoEditing = false;
+                        });
+                      },
+                    )
+                  ),
+                  if(!_isMemoEditing)
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      height: 40,
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: const BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Colors.black))
+                      ),
+                      child: buildRichText(_memoController),
                     ),
                   ),
                 ],
@@ -351,7 +380,7 @@ class _BookAddState extends State<BookAdd> {
                                           TextButton(
                                             onPressed: () {
                                               Navigator.pop(context);
-                                              DatabaseAdmin().updateCategorySearchAllTable(_targetgoodsController.text,item,currentCategory);
+                                              DatabaseAdmin().updateCategorySearchAllTable(_targetgoodsController.text,item,currentCategory, double.parse(_amountController.text) > 0);
                                             },
                                             child: const Text('확인'),
                                           ),
@@ -375,6 +404,40 @@ class _BookAddState extends State<BookAdd> {
           },
         );
       },
+    );
+  }
+
+  Widget buildRichText(TextEditingController controller) {
+    final RegExp tagPattern = RegExp(r'#[ㄱ-ㅎ가-힣0-9a-zA-Z_]+ ');
+    final String inputText = controller.text;
+    List<TextSpan> spans = [];
+    int lastMatchEnd = 0;
+    tagPattern.allMatches(inputText).forEach((match) {
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(
+          text: inputText.substring(lastMatchEnd, match.start),
+          style: normalStyle,
+        ));
+      }
+      spans.add(TextSpan(
+        text: inputText.substring(match.start, match.end),
+        style: tagStyle, 
+      ));
+      lastMatchEnd = match.end;
+    });
+    if (lastMatchEnd < inputText.length) {
+      spans.add(TextSpan(
+        text: inputText.substring(lastMatchEnd),
+        style: normalStyle,
+      ));
+    }
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isMemoEditing = true;
+        });
+      },
+      child: RichText(text: TextSpan(children: spans)),
     );
   }
 
@@ -541,7 +604,8 @@ class _BookAddState extends State<BookAdd> {
       goods: _targetgoodsController.text,
       category: _categoryController.text,
       categoryType: currentCategory,
-      description: _memoController.text,
+      description: _categoryController.text=="특별 예산" &&  !_memoController.text.contains("#특별예산")? '#특별예산 ${_memoController.text}' : _memoController.text,
+      extraBudget: _categoryController.text=="특별 예산" ? true : false,
     );
 
     // 이제 transaction 객체를 데이터베이스에 삽입합니다.
@@ -560,7 +624,8 @@ class _BookAddState extends State<BookAdd> {
       goods: _targetgoodsController.text,
       category: _categoryController.text,
       categoryType: currentCategory,
-      description: _memoController.text,
+      description:_categoryController.text=="특별 예산" &&  !_memoController.text.contains("#특별예산 ")? '#특별예산 ${_memoController.text}' : _memoController.text,
+      extraBudget: _categoryController.text=="특별 예산" ? true : false,
     );
     // 데이터베이스에 은행 계좌 정보 장장
     DatabaseAdmin().updateMoneyTransaction(transaction);

@@ -73,18 +73,12 @@ class TableDataIn extends StatelessWidget {
                   return Dialog(
                     child: SizedBox(
                       width: MediaQuery.of(context).size.width * 0.8,
-                      child: Column(
+                      child: const Column(
                         mainAxisSize:  MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          const DialogContent(),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: const Text('Close', style: TextStyle(fontSize: 16)),
-                          ),
+                          DialogContent(),
                         ],
                       ) 
                     )
@@ -329,6 +323,7 @@ class SecondPage extends StatelessWidget {
   }
 }
 
+///세번쨰 페이지, 칼럼 정렬
 class ThirdPage extends StatefulWidget {
   final FilePickerResult? filePicked;
   final String? typeofDatas;
@@ -342,7 +337,7 @@ class ThirdPage extends StatefulWidget {
 class _ThirdPageState extends State<ThirdPage> {
   final Logger logger = Logger();
   List<String> columnNames = [];
-  List<dynamic> relationColumnandValue =List.filled(6, null);
+  List<dynamic> relationColumnandValue =List.filled(7, null);
   List<dynamic> relationColumnandselectedAccount = [];
   List<List<dynamic>> dataRows = [];
   String? selectedTransactionTime;
@@ -350,6 +345,7 @@ class _ThirdPageState extends State<ThirdPage> {
   String? selectedAmount;
   String? selectedGoods;
   String? selectedCategory;
+  String? selectedCategoryType;
   String? selectedDescription;
 
 
@@ -376,7 +372,8 @@ class _ThirdPageState extends State<ThirdPage> {
             selectedAccount = findMatchingColumn('account', '계좌', 2);
             selectedGoods = findMatchingColumn('goods', '상품', 3);
             selectedCategory = findMatchingColumn('category', '카테고리', 4);
-            selectedDescription = findMatchingColumn('memo', '메모', 5);
+            selectedCategoryType = findMatchingColumn('categoryType', '분류', 5);
+            selectedDescription = findMatchingColumn('memo', '메모', 6);
           }); 
         }
       }
@@ -384,7 +381,7 @@ class _ThirdPageState extends State<ThirdPage> {
       logger.e('Error while processing the file: $e');
     }
   }
-
+  /// [transactionTime,amount, account, goods, category, categoryType, memo]
   String? findMatchingColumn(String parameter, String koreanparameter ,int position) {
     for (var columnName in columnNames) {
       if (columnName.toLowerCase() == parameter.toLowerCase() || columnName.contains(koreanparameter)) {
@@ -413,74 +410,82 @@ class _ThirdPageState extends State<ThirdPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        const Text('칼럼 정렬', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 24),
-        if (widget.filePicked != null)
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            buildTextDropdown('거래 시간', true, selectedTransactionTime, (newValue) {
-              setState(() {
-                selectedTransactionTime = newValue;
-                relationColumnandValue[0] = newValue;
-              });
-            }),
-            buildTextDropdown('거래 금액', true, selectedAmount, (newValue) {
-              setState(() {
-                selectedAmount = newValue;
-                relationColumnandValue[1] = newValue;
-              });
-            }),
-            buildTextDropdown('거래 계좌', true, selectedAccount, (newValue) {
-              setState(() {
-                selectedAccount = newValue;
-                relationColumnandValue[2] = newValue;
-              });
-            }),
-            buildTextDropdown('거래 상품', true, selectedGoods, (newValue) {
-              setState(() {
-                selectedGoods = newValue;
-                relationColumnandValue[3] = newValue;
-              });
-            }),
-            buildTextDropdown('비용 종류', false, selectedCategory, (newValue) {
-              setState(() {
-                selectedCategory = newValue;
-                relationColumnandValue[4] = newValue;
-              });
-            }),
-            buildTextDropdown('메모', false, selectedDescription, (newValue) {
-              setState(() {
-                selectedDescription = newValue;
-                relationColumnandValue[5] = newValue;
-              });
-            }),
-          ],
-        ),
-        const SizedBox(height: 40),
-        SizedBox(
-          width: MediaQuery.of(context).size.width * 0.6,
-          height: MediaQuery.of(context).size.height * 0.4*0.2,
-          child:ElevatedButton(
-            onPressed: isButtonEnabled() ? () {
-              List<dynamic> accountColumnData = [];
-              int dataColumnIndex = columnNames.indexOf(selectedAccount!);
-              for (List<dynamic> row in dataRows) {
-                accountColumnData.add(row[dataColumnIndex]);
-              }
-              relationColumnandselectedAccount = accountColumnData.toSet().toList();
-              _onButtonPressed(relationColumnandValue,relationColumnandselectedAccount);
-            } : null,
-            style: ElevatedButton.styleFrom(
-              shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(30))
-            ),
-            child: const Text('다음 단계'),
+    return SingleChildScrollView(
+      child:Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('칼럼 정렬', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
+          if (widget.filePicked != null)
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              buildTextDropdown('거래 시간', true, selectedTransactionTime, (newValue) {
+                setState(() {
+                  selectedTransactionTime = newValue;
+                  relationColumnandValue[0] = newValue;
+                });
+              }),
+              buildTextDropdown('거래 금액', true, selectedAmount, (newValue) {
+                setState(() {
+                  selectedAmount = newValue;
+                  relationColumnandValue[1] = newValue;
+                });
+              }),
+              buildTextDropdown('거래 계좌', true, selectedAccount, (newValue) {
+                setState(() {
+                  selectedAccount = newValue;
+                  relationColumnandValue[2] = newValue;
+                });
+              }),
+              buildTextDropdown('거래 상품', true, selectedGoods, (newValue) {
+                setState(() {
+                  selectedGoods = newValue;
+                  relationColumnandValue[3] = newValue;
+                });
+              }),
+              buildTextDropdown('카테 고리', false, selectedCategory, (newValue) {
+                setState(() {
+                  selectedCategory = newValue;
+                  relationColumnandValue[4] = newValue;
+                });
+              }),
+              buildTextDropdown('거래 분류', false, selectedCategoryType, (newValue) {
+                setState(() {
+                  selectedCategoryType = newValue;
+                  relationColumnandValue[5] = newValue;
+                });
+              }),
+              buildTextDropdown('메모', false, selectedDescription, (newValue) {
+                setState(() {
+                  selectedDescription = newValue;
+                  relationColumnandValue[6] = newValue;
+                });
+              }),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 80),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.6,
+            height: MediaQuery.of(context).size.height * 0.4*0.2,
+            child:ElevatedButton(
+              onPressed: isButtonEnabled() ? () {
+                List<dynamic> accountColumnData = [];
+                int dataColumnIndex = columnNames.indexOf(selectedAccount!);
+                for (List<dynamic> row in dataRows) {
+                  accountColumnData.add(row[dataColumnIndex]);
+                }
+                relationColumnandselectedAccount = accountColumnData.toSet().toList();
+                _onButtonPressed(relationColumnandValue,relationColumnandselectedAccount);
+              } : null,
+              style: ElevatedButton.styleFrom(
+                shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(30))
+              ),
+              child: const Text('다음 단계'),
+            ),
+          ),
+        ],
+      ),
     );
   }
   
@@ -590,7 +595,9 @@ class _ForthPageState extends State<ForthPage> {
         dateFormat = datetimeFormats[0];
       }
     }
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           const Text('추가 선택', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
@@ -660,6 +667,7 @@ class _ForthPageState extends State<ForthPage> {
             ),
           ),
         ],
+      ),
     );
   }
 
@@ -686,27 +694,37 @@ class _ForthPageState extends State<ForthPage> {
     );
   }
 
+  /// modelColumnrelations = [transactionTime,amount, account, goods, category, categoryType, memo]
   void insertDatasToDatabase(List<List<dynamic>> dataRows) {
-    for (var row in dataRows) {
-      String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
-      try {
-          MoneyTransaction transaction = MoneyTransaction(
-            transactionTime: formattedDatetime,
-            amount: double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()),
-            account: accountNames[widget.setData.indexOf(row[columnNames.indexOf(widget.modelColumnrelations[2])])],
-            goods: row[columnNames.indexOf(widget.modelColumnrelations[3])],
-            category: widget.modelColumnrelations[4] != null ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "",
-            description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
-          );
-          try {
-            DatabaseAdmin().insertMoneyTransaction(transaction);
-          } catch (e) {
-            logger.e('error: $e, not enough row data: $row');
-          }
-      } catch(e) {
-        logger.e('error: $e, formData row: $row');
+    try {
+      for (var row in dataRows) {
+        String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
+        String formattedcategory = widget.modelColumnrelations[4] != null ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "";
+        String formattedcategoryType = (widget.modelColumnrelations[5] != null  || !['소비', '수입', '이체'].contains(widget.modelColumnrelations[5]))? row[columnNames.indexOf(widget.modelColumnrelations[5])] : "";
+        try {
+            MoneyTransaction transaction = MoneyTransaction(
+              transactionTime: formattedDatetime,
+              amount: double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()),
+              account: relationColumnandValue![widget.setData.indexOf(row[columnNames.indexOf(widget.modelColumnrelations[2])])],
+              goods: row[columnNames.indexOf(widget.modelColumnrelations[3])].toString(),
+              category: formattedcategory,
+              categoryType: formattedcategoryType,
+              description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
+              extraBudget: formattedcategory=="특별 예산" ? true : false,
+            );
+            try {
+              DatabaseAdmin().insertMoneyTransaction(transaction);
+            } catch (e) {
+              logger.e('error: $e, not enough row data: $row');
+            }
+        } catch(e) {
+          logger.e('error: $e, formData row: $row');
+        }
       }
+    } catch(e) {
+      logger.e('error: $e, formmating error');
     }
+    
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// import 'package:syncfusion_flutter_core/core.dart';
 import 'package:ver_0/pages/book.dart';
 import 'package:ver_0/pages/investment.dart';
 import 'package:ver_0/pages/stats.dart';
@@ -6,9 +7,9 @@ import 'package:ver_0/widgets/tab_bar.dart';
 import 'package:ver_0/widgets/drawer_end.dart';
 import 'package:ver_0/widgets/database_admin.dart';
 import 'package:ver_0/widgets/models/current_holdings.dart';
-// import 'package:my_flutter_app/sub_pages/page2.dart';
 
 void main() {
+  // SyncfusionLicense.registerLicense("YOUR LICENSE KEY"); 
   runApp(const DemoApp());
 }
 
