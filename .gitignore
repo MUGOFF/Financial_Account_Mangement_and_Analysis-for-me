@@ -8,3 +8,6 @@ MD asset/xlsx/
 # git commit -m "clear git cache"
 
 disposal/
+
+Tensorflow/raw_data/
+Tensorflow/train_data/
