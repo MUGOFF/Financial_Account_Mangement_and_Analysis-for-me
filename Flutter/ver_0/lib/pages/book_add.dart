@@ -58,7 +58,7 @@ class _BookAddState extends State<BookAdd> {
       _dateController = TextEditingController(text: parts[0].trim());
       _timeController = TextEditingController(text: parts[1].trim());
       _accountController.text = widget.moneyTransaction!.account.toString();
-      _amountdisplayController.text = widget.moneyTransaction!.amount.toString();
+      _amountdisplayController.text = _thousandsFormmater(widget.moneyTransaction!.amount.toString());
       _amountController.text = widget.moneyTransaction!.amount.toString();
       _targetgoodsController.text = widget.moneyTransaction!.goods;
       _categoryController.text = widget.moneyTransaction!.category;
@@ -67,6 +67,17 @@ class _BookAddState extends State<BookAdd> {
       _dateController = TextEditingController(text: DateFormat('yyyy년 MM월 dd일').format(DateTime.now()));
       _timeController = TextEditingController(text:'${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}');
     }
+  }
+
+  String _thousandsFormmater(String numberText) {
+    final String newValueMinus = numberText.contains('-') ? '-' : '';
+    final newText = numberText.replaceAll('-', '').replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match match) => '${match[1]},',
+    );
+    final formattedText = '$newValueMinus  ₩  $newText';
+
+    return formattedText;
   }
 
   @override
@@ -91,8 +102,8 @@ class _BookAddState extends State<BookAdd> {
               ),
               const SizedBox(height: 16.0), // Add spacing between rows and buttons
               // Date, String, Int, String, String Fields
-              buildRow("날짜", _dateController, fieldType: 'datetime',secondController: _timeController),
-              buildRow("거래금액", _amountdisplayController, fieldType: 'numeric'),
+              buildDateTimeRow("날짜", _dateController, _timeController),
+              buildNumericRow("거래금액", _amountdisplayController),
               Row(
                 children: [
                   const Expanded(
@@ -122,7 +133,7 @@ class _BookAddState extends State<BookAdd> {
                   ),
                 ],
               ),
-              buildRow("거래대상", _targetgoodsController),
+              buildTextRow("거래대상", _targetgoodsController),
               Row(
                 children: [
                   const Expanded(
@@ -441,17 +452,6 @@ class _BookAddState extends State<BookAdd> {
     );
   }
 
-  Widget buildRow(String label, TextEditingController controller, {String fieldType = 'text', TextEditingController? secondController}) {
-    switch (fieldType) {
-      case 'numeric':
-        return buildNumericRow(label, controller);
-      case 'datetime':
-        return buildDateTimeRow(label, controller, secondController);
-      default:
-        return buildTextRow(label, controller);
-    }
-  }
-
   Widget buildTextRow(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -519,7 +519,7 @@ class _BookAddState extends State<BookAdd> {
     );
   }
 
-  Widget buildDateTimeRow(String label, TextEditingController controller, TextEditingController? secondController) {
+  Widget buildDateTimeRow(String label, TextEditingController dateController, TextEditingController timeController) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
@@ -539,17 +539,16 @@ class _BookAddState extends State<BookAdd> {
               children: [
                 Expanded(
                   child: DatePicker(
-                    controller: controller,
+                    controller: dateController,
                     tryValidator: true,
                   ),
                 ),
-                if (secondController != null)
-                  Expanded(
-                    child: TimePicker(
-                      controller: secondController,
-                      tryValidator: true,
-                    ),
+                Expanded(
+                  child: TimePicker(
+                    controller: timeController,
+                    tryValidator: true,
                   ),
+                ),
               ],
             ),
           ),
@@ -596,11 +595,18 @@ class _BookAddState extends State<BookAdd> {
   }
 
   void insertDataToDatabase() {
-    _amountController.text = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.]'), '');
+    String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
+    if (_amountController.text.startsWith('-')) {
+      amountText = '-${amountText.substring(1).replaceAll('-', '')}';
+    } else {
+      amountText = amountText.replaceAll('-', '');
+    }
+    _amountController.text = amountText;
     final MoneyTransaction transaction = MoneyTransaction(
       transactionTime: '${_dateController.text}T${_timeController.text}', // 여기서는 현재 시간을 사용할 수 있습니다. 
       account: _accountController.text,
-      amount: currentCategory == "소비"? double.parse(_amountController.text).abs()*-1 : currentCategory == "수입"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
+      // amount: currentCategory == "소비"? double.parse(_amountController.text).abs()*-1 : currentCategory == "수입"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
+      amount: double.parse(_amountController.text),
       goods: _targetgoodsController.text,
       category: _categoryController.text,
       categoryType: currentCategory,
@@ -614,13 +620,19 @@ class _BookAddState extends State<BookAdd> {
   }
 
   void updateDataToDatabase() {
-    _amountController.text = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.]'), '');
+    String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
+    if (_amountController.text.startsWith('-')) {
+      amountText = '-${amountText.substring(1).replaceAll('-', '')}';
+    } else {
+      amountText = amountText.replaceAll('-', '');
+    }
+    _amountController.text = amountText;
     // 은행 계좌 정보 생성
     MoneyTransaction transaction = MoneyTransaction(
       id: int.parse(_idController.text),
       transactionTime: '${_dateController.text}T${_timeController.text}', // 여기서는 현재 시간을 사용할 수 있습니다. 
       account: _accountController.text,
-      amount: currentCategory == "소비"? double.parse(_amountController.text).abs()*-1 : currentCategory == "수입"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
+      amount: double.parse(_amountController.text),
       goods: _targetgoodsController.text,
       category: _categoryController.text,
       categoryType: currentCategory,
@@ -642,12 +654,13 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
   TextEditingValue formatEditUpdate(
       TextEditingValue oldValue, TextEditingValue newValue) {
     // 입력된 값을 금액 형식으로 변환합니다.
-    final newText = newValue.text.replaceAllMapped(
+    final String newValueMinus = newValue.text.contains('-') ? '-' : '';
+    final newText = newValue.text.replaceAll('-', '').replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (Match match) => '${match[1]},',
     );
 
-    final formattedText = '  ₩  $newText';
+    final formattedText = '$newValueMinus  ₩  $newText';
     final selectionIndex = formattedText.length;
 
     return newValue.copyWith(

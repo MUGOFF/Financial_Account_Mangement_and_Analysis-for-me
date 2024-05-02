@@ -11,3 +11,4 @@ disposal/
 
 Tensorflow/raw_data/
 Tensorflow/train_data/
+Tensorflow/preprocessed_data/
