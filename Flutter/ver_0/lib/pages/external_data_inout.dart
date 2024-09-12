@@ -13,6 +13,7 @@ import 'package:ver_0/widgets/models/money_transaction.dart';
 import 'package:ver_0/widgets/models/expiration_investment.dart';
 import 'package:ver_0/widgets/models/nonexpiration_investment.dart';
 
+/// 입출력 페이지 구성
 class ExternalTerminal extends StatelessWidget {
   const ExternalTerminal({super.key});
 
@@ -49,7 +50,10 @@ class ExternalTerminal extends StatelessWidget {
   }
 }
 
+/// 외부 데이터 입력 위젯
 class TableDataIn extends StatelessWidget {
+  
+/// 외부 데이터 입력 탭
   const TableDataIn({super.key});
 
   @override
@@ -99,7 +103,9 @@ class TableDataIn extends StatelessWidget {
   }
 }
 
+/// 외부 데이터 입력 모달 위젯
 class DialogContent extends StatefulWidget {
+  /// 외부 데이터 입력 모달 
   const DialogContent({super.key});
 
   @override
@@ -161,6 +167,7 @@ class _DialogContentState extends State<DialogContent> {
               });
             },
             children: [
+              /// 계열 선택 페이지
               FirstPage(
                 onButtonPressed: (buttonValue) {
                   setState(() {
@@ -172,6 +179,7 @@ class _DialogContentState extends State<DialogContent> {
                   );
                 }
               ),
+              /// 파일 선택 페이지
               SecondPage(
                 onFilePathSelected: (path) {
                   setState(() {
@@ -183,6 +191,7 @@ class _DialogContentState extends State<DialogContent> {
                   );
                 },
               ),
+              /// 카테고리 정보 연결 페이지
               ThirdPage(
                 onButtonPressed: (realtion, setforaccount) {
                   setState(() {
@@ -197,6 +206,7 @@ class _DialogContentState extends State<DialogContent> {
                 filePicked: filePicked,
                 typeofDatas: typeofDatas,
               ),
+              /// 데이터 형식 판별 페이지
               ForthPage(
                 onButtonPressed: () {
                   Navigator.of(context).pop();
@@ -214,9 +224,13 @@ class _DialogContentState extends State<DialogContent> {
   }
 }
 
+/// 계열 선택 페이지
 class FirstPage extends StatelessWidget {
   final Function(String?) onButtonPressed;
 
+  /// onButtonPressed: 다음 페이지 선택 시 발동 함수
+  /// 
+  /// - 외부 위젯으로 값 전달
   const FirstPage({required this.onButtonPressed, super.key});
 
   Future<void> _onButtonPressed(String? value) async {
@@ -228,7 +242,7 @@ class FirstPage extends StatelessWidget {
         logger.w('No value selected.');
       }
     } catch (e) {
-      logger.e('Error picking file: $e');
+      logger.e('Error picking category: $e');
     }
   }
 
@@ -275,6 +289,9 @@ class FirstPage extends StatelessWidget {
 class SecondPage extends StatelessWidget {
   final Function(FilePickerResult?) onFilePathSelected;
 
+  /// onFilePathSelected: 외부 파일 선택 시 발동 함수
+  /// 
+  /// - 외부 위젯으로 값(파일) 전달
   const SecondPage({required this.onFilePathSelected, super.key});
 
   Future<void> _pickFile() async {
@@ -328,6 +345,10 @@ class ThirdPage extends StatefulWidget {
   final FilePickerResult? filePicked;
   final String? typeofDatas;
   final Function(List<dynamic>, List<dynamic>) onButtonPressed;
+
+  /// onButtonPressed: 다음 페이지 선택 시 발동 함수
+  /// 
+  /// - 외부 위젯으로 값 전달
   const ThirdPage({required this.filePicked, required this.onButtonPressed, required this.typeofDatas, super.key});
 
   @override
