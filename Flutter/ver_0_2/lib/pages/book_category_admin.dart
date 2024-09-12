@@ -181,17 +181,17 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
           });
         },
         style: ButtonStyle(
-          minimumSize: MaterialStateProperty.all<Size>(const Size(120, 30)),
-          backgroundColor: MaterialStateProperty.resolveWith<Color>(
-            (Set<MaterialState> states) {
+          minimumSize: WidgetStateProperty.all<Size>(const Size(120, 30)),
+          backgroundColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
               if (currentCategory == value) {
                 return color.withOpacity(0.4);
               }
               return Colors.transparent;
             },
           ),
-          side : MaterialStateProperty.resolveWith<BorderSide>(
-            (Set<MaterialState> states) {
+          side : WidgetStateProperty.resolveWith<BorderSide>(
+            (Set<WidgetState> states) {
               if (currentCategory == value) {
                 return const BorderSide(color: Colors.transparent);
               }

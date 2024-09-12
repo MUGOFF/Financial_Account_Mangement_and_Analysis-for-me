@@ -443,6 +443,7 @@ class DatabaseAdmin {
         amount: transactionMaps[i]['amount'],
         goods: transactionMaps[i]['goods'],
         category: transactionMaps[i]['category'],
+        categoryType: transactionMaps[i]['categoryType'],
         description: transactionMaps[i]['description'],
         extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
       );
@@ -455,7 +456,7 @@ class DatabaseAdmin {
     final List<Map<String, dynamic>> transactionMaps = await db.query(
       'money_transactions',
       columns: ['goods', 'SUM(amount) * -1 as totalAmount'],
-      where: "substr(transactionTime,1,9) = ? AND category = ? AND amount < 0 AND categoryType = '소비' AND extraBudget == 0",
+      where: "substr(transactionTime,1,9) = ? AND category = ? AND categoryType = '소비' AND extraBudget == 0",
       whereArgs: ['$year년 ${month.toString().padLeft(2, '0')}월', category],
       groupBy: 'goods'
     );
@@ -469,7 +470,7 @@ class DatabaseAdmin {
     final List<Map<String, dynamic>> transactionMaps = await db.query(
       'money_transactions',
       columns: ['category', 'SUM(amount) * -1 as totalAmount'],
-      where: "substr(transactionTime,1,9) = ? AND amount < 0 AND categoryType = '소비' AND extraBudget == 0",
+      where: "substr(transactionTime,1,9) = ? AND categoryType = '소비' AND extraBudget == 0",
       whereArgs: ['$year년 ${month.toString().padLeft(2, '0')}월'],
       groupBy: 'category'
     );
@@ -483,7 +484,7 @@ class DatabaseAdmin {
     final List<Map<String, dynamic>> transactionMaps = await db.query(
       'money_transactions',
       columns: ['category', 'SUM(amount) * -1 as totalAmount'],
-      where: "substr(transactionTime,1,5) = ? AND amount < 0 AND categoryType = '소비'",
+      where: "substr(transactionTime,1,5) = ? AND categoryType = '소비'",
       whereArgs: ['$year년'],
       groupBy: 'category'
     );
@@ -521,6 +522,7 @@ class DatabaseAdmin {
         amount: transactionMaps[i]['amount'],
         goods: transactionMaps[i]['goods'],
         category: transactionMaps[i]['category'],
+        categoryType: transactionMaps[i]['categoryType'],
         description: transactionMaps[i]['description'],
         extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
       );

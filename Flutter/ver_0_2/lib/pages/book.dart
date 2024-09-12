@@ -21,6 +21,8 @@ class _BookState extends State<Book> {
   int year = DateTime.now().year;
   int month = DateTime.now().month;
   List<MoneyTransaction> transactions = [];
+  List<String> filterValue = ['소비', '수입'];
+  String? transactionFilter = '기본';
 
   @override
   void initState() {
@@ -148,10 +150,13 @@ class _BookState extends State<Book> {
               itemCount: transactions.length,
               itemBuilder: (context, index) {
                 MoneyTransaction transaction = transactions[index];
+                if (!filterValue.contains(transactions[index].categoryType)) {
+                  return const SizedBox.shrink();
+                }
                 return Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: transaction.amount > 0 ? [Colors.red.shade200, Colors.red.shade50] : [Colors.blue.shade200, Colors.blue.shade50],
+                      colors: transaction.categoryType == '소비' ? [Colors.red.shade200, Colors.red.shade50] : transaction.categoryType == '수입' ? [Colors.blue.shade200, Colors.blue.shade50] : [Colors.grey.shade200, Colors.grey.shade50],
                       begin: Alignment.centerRight,
                       end: Alignment.centerLeft,
                     ),
@@ -199,16 +204,113 @@ class _BookState extends State<Book> {
         mainAxisSize: MainAxisSize.min,
         children: [
           FloatingActionButton(
+            heroTag: 'filter-floating',
             onPressed: () {
-              Navigator.pop(context);
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return PopScope(
+                    child: AlertDialog(
+                      title: const Text('내역 필터'),
+                      content: StatefulBuilder(
+                        builder: (BuildContext context, StateSetter setState) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              RadioListTile<String>(
+                                value: '기본',
+                                groupValue: transactionFilter,
+                                onChanged: (String? value) {
+                                  setState(() {
+                                    transactionFilter = value;
+                                  });
+                                },
+                                title: const Text('기본'),
+                                subtitle: const Text('소비 + 수입'),
+                              ),
+                              RadioListTile<String>(
+                                value: '소비',
+                                groupValue: transactionFilter,
+                                onChanged: (String? value) {
+                                  setState(() {
+                                    transactionFilter = value;
+                                  });
+                                },
+                                title: const Text('소비'),
+                                subtitle: const Text(
+                                    '소비 내역만'),
+                              ),
+                              RadioListTile<String>(
+                                value: '수입',
+                                groupValue: transactionFilter,
+                                onChanged: (String? value) {
+                                  setState(() {
+                                    transactionFilter = value;
+                                  });
+                                },
+                                title: const Text('수입'),
+                                subtitle: const Text(
+                                    '수입 내역만'),
+                              ),
+                              RadioListTile<String>(
+                                value: '전체',
+                                groupValue: transactionFilter,
+                                onChanged: (String? value) {
+                                  setState(() {
+                                    transactionFilter = value;
+                                  });
+                                },
+                                title: const Text('전체'),
+                                subtitle: const Text(
+                                    '소비 + 수입 + 이체'),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text('취소'),
+                          ),
+                        TextButton(
+                            onPressed: () {
+                              setState(() {
+                                switch (transactionFilter) {
+                                  case '기본' :
+                                    filterValue = ['소비', '수입'];
+                                    break;
+                                  case '소비' :
+                                    filterValue = ['소비'];
+                                    break;
+                                  case '수입' :
+                                    filterValue = ['수입'];
+                                    break;
+                                  case '전체' :
+                                    filterValue = ['소비', '수입', '이체'];
+                                    break;
+                                }
+                              });
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text('확인'),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              );
             },
-            tooltip: '기록 데이터 추가',
-            child: initialFilterState == 0 ? const Icon(Icons.filter_alt_outlined) : const Icon(Icons.filter_alt),
+            tooltip: '표시 내역 필터',
+            child: transactionFilter == '기본' ? const Icon(Icons.filter_alt_outlined) : const Icon(Icons.filter_alt),
           ),
           const SizedBox(height: 8.0),
           Visibility(
             visible: _isVisible,
             child:  FloatingActionButton(
+              heroTag: 'ADD-floating',
               onPressed: () {
                 Navigator.push(
                   context,

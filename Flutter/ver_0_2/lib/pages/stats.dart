@@ -17,13 +17,13 @@ class StatisticsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('통계'),
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        ),
-        endDrawer: const AppDrawer(),
-        body: const NestedTabBarBook())
-      ;
+      appBar: AppBar(
+        title: const Text('통계'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      endDrawer: const AppDrawer(),
+      body: const NestedTabBarBook()
+    );
     //   DefaultTabController(
     //   length: 2,
     //   child: Scaffold(

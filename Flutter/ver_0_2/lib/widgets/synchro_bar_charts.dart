@@ -6,7 +6,7 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 
 // 가  계  부 그  래  프 //
-
+Logger logger = Logger();
 
 ///차트 데이터 기본클래스 생성
 class _BarChartData {
