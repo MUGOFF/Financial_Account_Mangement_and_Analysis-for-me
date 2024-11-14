@@ -478,6 +478,20 @@ class DatabaseAdmin {
     return transactionMaps;
   }
 
+  ///카테고리별 월간 소비 총합(0 이상) 가져오기
+  Future<List<Map<String, dynamic>>> getTransactionsSUMByCategoryMonthNegative(int year, int month) async {
+    final db = await database;
+    final List<Map<String, dynamic>> transactionMaps = await db.query(
+      'money_transactions',
+      columns: ['category', 'SUM(amount) * -1 as totalAmount'],
+      where: "substr(transactionTime,1,9) = ? AND categoryType = '소비' AND extraBudget == 0 AND amount < 0",
+      whereArgs: ['$year년 ${month.toString().padLeft(2, '0')}월'],
+      groupBy: 'category'
+    );
+    
+    return transactionMaps;
+  }
+
   ///카테고리별 연간 소비 총합 가져오기
   Future<List<Map<String, dynamic>>> getYearlySumByCategory(int year) async {
     final db = await database;
@@ -492,7 +506,21 @@ class DatabaseAdmin {
     return transactionMaps;
   }
 
-  ///연도별 카테고리  소비 총합 가져오기
+  ///카테고리별 연간 소비 총합(0 이상) 가져오기
+  Future<List<Map<String, dynamic>>> getYearlySumByCategoryNegative(int year) async {
+    final db = await database;
+    final List<Map<String, dynamic>> transactionMaps = await db.query(
+      'money_transactions',
+      columns: ['category', 'SUM(amount) * -1 as totalAmount'],
+      where: "substr(transactionTime,1,5) = ? AND categoryType = '소비' AND amount < 0",
+      whereArgs: ['$year년'],
+      groupBy: 'category'
+    );
+    
+    return transactionMaps;
+  }
+
+  ///연도별 카테고리  소비 총합(0 이상) 가져오기
   Future<List<Map<String, dynamic>>> getCategorySumByYear(String category) async {
     final db = await database;
     final List<Map<String, dynamic>> transactionMaps = await db.query(

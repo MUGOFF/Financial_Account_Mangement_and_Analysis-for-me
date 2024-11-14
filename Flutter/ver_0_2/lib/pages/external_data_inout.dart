@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 // import 'package:excel/excel.dart';
 import 'package:csv/csv.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
@@ -82,7 +83,7 @@ class TableDataIn extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          DialogContent(),
+                          BookDialogContent(),
                         ],
                       ) 
                     )
@@ -95,7 +96,7 @@ class TableDataIn extends StatelessWidget {
                 borderRadius: BorderRadius.circular(30.0), // 원하는 모양으로 조절
               ),
             ),
-            child: const Text('파일 업로드', style: TextStyle(fontSize: 36)),
+            child: const AutoSizeText('데이터 \n업로드', style: TextStyle(fontSize: 36), maxLines: 2),
           ),
         ),
       ],
@@ -104,19 +105,18 @@ class TableDataIn extends StatelessWidget {
 }
 
 /// 외부 데이터 입력 모달 위젯
-class DialogContent extends StatefulWidget {
+class BookDialogContent extends StatefulWidget {
   /// 외부 데이터 입력 모달 
-  const DialogContent({super.key});
+  const BookDialogContent({super.key});
 
   @override
- State<DialogContent> createState() => _DialogContentState();
+ State<BookDialogContent> createState() => _BookDialogContentState();
 }
 
-class _DialogContentState extends State<DialogContent> {
+class _BookDialogContentState extends State<BookDialogContent> {
   late PageController _pageController;
   int _currentPageIndex = 0;
   FilePickerResult? filePicked;
-  String? typeofDatas;
   List<dynamic> modelColumnrelations = [];
   List<dynamic> setData = [];
 
@@ -157,7 +157,7 @@ class _DialogContentState extends State<DialogContent> {
         ),
         SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
-          height:_currentPageIndex > 1 ? MediaQuery.of(context).size.height * 0.6 : MediaQuery.of(context).size.height * 0.4,
+          height:_currentPageIndex > 0 ? MediaQuery.of(context).size.height * 0.6 : MediaQuery.of(context).size.height * 0.4,
           child: PageView(
             controller: _pageController,
             physics: const NeverScrollableScrollPhysics(),
@@ -167,20 +167,8 @@ class _DialogContentState extends State<DialogContent> {
               });
             },
             children: [
-              /// 계열 선택 페이지
-              FirstPage(
-                onButtonPressed: (buttonValue) {
-                  setState(() {
-                    typeofDatas = buttonValue;
-                  });
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                }
-              ),
               /// 파일 선택 페이지
-              SecondPage(
+              FirstPage(
                 onFilePathSelected: (path) {
                   setState(() {
                     filePicked = path;
@@ -192,7 +180,7 @@ class _DialogContentState extends State<DialogContent> {
                 },
               ),
               /// 카테고리 정보 연결 페이지
-              ThirdPage(
+              SecondPage(
                 onButtonPressed: (realtion, setforaccount) {
                   setState(() {
                     modelColumnrelations = realtion;
@@ -204,15 +192,13 @@ class _DialogContentState extends State<DialogContent> {
                   );
                 }, 
                 filePicked: filePicked,
-                typeofDatas: typeofDatas,
               ),
               /// 데이터 형식 판별 페이지
-              ForthPage(
+              LastPage(
                 onButtonPressed: () {
                   Navigator.of(context).pop();
                 },
                 filePicked: filePicked,
-                typeofDatas: typeofDatas,
                 modelColumnrelations: modelColumnrelations,
                 setData: setData,
               ),
@@ -224,76 +210,19 @@ class _DialogContentState extends State<DialogContent> {
   }
 }
 
-/// 계열 선택 페이지
-class FirstPage extends StatelessWidget {
-  final Function(String?) onButtonPressed;
-
-  /// onButtonPressed: 다음 페이지 선택 시 발동 함수
-  /// 
-  /// - 외부 위젯으로 값 전달
-  const FirstPage({required this.onButtonPressed, super.key});
-
-  Future<void> _onButtonPressed(String? value) async {
-    final Logger logger = Logger();
-    try {
-      if (value != null) {
-        onButtonPressed(value);
-      } else {
-        logger.w('No value selected.');
-      }
-    } catch (e) {
-      logger.e('Error picking category: $e');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text('입력 정보 선택', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: MediaQuery.of(context).size.width * 0.6,
-          height: MediaQuery.of(context).size.height * 0.4*0.3,
-          child:ElevatedButton(
-            onPressed: () {
-              _onButtonPressed('book');
-            },
-            style: ElevatedButton.styleFrom(
-              shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(30))
-            ),
-            child: const Text('가계부', style: TextStyle(fontSize: 24)),
-          )
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: MediaQuery.of(context).size.width * 0.6,
-          height: MediaQuery.of(context).size.height * 0.4*0.3,
-          child:ElevatedButton(
-            onPressed: null,
-            // () {
-            //   _onButtonPressed('invest');
-            // },
-            style: ElevatedButton.styleFrom(
-              shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(30))
-            ),
-            child: const Text('투자', style: TextStyle(fontSize: 24)),
-          )
-        ),
-      ],
-    );
-  }
-}
-
-class SecondPage extends StatelessWidget {
+class FirstPage extends StatefulWidget {
   final Function(FilePickerResult?) onFilePathSelected;
 
   /// onFilePathSelected: 외부 파일 선택 시 발동 함수
-  /// 
+  ///
   /// - 외부 위젯으로 값(파일) 전달
-  const SecondPage({required this.onFilePathSelected, super.key});
+  const FirstPage({required this.onFilePathSelected, super.key});
 
+  @override
+  State<FirstPage> createState() => _FirstPageState();
+}
+
+class _FirstPageState extends State<FirstPage> {
   Future<void> _pickFile() async {
     final Logger logger = Logger();
     try {
@@ -304,7 +233,20 @@ class SecondPage extends StatelessWidget {
         withData: true,
       );
       if (result != null) {
-        onFilePathSelected(result);
+        try {
+          var input = File(result.files.single.path!).openRead();
+          var fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
+          if (fields.isNotEmpty) {
+            widget.onFilePathSelected(result);
+          } 
+        } catch (e) {
+          logger.e('Error picking file type or format: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Error picking file type or format')),
+            );
+          }
+        }
       } else {
         // 사용자가 파일을 선택하지 않았을 때 처리할 로직을 구현합니다.
         logger.w('No file selected.');
@@ -341,33 +283,32 @@ class SecondPage extends StatelessWidget {
 }
 
 ///세번쨰 페이지, 칼럼 정렬
-class ThirdPage extends StatefulWidget {
+class SecondPage extends StatefulWidget {
   final FilePickerResult? filePicked;
-  final String? typeofDatas;
   final Function(List<dynamic>, List<dynamic>) onButtonPressed;
 
   /// onButtonPressed: 다음 페이지 선택 시 발동 함수
   /// 
   /// - 외부 위젯으로 값 전달
-  const ThirdPage({required this.filePicked, required this.onButtonPressed, required this.typeofDatas, super.key});
+  const SecondPage({required this.filePicked, required this.onButtonPressed, super.key});
 
   @override
-  State<ThirdPage> createState() => _ThirdPageState();
+  State<SecondPage> createState() => _SecondPageState();
 }
 
-class _ThirdPageState extends State<ThirdPage> {
+class _SecondPageState extends State<SecondPage> {
   final Logger logger = Logger();
   List<String> columnNames = [];
   List<dynamic> relationColumnandValue =List.filled(7, null);
   List<dynamic> relationColumnandselectedAccount = [];
   List<List<dynamic>> dataRows = [];
   String? selectedTransactionTime;
-  String? selectedAccount;
   String? selectedAmount;
   String? selectedGoods;
   String? selectedCategory;
   String? selectedCategoryType;
   String? selectedDescription;
+  String? selectedInstallment;
 
 
   @override
@@ -390,11 +331,11 @@ class _ThirdPageState extends State<ThirdPage> {
           setState(() {
             selectedTransactionTime = findMatchingColumn('transactionTime', '날짜', 0);
             selectedAmount = findMatchingColumn('amount', '금액', 1);
-            selectedAccount = findMatchingColumn('account', '계좌', 2);
-            selectedGoods = findMatchingColumn('goods', '상품', 3);
-            selectedCategory = findMatchingColumn('category', '카테고리', 4);
-            selectedCategoryType = findMatchingColumn('categoryType', '분류', 5);
-            selectedDescription = findMatchingColumn('memo', '메모', 6);
+            selectedGoods = findMatchingColumn('goods', '상품', 2);
+            selectedCategory = findMatchingColumn('category', '카테고리', 3);
+            selectedCategoryType = findMatchingColumn('categoryType', '타입', 4);
+            selectedDescription = findMatchingColumn('memo', '메모', 5);
+            selectedInstallment = findMatchingColumn('installment', '할부', 6);
           }); 
         }
       }
@@ -416,7 +357,6 @@ class _ThirdPageState extends State<ThirdPage> {
   bool isButtonEnabled() {
     return selectedTransactionTime != null &&
            selectedAmount != null &&
-           selectedAccount != null &&
            selectedGoods != null;
   }
 
@@ -441,7 +381,7 @@ class _ThirdPageState extends State<ThirdPage> {
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              buildTextDropdown('거래 시간', true, selectedTransactionTime, (newValue) {
+              buildTextDropdown('거래 날짜', true, selectedTransactionTime, (newValue) {
                 setState(() {
                   selectedTransactionTime = newValue;
                   relationColumnandValue[0] = newValue;
@@ -453,33 +393,33 @@ class _ThirdPageState extends State<ThirdPage> {
                   relationColumnandValue[1] = newValue;
                 });
               }),
-              buildTextDropdown('거래 계좌', true, selectedAccount, (newValue) {
-                setState(() {
-                  selectedAccount = newValue;
-                  relationColumnandValue[2] = newValue;
-                });
-              }),
               buildTextDropdown('거래 상품', true, selectedGoods, (newValue) {
                 setState(() {
                   selectedGoods = newValue;
-                  relationColumnandValue[3] = newValue;
+                  relationColumnandValue[2] = newValue;
                 });
               }),
-              buildTextDropdown('카테 고리', false, selectedCategory, (newValue) {
+              buildTextDropdown('거래 타입', false, selectedCategoryType, (newValue) {
                 setState(() {
-                  selectedCategory = newValue;
+                  selectedCategoryType = newValue;
                   relationColumnandValue[4] = newValue;
                 });
               }),
-              buildTextDropdown('거래 분류', false, selectedCategoryType, (newValue) {
+              buildTextDropdown('세부 종류', false, selectedCategory, (newValue) {
                 setState(() {
-                  selectedCategoryType = newValue;
-                  relationColumnandValue[5] = newValue;
+                  selectedCategory = newValue;
+                  relationColumnandValue[3] = newValue;
                 });
               }),
               buildTextDropdown('메모', false, selectedDescription, (newValue) {
                 setState(() {
                   selectedDescription = newValue;
+                  relationColumnandValue[5] = newValue;
+                });
+              }),
+              buildTextDropdown('할부', false, selectedInstallment, (newValue) {
+                setState(() {
+                  selectedInstallment = newValue;
                   relationColumnandValue[6] = newValue;
                 });
               }),
@@ -492,10 +432,6 @@ class _ThirdPageState extends State<ThirdPage> {
             child:ElevatedButton(
               onPressed: isButtonEnabled() ? () {
                 List<dynamic> accountColumnData = [];
-                int dataColumnIndex = columnNames.indexOf(selectedAccount!);
-                for (List<dynamic> row in dataRows) {
-                  accountColumnData.add(row[dataColumnIndex]);
-                }
                 relationColumnandselectedAccount = accountColumnData.toSet().toList();
                 _onButtonPressed(relationColumnandValue,relationColumnandselectedAccount);
               } : null,
@@ -523,12 +459,24 @@ class _ThirdPageState extends State<ThirdPage> {
         ),
         DropdownButton<String>(
           value: parameter,
-          items: columnNames.map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
+          items: [
+            const  DropdownMenuItem<String>(
+              value: null,  // null 값을 가지는 '----' 항목
+              child: Text('----'),
+            ),
+            ...columnNames.map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }),
+          ],
+          // items: columnNames.map((String value) {
+          //   return DropdownMenuItem<String>(
+          //     value: value,
+          //     child: Text(value),
+          //   );
+          // }).toList(),
           onChanged: onChanged,
         ),
       ],
@@ -536,24 +484,28 @@ class _ThirdPageState extends State<ThirdPage> {
   }
 }
 
-class ForthPage extends StatefulWidget {
+class LastPage extends StatefulWidget {
   final VoidCallback onButtonPressed;
   final FilePickerResult? filePicked;
-  final String? typeofDatas;
   final List<dynamic> modelColumnrelations;
   final List<dynamic> setData;
 
-  const ForthPage({required this.filePicked, required this.onButtonPressed, required this.typeofDatas, required this.modelColumnrelations, required this.setData, super.key});
+  const LastPage({required this.filePicked, required this.onButtonPressed, required this.modelColumnrelations, required this.setData, super.key});
 
   @override
-  State<ForthPage> createState() => _ForthPageState();
+  State<LastPage> createState() => _LastPageState();
 }
 
-class _ForthPageState extends State<ForthPage> {
+class _LastPageState extends State<LastPage> {
   final Logger logger = Logger();
+  bool? isDateOnly = false;
   String? dateFormat;
-  final List<String> dateFormats = ['yyyy-MM-dd', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy년 MM월 dd일'];
-  final List<String> timeFormats = ['hh:mm:ss', 'hh시 mm분 ss초'];
+  final List<String> dateFormats = [
+    'yyyy-MM-dd', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy년 MM월 dd일', 'yyyy/MM/dd'
+  ];
+  final List<String> timeFormats = [
+    'hh:mm:ss', 'hh시 mm분 ss초', 'hh:mm' , 'hh시 mm분'
+  ];
   final List<String> datetimeFormats = [];
   List<String> columnNames = [];
   List<List<dynamic>> dataRows = [];
@@ -588,19 +540,17 @@ class _ForthPageState extends State<ForthPage> {
     }
   }
 
-  // Future<void> _readAccountsinDatabase() async{
-  //   List<BankAccount> fetchedBankAccounts = await DatabaseAdmin().getAllBankAccounts();
-  //   List<CardAccount> fetchedCardAccounts = await DatabaseAdmin().getAllCardAccounts();
-  //   await Future.forEach(fetchedBankAccounts, (bankAccount) async {
-  //     accountNames.add(bankAccount.bankName);
-  //   });
-  //   await Future.forEach(fetchedCardAccounts, (cardAccount) async {
-  //     accountNames.add(cardAccount.cardName);
-  //   });
-  // }
-
   bool isButtonEnabled(List<dynamic>? relationColumnandValue) {
     return relationColumnandValue != null && !relationColumnandValue.contains(null);
+  }
+
+  int? parseToInt(dynamic variable) {
+    if (variable is int) {
+      return variable;
+    } else if (variable is String) {
+      return int.tryParse(variable.replaceAll(RegExp(r'[^0-9]'), ''));
+    }
+    return 0;
   }
 
   @override
@@ -628,14 +578,45 @@ class _ForthPageState extends State<ForthPage> {
             child:Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('날짜시간 포맷', style: TextStyle(fontSize: 20)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('날짜시간 포맷', style: TextStyle(fontSize: 20)),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('시간 제외', style: TextStyle(fontSize: 10)),
+                        Checkbox(
+                          value: isDateOnly,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              isDateOnly = value;
+                              if (value!) {
+                                dateFormat = dateFormats[0];
+                              } else {
+                                dateFormat = datetimeFormats[0];
+                              }
+                            });
+                          },
+                        ),      
+                      ]
+                    ),
+                  ]
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButton<String>(
                       value: dateFormat,
-                      items: datetimeFormats.map((String value) {
+                      items: isDateOnly!? dateFormats.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList() : datetimeFormats.map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),
@@ -648,26 +629,6 @@ class _ForthPageState extends State<ForthPage> {
                       },
                     ),
                   ],
-                ),
-                const SizedBox(height: 20),
-                const Text('계좌 선택', style: TextStyle(fontSize: 20)),
-                Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: widget.setData.length,
-                    itemBuilder: (context, index) {
-                      return buildTextDropdown(widget.setData[index].toString(), relationColumnandValue![index], (newValue) {
-                          setState(() {
-                            try {
-                              relationColumnandValue![index] = newValue;
-                            } catch (e) {
-                              logger.e("error: $e");
-                            }
-                          });
-                        });
-                      // return Text(widget.setData[index].toString());
-                    },
-                  ),
                 ),
               ],
             ),
@@ -715,19 +676,42 @@ class _ForthPageState extends State<ForthPage> {
     );
   }
 
-  /// modelColumnrelations = [transactionTime,amount, account, goods, category, categoryType, memo]
+  /// modelColumnrelations = [transactionTime, amount, goods, category, categoryType, memo. installment]
   void insertDatasToDatabase(List<List<dynamic>> dataRows) {
     try {
       for (var row in dataRows) {
         String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
-        String formattedcategory = widget.modelColumnrelations[4] != null ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "";
-        String formattedcategoryType = (widget.modelColumnrelations[5] != null  || !['소비', '수입', '이체'].contains(widget.modelColumnrelations[5]))? row[columnNames.indexOf(widget.modelColumnrelations[5])] : "";
-        try {
+        String formattedcategory = widget.modelColumnrelations[3] != null ? row[columnNames.indexOf(widget.modelColumnrelations[3])] : "";
+        String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(row[columnNames.indexOf(widget.modelColumnrelations[4])]) ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "이체";
+        // int? formattedInstallment  = widget.modelColumnrelations[6] != null ? int.tryParse(row[columnNames.indexOf(widget.modelColumnrelations[6])].replaceAll(RegExp(r'[^0-9]'), '')) : 0;
+        int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parseToInt(row[columnNames.indexOf(widget.modelColumnrelations[6])]) : 0;
+        try { 
+          if (formattedInstallment != null && formattedInstallment > 1) {
+            for (int i = 0; i < formattedInstallment; i++) {
+              DateTime startDate = DateFormat('yyyy년 MM월 dd일THH:mm').parse(formattedDatetime);
+              DateTime installmentDate = DateTime(startDate.year, startDate.month + i, startDate.day);
+              String installTransactionTime = '${DateFormat('yyyy년 MM월 dd일').format(installmentDate).toString()}T${startDate.hour}:${startDate.minute}';
+
+              MoneyTransaction transaction = MoneyTransaction(
+                transactionTime: installTransactionTime,
+                amount: double.parse((double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()) / formattedInstallment).toStringAsFixed(2)),
+                goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
+                category: formattedcategory,
+                categoryType: formattedcategoryType,
+                description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
+                extraBudget: formattedcategory=="특별 예산" ? true : false,
+              );
+              try {
+                DatabaseAdmin().insertMoneyTransaction(transaction);
+              } catch (e) {
+                logger.e('error: $e, not enough row data: $row');
+              }
+            }
+          } else {
             MoneyTransaction transaction = MoneyTransaction(
               transactionTime: formattedDatetime,
               amount: double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()),
-              // account: relationColumnandValue![widget.setData.indexOf(row[columnNames.indexOf(widget.modelColumnrelations[2])])],
-              goods: row[columnNames.indexOf(widget.modelColumnrelations[3])].toString(),
+              goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
               category: formattedcategory,
               categoryType: formattedcategoryType,
               description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
@@ -738,12 +722,18 @@ class _ForthPageState extends State<ForthPage> {
             } catch (e) {
               logger.e('error: $e, not enough row data: $row');
             }
+          }
         } catch(e) {
           logger.e('error: $e, formData row: $row');
         }
       }
     } catch(e) {
       logger.e('error: $e, formmating error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error file format type')),
+        );
+      }
     }
     
   }

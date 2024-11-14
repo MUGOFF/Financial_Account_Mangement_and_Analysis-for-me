@@ -1,8 +1,11 @@
 import 'dart:math';
 import 'dart:async';
 import 'package:collection/collection.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:logger/logger.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
@@ -91,7 +94,7 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage> {
   final PageController _pageController = PageController();
   int pastyear = DateTime.now().year;
   int pastmonth = DateTime.now().month;
-  bool isyearcompare = false;
+  bool isNotCompareBar = false;
   String selectCategory = "";
 
   @override
@@ -108,17 +111,12 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage> {
 
   void setPastDate(){
     setState(() {
-      if(isyearcompare) {
-          pastyear = widget.year-1;
-          pastmonth = widget.month;
+      if (widget.month == 1) {
+        pastyear = widget.year-1;
+        pastmonth = 12;
       } else {
-        if (widget.month == 1) {
-          pastyear = widget.year-1;
-          pastmonth = 12;
-        } else {
-          pastyear = widget.year;
-          pastmonth = widget.month-1;
-        }
+        pastyear = widget.year;
+        pastmonth = widget.month-1;
       }
       selectCategory = "";
     });
@@ -137,37 +135,81 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if(!isyearcompare)
-                const Text('월간',style: TextStyle(fontSize: 20),),
-                if(isyearcompare)
-                const Text('연간',style: TextStyle(fontSize: 20),),
-                const SizedBox(width: 5,),
-                Switch.adaptive(
-                  value: isyearcompare,
-                  activeColor: Colors.teal,
-                  activeTrackColor: Colors.teal.shade200,
-                  inactiveThumbColor: Colors.teal,
-                  inactiveTrackColor: Colors.teal.shade200,
-                  onChanged: (bool value) {
-                    setState(() {
-                      isyearcompare = value;
-                      setPastDate();
-                      selectCategory = "";
-                    });
-                  },
+                const Spacer(flex: 1),
+                Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if(!isNotCompareBar)
+                        const Text('전월 비교',style: TextStyle(fontSize: 20)),
+                        if(isNotCompareBar)
+                        const Text('비용 비율',style: TextStyle(fontSize: 20)),
+                        const SizedBox(width: 5,),
+                        Switch.adaptive(
+                          value: isNotCompareBar,
+                          activeColor: Colors.teal,
+                          activeTrackColor: Colors.teal.shade200,
+                          inactiveThumbColor: Colors.teal,
+                          inactiveTrackColor: Colors.teal.shade200,
+                          onChanged: (bool value) {
+                            setState(() {
+                              isNotCompareBar = value;
+                              setPastDate();
+                              selectCategory = "";
+                            });
+                          },
+                        ),
+                        const SizedBox(width: 20,),
+                      ],
+                    ),
+                    if(!isNotCompareBar)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('${widget.year}-${widget.month.toString().padLeft(2, '0')}',style: const TextStyle(fontSize: 20),),
+                        const Text('  vs  ',style: TextStyle(fontSize: 20),),
+                        Text('$pastyear-${pastmonth.toString().padLeft(2, '0')}',style: const TextStyle(fontSize: 20),),
+                      ],
+                    ),
+                  ]
                 ),
-                const SizedBox(width: 20,),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('${widget.year}-${widget.month.toString().padLeft(2, '0')}',style: const TextStyle(fontSize: 20),),
-                const Text('  vs  ',style: TextStyle(fontSize: 20),),
-                Text('$pastyear-${pastmonth.toString().padLeft(2, '0')}',style: const TextStyle(fontSize: 20),),
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0), // 오른쪽 마진
+                  child: ElevatedButton(
+                    onPressed:(){
+                      Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) => BudgetSettingPage(year: widget.year, month: widget.month),
+                            transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                              const begin = Offset(0.0, 1.0);
+                              const end = Offset.zero;
+                              const curve = Curves.ease;
+
+                              var tween = Tween(begin: begin, end: end)
+                                  .chain(CurveTween(curve: curve));
+
+                              return SlideTransition(
+                                position: animation.drive(tween),
+                                child: child,
+                              );
+                            },
+                          ),
+                        ).then((result) {
+                          setState(() {
+                          });
+                        }
+                      );
+                    },
+                    child: const  Text('월간 예산\n 설정', textAlign: TextAlign.center,)
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 50),
+            if(!isNotCompareBar)
             Expanded(
               child: ColumnChartsByCategoryMonth(
                 key: UniqueKey(),
@@ -176,6 +218,28 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage> {
                 pastyear: pastyear,
                 pastmonth: pastmonth,
                 onBarSelected: (ChartPointDetails pointInteractionDetails) {
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                  if(pointInteractionDetails.dataPoints != null) {
+                    var detailList = pointInteractionDetails.dataPoints;
+                    if (pointInteractionDetails.pointIndex != null) {
+                      setState(() {
+                        selectCategory = detailList![pointInteractionDetails.pointIndex!].x;
+                      });
+                    }
+                  }
+                },
+              ),
+            ),
+            if(isNotCompareBar)
+            Expanded(
+              child: PieChartsByCategoryMonth(
+                key: UniqueKey(),
+                year: widget.year,
+                month: widget.month,
+                onPieSelected: (ChartPointDetails pointInteractionDetails) {
                   _pageController.nextPage(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
@@ -225,6 +289,8 @@ class YearlyConsumePage extends StatefulWidget {
 class _YearlyConsumePageState extends State<YearlyConsumePage> {
   final PageController _pageController = PageController();
   int pastyear = DateTime.now().year;
+  int month = DateTime.now().month;
+  bool isNotCompareBar = false;
   String selectCategory = "";
 
   @override
@@ -258,7 +324,75 @@ class _YearlyConsumePageState extends State<YearlyConsumePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('${widget.year}',style: const TextStyle(fontSize: 20),),
+                const Spacer(flex: 3),
+                Column(
+                  children: [
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: [
+                    //     if(!isNotCompareBar)
+                    //     const Text('전년 비교',style: TextStyle(fontSize: 20)),
+                    //     if(isNotCompareBar)
+                    //     const Text('비용 비율',style: TextStyle(fontSize: 20)),
+                    //     const SizedBox(width: 5,),
+                    //     Switch.adaptive(
+                    //       value: isNotCompareBar,
+                    //       activeColor: Colors.teal,
+                    //       activeTrackColor: Colors.teal.shade200,
+                    //       inactiveThumbColor: Colors.teal,
+                    //       inactiveTrackColor: Colors.teal.shade200,
+                    //       onChanged: (bool value) {
+                    //         setState(() {
+                    //           isNotCompareBar = value;
+                    //           setPastDate();
+                    //           selectCategory = "";
+                    //         });
+                    //       },
+                    //     ),
+                    //     const SizedBox(width: 20,),
+                    //   ],
+                    // ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('${widget.year}',style: const TextStyle(fontSize: 20),),
+                      ],
+                    ),
+                  ]
+                ),
+                const Spacer(flex: 1),
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0), // 오른쪽 마진
+                  child: ElevatedButton(
+                    onPressed:(){
+                      Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) => BudgetSettingYearlyPage(year: widget.year),
+                            transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                              const begin = Offset(0.0, 1.0);
+                              const end = Offset.zero;
+                              const curve = Curves.ease;
+
+                              var tween = Tween(begin: begin, end: end)
+                                  .chain(CurveTween(curve: curve));
+
+                              return SlideTransition(
+                                position: animation.drive(tween),
+                                child: child,
+                              );
+                            },
+                          ),
+                        ).then((result) {
+                          setState(() {
+                          });
+                        }
+                      );
+                    },
+                    child: const  Text('연간 예산\n 설정', textAlign: TextAlign.center,)
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 50),
@@ -306,7 +440,7 @@ class _YearlyConsumePageState extends State<YearlyConsumePage> {
   }
 }
 
-///예산 페이지
+///예산 설정 페이지
 class BudgetSettingPage extends StatefulWidget {
   final int year;
   final int month;
@@ -320,10 +454,12 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
   Logger logger = Logger();
   bool isloading = true;
   final TextEditingController _textFieldController = TextEditingController();
+  final GlobalKey<ScaffoldState> _scaffoldBudgetMonthKey = GlobalKey<ScaffoldState>();
   final TextEditingController _categoryFieldController = TextEditingController();
   List<BudgetSetting> budgetSet = [];
   List<Map<String, dynamic>>expenseData= [];
   double totalExpenseAmount= 0;
+  bool isPercentageChannels = true;
   List<String> categoryData = [];
   List<String> budgetCategoryData = [];
 
@@ -378,7 +514,6 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
         totalExpenseAmount = localTotalExpenseAmount;
         isloading = false;
       });
-      // logger.d(localBudgetCategoryData) ;   
       // logger.d(budgetCategoryData) ;   
       // logger.d(budgetSet[0].budgetList) ;   
     }
@@ -387,46 +522,125 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
   @override
   Widget build(BuildContext context) {
     if (isloading) {
-      return const Center(child: CircularProgressIndicator());
+      return Scaffold(
+        key: _scaffoldBudgetMonthKey,
+        body: const Center(child: CircularProgressIndicator())
+      );
     } else if (budgetSet.isEmpty && !isloading) {
-      return emptyBudgetWidget();
+      return Scaffold(
+        key: _scaffoldBudgetMonthKey,
+        appBar: AppBar(title: Text('${widget.year}년 ${widget.month}월'),),
+        body: emptyBudgetWidget()
+      );
     } else {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('예산 총액', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30)),
-            const SizedBox(height: 30),
-            PercentageGaugeBar(childNumber: totalExpenseAmount,motherNumber: budgetSet[0].budgetList!['총 예산']!),
-            const Divider(height: 50),
-            Align(
-              alignment: const Alignment(0.8,0.5),
-              child: IconButton(
-                onPressed: () {
+      return Scaffold(
+        key: _scaffoldBudgetMonthKey,
+        appBar: AppBar(title: Text('${widget.year}년 ${widget.month}월'),),
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(width: 10),
+                  const Text('예산 총액', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30)),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          final value = budgetSet[0].budgetList!['총 예산'];
+                          _textFieldController.text = value.toString();
+                          return AlertDialog(
+                            title: Text('${widget.year}년 ${widget.month}월 예산 수정'),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Text('총 예산: ', textAlign: TextAlign.left,),
+                                  ],
+                                ),
+                                TextField(
+                                  controller: _textFieldController,
+                                  cursorColor: Colors.transparent,
+                                  keyboardType: TextInputType.number, // 숫자만 입력하도록 지정
+                                  decoration: const InputDecoration(
+                                    hintText: '예산을 입력하세요', // 힌트 텍스트
+                                  ),
+                                ),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('취소'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    updateNewBudgetToDatabase('총 예산', double.parse(_textFieldController.text), budgetSet[0].budgetList!);
+                                    _textFieldController.clear();
+                                    _fetchDatas();
+                                  });
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('수정'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    icon: const Icon(CupertinoIcons.pencil)
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
+              GestureDetector(
+                onTap: () {
                   setState(() {
-                    if(_animationStatus == AnimationStatus.dismissed) {
-                      _animationController.forward();
-                    } else {
-                      _animationController.reverse();
-                    }
+                    isPercentageChannels = !isPercentageChannels;
                   });
                 },
-                icon: const Icon(Icons.autorenew),
-              )
-            ),
-            Expanded(
-              child: Transform(
-                alignment: Alignment.center,
-                transform: Matrix4.identity()
-                  ..setEntry(2,1,0.0015)
-                  ..rotateY(pi*(_animation.value % 1.0)),
-                  child: _animation.value<=0.5
-                  ? percetageChanel(budgetSet, expenseData, categoryData)
-                  : budgetChanel(budgetSet, budgetCategoryData)
+                child: PercentageGaugeBar(childNumber: totalExpenseAmount,motherNumber: budgetSet[0].budgetList!['총 예산']!, isPercentage: isPercentageChannels)
               ),
-            )
-          ],
+              const Divider(height: 50),
+              Align(
+                alignment: const Alignment(0.8,0.5),
+                child: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      if(_animationStatus == AnimationStatus.dismissed) {
+                        _animationController.forward();
+                      } else {
+                        _animationController.reverse();
+                      }
+                    });
+                  },
+                  icon: const Icon(Icons.autorenew),
+                )
+              ),
+              Expanded(
+                child: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(2,1,0.0015)
+                    ..rotateY(pi*(_animation.value % 1.0)),
+                    child: _animation.value<=0.5
+                    ? percetageChanel(budgetSet, expenseData, categoryData)
+                    : budgetChanel(budgetSet, budgetCategoryData)
+                ),
+              )
+            ],
+          ),
         ),
       );
     }
@@ -497,39 +711,50 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
   }
 
   Widget percetageChanel(List<BudgetSetting> budgetSet, List<Map<String, dynamic>> expenseData, List<String> categoryData) {
-    return Column(
-      key: const Key('percentage'),
-      children: [
-        ListView.builder(
-          shrinkWrap: true,
-          itemCount: categoryData.length,
-          itemBuilder: (context, index) {
-            final key = categoryData[index];
-            final valueA = budgetSet[0].budgetList![key] ?? 0.0;
-            final valueB =
-                expenseData.firstWhere((map) => map['category'] == key, orElse: () => {'totalAmount': 0.0})['totalAmount'];
-            return Padding(
-              padding: const EdgeInsets.all(12),
-              child:  Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.2,
-                    child: Text(key, style: const TextStyle(fontSize: 24)),
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isPercentageChannels = !isPercentageChannels;
+        });
+      },
+      child: Column(
+        key: const Key('percentage'),
+        children: [
+          Expanded(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: categoryData.length,
+              itemBuilder: (context, index) {
+                final key = categoryData[index];
+                final valueA = budgetSet[0].budgetList![key] ?? 0.0;
+                final valueB =
+                    expenseData.firstWhere((map) => map['category'] == key, orElse: () => {'totalAmount': 0.0})['totalAmount'];
+                return Padding(
+                  padding: const EdgeInsets.all(12),
+                  child:  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.2,
+                        child: Text(key, style: const TextStyle(fontSize: 24)),
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.5,
+                        child: PercentageGaugeBar(childNumber: valueB,motherNumber: valueA, isThick: false, isPercentage: isPercentageChannels)
+                      )
+                    ]
                   ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.5,
-                    child: PercentageGaugeBar(childNumber: valueB,motherNumber: valueA, isThick: false)
-                  )
-                ]
-              ),
-            );
-          },
-        )
-      ],
+                );
+              },
+            )
+          )   
+        ],
+      ),
     );
   }
 
+
+  /// 세부 예산 항목
   Widget budgetChanel(List<BudgetSetting> budgetSet, List<String> budgetCategoryData) {
     return Column(
       key: const Key('budget'),
@@ -618,120 +843,126 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
               ],
             ) ,
           )
-        ), 
-        ListView.builder(
-          shrinkWrap: true,
-          itemCount: budgetCategoryData.length,
-          itemBuilder: (context, index) {
-            final key = budgetCategoryData[index];
-            final value = budgetSet[0].budgetList![key] ?? 0.0;
-            return Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.2,
-                    child: Text(key, style: const TextStyle(fontSize: 24)),
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.3,
-                    child: GestureDetector(
-                      onTap:() {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            _textFieldController.text = value.toString();
-                            return AlertDialog(
-                              title: const Text('항목 수정'),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text(key, textAlign: TextAlign.left,),
-                                    ],
-                                  ),
-                                  TextField(
-                                    controller: _textFieldController,
-                                    cursorColor: Colors.transparent,
-                                    keyboardType: TextInputType.number, // 숫자만 입력하도록 지정
-                                    decoration: const InputDecoration(
-                                      hintText: '예산을 입력하세요', // 힌트 텍스트
+        ),
+        Expanded(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: budgetCategoryData.length,
+            itemBuilder: (context, index) {
+              final key = budgetCategoryData[index];
+              final value = budgetSet[0].budgetList![key] ?? 0.0;
+              return Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.2,
+                      child: Text(key, style: const TextStyle(fontSize: 24)),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.3,
+                      child: Text(value.toString(), textAlign: TextAlign.end ,style: const TextStyle(fontSize: 24)),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.1,
+                      child: GestureDetector(
+                        onTap:() {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              _textFieldController.text = value.toString();
+                              return AlertDialog(
+                                title: const Text('항목 수정'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Text(key, textAlign: TextAlign.left,),
+                                      ],
                                     ),
+                                    TextField(
+                                      controller: _textFieldController,
+                                      cursorColor: Colors.transparent,
+                                      keyboardType: TextInputType.number, // 숫자만 입력하도록 지정
+                                      decoration: const InputDecoration(
+                                        hintText: '예산을 입력하세요', // 힌트 텍스트
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('취소'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        if(budgetSet[0].budgetList != null) {
+                                          updateNewBudgetToDatabase(key, double.parse(_textFieldController.text), budgetSet[0].budgetList!);
+                                          _textFieldController.clear();
+                                          _fetchDatas();
+                                        }
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('수정'),
                                   ),
                                 ],
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('취소'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      if(budgetSet[0].budgetList != null) {
-                                        updateNewBudgetToDatabase(key, double.parse(_textFieldController.text), budgetSet[0].budgetList!);
-                                        _textFieldController.clear();
-                                        _fetchDatas();
-                                      }
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('수정'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                      child: Text(value.toString(), textAlign: TextAlign.end ,style: const TextStyle(fontSize: 24))
-                    )
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.1,
-                    child: IconButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text('항목 삭제'),
-                              content: const Text('선택한 항목을 삭제하시겠습니까?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('취소'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      if(budgetSet[0].budgetList != null) {
-                                        deleteBudgetFormListDatabase(key, budgetSet[0].budgetList!);
-                                        _fetchDatas();
-                                      }
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('삭제'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                      icon: const Icon(Icons.remove_circle_outline),
+                              );
+                            },
+                          );
+                        },
+                        child: const Icon(CupertinoIcons.pencil)
+                      )
                     ),
-                  ),
-                ],
-              )
-            );
-          },
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.1,
+                      child: IconButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('항목 삭제'),
+                                content: const Text('선택한 항목을 삭제하시겠습니까?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('취소'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        if(budgetSet[0].budgetList != null) {
+                                          deleteBudgetFormListDatabase(key, budgetSet[0].budgetList!);
+                                          _fetchDatas();
+                                        }
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('삭제'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.remove_circle_outline),
+                      ),
+                    ),
+                  ],
+                )
+              );
+            },
+          )
         )
       ],
     );
@@ -774,7 +1005,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
               return const CircularProgressIndicator(); // 데이터 로딩 중이면 로딩 인디케이터 표시
             }
             if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
+              return AutoSizeText(maxLines: 3,'Error: ${snapshot.error}');
             }
             List<TransactionCategory> fetchedCategorys = snapshot.data!;
             return Container(
@@ -785,7 +1016,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
                   children: [
                       ...fetchedCategorys.expand((category) {
                       if (category.name == '소비') {
-                        return category.itemList!.map((item) {
+                        return category.itemList!.where((item) => item != '특별 예산').map((item) { 
                           return ListTile(
                             title: Text(item),
                             onTap: () {
@@ -808,6 +1039,654 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
         );
       },
     );
+  }
+}
+
+
+
+///연간 예산 설정 페이지
+class BudgetSettingYearlyPage extends StatefulWidget {
+  final int year;
+  const BudgetSettingYearlyPage({required this.year, super.key});
+
+  @override
+  State<BudgetSettingYearlyPage> createState() => _BudgetSettingYearlyPageState();
+}
+
+class _BudgetSettingYearlyPageState extends State<BudgetSettingYearlyPage> with TickerProviderStateMixin{
+  Logger logger = Logger();
+  bool isloading = true;
+  final TextEditingController _textFieldController = TextEditingController();
+  final TextEditingController _textFieldInputController = TextEditingController();
+  final GlobalKey<ScaffoldState> _scaffoldBudgetMonthKey = GlobalKey<ScaffoldState>();
+  final TextEditingController _categoryFieldController = TextEditingController(text: '특별 예산');
+  final int month = 13;
+  List<BudgetSetting> budgetSet = [];
+  List<Map<String, dynamic>>expenseData= [];
+  double totalExpenseAmount= 0;
+  bool isPercentageChannels = true;
+  List<String> categoryData = [];
+  List<String> budgetCategoryData = [];
+
+  late AnimationController _animationController;
+  late Animation _animation;
+  AnimationStatus _animationStatus = AnimationStatus.dismissed;
+
+  @override
+  void initState() {
+    _fetchDatas();
+    super.initState();
+    _animationController = AnimationController(vsync: this, duration: const Duration(seconds: 1));
+    _animation = Tween(end: 1.0, begin: 0.0).animate(_animationController)
+      ..addListener(() {
+        setState(() {
+          
+        });
+      })
+      ..addStatusListener((status) {
+        _animationStatus = status;
+      });
+    _textFieldController.addListener(_formatInput);
+  }
+
+  @override
+  void dispose() {
+    _textFieldController.removeListener(_formatInput);
+    _textFieldController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchDatas() async {
+    isloading = true;
+    List<String> localCategoryData = [];
+    List<String> localBudgetCategoryData = [];
+    double localTotalExpenseAmount= 0;
+    List<BudgetSetting> fetchedBudgetSet = await DatabaseAdmin().getMonthBugetList(widget.year, month);
+    List<Map<String, dynamic>> fetchedExpenseData =  await DatabaseAdmin().getYearlySumByCategory(widget.year);
+    List<Map<String, dynamic>> localexpenseData = [...fetchedExpenseData];
+    if (fetchedBudgetSet.isNotEmpty && fetchedBudgetSet[0].budgetList != null) {
+      for (var key in fetchedBudgetSet[0].budgetList!.keys) {
+        localCategoryData.add(key);
+        localBudgetCategoryData.add(key);
+      }
+    }
+    localexpenseData.sort((previous, next) => next['totalAmount'].compareTo(previous['totalAmount']));
+    for (var data in localexpenseData) {
+      // localCategoryData.add(data['category']);
+      localTotalExpenseAmount = localTotalExpenseAmount + data['totalAmount'];
+    }
+    localCategoryData = localCategoryData.toSet().toList();
+    localCategoryData.remove('총 예산');
+    localBudgetCategoryData.remove('총 예산');
+    if (mounted) {
+      setState(() {
+        expenseData = fetchedExpenseData;
+        budgetSet = fetchedBudgetSet;
+        categoryData = localCategoryData;
+        budgetCategoryData = localBudgetCategoryData;
+        totalExpenseAmount = localTotalExpenseAmount;
+        isloading = false;
+      });
+      // logger.d(budgetCategoryData) ;   
+      // logger.d(budgetSet[0].budgetList) ;   
+    }
+  }
+
+  void _formatInput() {
+    String newText = _textFieldController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (newText.isEmpty) return;
+
+    final int value = int.parse(newText);
+    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
+
+    // 포맷된 텍스트를 다시 설정 (커서 위치를 조정하여 깜빡임 방지)
+    _textFieldController.value = TextEditingValue(
+      text: formattedText,
+      selection: TextSelection.collapsed(offset: formattedText.length),
+    );
+    _textFieldInputController.text = _textFieldController.text.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isloading) {
+      return Scaffold(
+        key: _scaffoldBudgetMonthKey,
+        body: const Center(child: CircularProgressIndicator())
+      );
+    } else if (budgetSet.isEmpty && !isloading) {
+      return Scaffold(
+        key: _scaffoldBudgetMonthKey,
+        appBar: AppBar(title: Text('${widget.year}년'),),
+        body: emptyBudgetWidget()
+      );
+    } else {
+      return Scaffold(
+        key: _scaffoldBudgetMonthKey,
+        appBar: AppBar(title: Text('${widget.year}년'),),
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(width: 10),
+                  const Text('예산 총액', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30)),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          final value = budgetSet[0].budgetList!['총 예산'];
+                          _textFieldController.text = value.toString();
+                          return AlertDialog(
+                            title: Text('${widget.year}년 예산 수정'),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Text('총 예산: ', textAlign: TextAlign.left,),
+                                  ],
+                                ),
+                                TextField(
+                                  controller: _textFieldController,
+                                  cursorColor: Colors.transparent,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    hintText: '예산을 입력하세요', // 힌트 텍스트
+                                  ),
+                                ),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('취소'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    updateNewBudgetToDatabase('총 예산', double.parse(_textFieldInputController.text), budgetSet[0].budgetList!);
+                                    _textFieldController.clear();
+                                    _fetchDatas();
+                                  });
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('수정'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    icon: const Icon(CupertinoIcons.pencil)
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    isPercentageChannels = !isPercentageChannels;
+                  });
+                },
+                child:PercentageGaugeBar(childNumber: totalExpenseAmount,motherNumber: budgetSet[0].budgetList!['총 예산']!, isPercentage: isPercentageChannels)
+              ),
+              const Divider(height: 50),
+              Align(
+                alignment: const Alignment(0.8,0.5),
+                child: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      if(_animationStatus == AnimationStatus.dismissed) {
+                        _animationController.forward();
+                      } else {
+                        _animationController.reverse();
+                      }
+                    });
+                  },
+                  icon: const Icon(Icons.autorenew),
+                )
+              ),
+              Expanded(
+                child: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(2,1,0.0015)
+                    ..rotateY(pi*(_animation.value % 1.0)),
+                    child: _animation.value<=0.5
+                    ? percetageChanel(budgetSet, expenseData, categoryData)
+                    : budgetChanel(budgetSet, budgetCategoryData)
+                ),
+              )
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  /// 키보드 위 간단 숫자 입력 버튼
+  Widget _changeAmountOutlinedButton(String text, Function() onPressed) {
+    return Container(
+      margin: EdgeInsets.all(MediaQuery.of(context).size.width*0.005), // 버튼의 마진
+      child: OutlinedButton(
+        onPressed: () => onPressed(),
+        style: ButtonStyle(
+          padding: WidgetStateProperty.all<EdgeInsets>(
+            EdgeInsets.all(MediaQuery.of(context).size.width*0.0005), // adaptive padding
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              return Colors.transparent;
+            },
+          ),
+          side: WidgetStateProperty.resolveWith<BorderSide>(
+            (Set<WidgetState> states) {
+              return BorderSide(color: Colors.green.withOpacity(0.9));
+            },
+          ),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget emptyBudgetWidget() {
+    return Center(
+      child: SizedBox(
+        width: 300,
+        height: 100,
+        child: FilledButton(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('${widget.year}년 예산 등록'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text('총 예산: ', textAlign: TextAlign.left,),
+                        ],
+                      ),
+                      TextField(
+                        controller: _textFieldController,
+                        cursorColor: Colors.transparent,
+                        keyboardType: TextInputType.number, // 숫자만 입력하도록 지정
+                        decoration: const InputDecoration(
+                          hintText: '예산을 입력하세요', // 힌트 텍스트
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _changeAmountOutlinedButton("100K", () {
+                            String amountText  = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
+                            _textFieldInputController.text = amountText =='' ? '0' : amountText;
+                            _textFieldInputController.text = ((double.parse(_textFieldInputController.text) % 1 == 0) ? (double.parse(_textFieldInputController.text) + 100000).toStringAsFixed(0) : (double.parse(_textFieldInputController.text) + 1000).toString());
+                            _textFieldController.text = _textFieldInputController.text;
+                          }),
+                          _changeAmountOutlinedButton("500K", () {
+                            String amountText  = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
+                            _textFieldInputController.text = amountText =='' ? '0' : amountText;
+                            _textFieldInputController.text = ((double.parse(_textFieldInputController.text) % 1 == 0) ? (double.parse(_textFieldInputController.text) + 500000).toStringAsFixed(0) : (double.parse(_textFieldInputController.text) + 5000).toString());
+                            _textFieldController.text = _textFieldInputController.text;
+                          }),
+                          _changeAmountOutlinedButton("1M", () {
+                            String amountText  = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
+                            _textFieldInputController.text = amountText =='' ? '0' : amountText;
+                            _textFieldInputController.text = ((double.parse(_textFieldInputController.text) % 1 == 0) ? (double.parse(_textFieldInputController.text) + 1000000).toStringAsFixed(0) : (double.parse(_textFieldInputController.text) + 10000).toString());
+                            _textFieldController.text = _textFieldInputController.text;
+                          }),
+                          _changeAmountOutlinedButton("10M", () {
+                            String amountText  = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
+                            _textFieldInputController.text = amountText =='' ? '0' : amountText;
+                            _textFieldInputController.text = ((double.parse(_textFieldInputController.text) % 1 == 0) ? (double.parse(_textFieldInputController.text) + 10000000).toStringAsFixed(0) : (double.parse(_textFieldInputController.text) + 100000).toString());
+                            _textFieldController.text = _textFieldInputController.text;
+                          }),
+                        ],
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('취소'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          insertNewBudgetToDatabase();
+                          _textFieldController.clear();
+                          _fetchDatas();
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: const Text('등록'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.greenAccent.shade200,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))
+          ),
+          child: const Text('예산 등록', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),),
+        )
+      ), 
+    );
+  }
+
+  Widget percetageChanel(List<BudgetSetting> budgetSet, List<Map<String, dynamic>> expenseData, List<String> categoryData) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isPercentageChannels = !isPercentageChannels;
+        });
+      },
+      child: Column(
+        key: const Key('percentage'),
+        children: [
+          Expanded(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: categoryData.length,
+              itemBuilder: (context, index) {
+                final key = categoryData[index];
+                final valueA = budgetSet[0].budgetList![key] ?? 0.0;
+                final valueB =
+                    expenseData.firstWhere((map) => map['category'] == key, orElse: () => {'totalAmount': 0.0})['totalAmount'];
+                return Padding(
+                  padding: const EdgeInsets.all(12),
+                  child:  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.2,
+                        child: Text(key, style: const TextStyle(fontSize: 24)),
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.5,
+                        child: PercentageGaugeBar(childNumber: valueB,motherNumber: valueA, isThick: false, isPercentage: isPercentageChannels)
+                      )
+                    ]
+                  ),
+                );
+              },
+            )
+          )   
+        ],
+      ),
+    );
+  }
+
+
+  /// 세부 예산 항목
+  Widget budgetChanel(List<BudgetSetting> budgetSet, List<String> budgetCategoryData) {
+    return Column(
+      key: const Key('budget'),
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('${widget.year}년 특별 예산 등록'),
+                    content:  Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: TextField(
+                                readOnly: true,
+                                controller: _categoryFieldController,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 4,
+                              child: TextField(
+                                controller: _textFieldController,
+                                cursorColor: Colors.transparent,
+                                keyboardType: TextInputType.number, // 숫자만 입력하도록 지정
+                                decoration: const InputDecoration(
+                                  hintText: '예산을 입력하세요', // 힌트 텍스트
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _textFieldController.clear();
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          if (double.parse(_textFieldInputController.text) > budgetSet[0].budgetList!['총 예산']!) {
+                            // 조건을 만족하면 토스트 메시지 표시 후 함수 종료
+                            Fluttertoast.showToast(
+                              msg: "특별 예산이 총 예산을 넘었습니다.",
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.BOTTOM,
+                              backgroundColor: Colors.red,
+                              textColor: Colors.white,
+                              fontSize: 16.0,
+                            );
+                            return;
+                          }
+                          setState(() {
+                            if(budgetSet[0].budgetList != null) {
+                              updateNewBudgetToDatabase(_categoryFieldController.text, double.parse(_textFieldInputController.text), budgetSet[0].budgetList!);
+                              _textFieldController.clear();
+                              _fetchDatas();
+                            }
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('등록'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green.shade200,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+               Icon(Icons.add_circle_outline, size:40),
+               SizedBox(width: 12),
+               Text('항목 예산 등록', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),),
+              ],
+            ) ,
+          )
+        ),
+        Expanded(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: budgetCategoryData.length,
+            itemBuilder: (context, index) {
+              final key = budgetCategoryData[index];
+              final value = budgetSet[0].budgetList![key] ?? 0.0;
+              return Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.2,
+                      child: Text(key, style: const TextStyle(fontSize: 24)),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.3,
+                      child: Text(value.toString(), textAlign: TextAlign.end ,style: const TextStyle(fontSize: 24)),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.1,
+                      child: GestureDetector(
+                        onTap:() {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              _textFieldController.text = value.toString();
+                              return AlertDialog(
+                                title: const Text('항목 수정'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Text(key, textAlign: TextAlign.left,),
+                                      ],
+                                    ),
+                                    TextField(
+                                      controller: _textFieldController,
+                                      cursorColor: Colors.transparent,
+                                      keyboardType: TextInputType.number, // 숫자만 입력하도록 지정
+                                      decoration: const InputDecoration(
+                                        hintText: '예산을 입력하세요', // 힌트 텍스트
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('취소'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        if(budgetSet[0].budgetList != null) {
+                                          updateNewBudgetToDatabase(key, double.parse(_textFieldInputController.text), budgetSet[0].budgetList!);
+                                          _textFieldController.clear();
+                                          _fetchDatas();
+                                        }
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('수정'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        child: const Icon(CupertinoIcons.pencil)
+                      )
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.1,
+                      child: IconButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('항목 삭제'),
+                                content: const Text('선택한 항목을 삭제하시겠습니까?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('취소'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        if(budgetSet[0].budgetList != null) {
+                                          deleteBudgetFormListDatabase(key, budgetSet[0].budgetList!);
+                                          _fetchDatas();
+                                        }
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('삭제'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.remove_circle_outline),
+                      ),
+                    ),
+                  ],
+                )
+              );
+            },
+          )
+        )
+      ],
+    );
+  }
+
+  void insertNewBudgetToDatabase() {
+    final BudgetSetting newBudget = BudgetSetting(
+      year : widget.year,
+      month : month, 
+      budgetList: <String,double>{"총 예산": double.parse(_textFieldInputController.text)},
+    );
+
+    DatabaseAdmin().insertBugetSettingTable(newBudget);
+  }
+
+  void updateNewBudgetToDatabase(String category, double value, Map<String, double> budgetlist) {
+    final Map<String, double>  updatedBudgetList = Map.from(budgetlist);
+
+    updatedBudgetList[category] = value;
+
+    DatabaseAdmin().updateBugetSettingTable(widget.year, month, updatedBudgetList);
+  }
+
+  void deleteBudgetFormListDatabase(String category, Map<String, double> budgetlist) {
+    final Map<String, double>  updatedBudgetList = Map.from(budgetlist);
+
+    updatedBudgetList.remove(category);
+
+    DatabaseAdmin().updateBugetSettingTable(widget.year, month, updatedBudgetList);
   }
 }
 

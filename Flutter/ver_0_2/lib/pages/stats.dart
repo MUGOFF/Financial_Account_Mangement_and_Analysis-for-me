@@ -24,34 +24,6 @@ class StatisticsView extends StatelessWidget {
       endDrawer: const AppDrawer(),
       body: const NestedTabBarBook()
     );
-    //   DefaultTabController(
-    //   length: 2,
-    //   child: Scaffold(
-    //     appBar: AppBar(
-    //       title: const Text('통계'),
-    //       backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-    //     ),
-    //     endDrawer: const AppDrawer(),
-    //     body: const Column(
-    //       children: [
-    //         TabBar(
-    //           tabs: <Widget>[
-    //             Tab(text: '가계부'),
-    //             Tab(text: '자산관리'),
-    //           ]
-    //         ),
-    //         Expanded(
-    //           child: TabBarView(
-    //             children: <Widget>[
-    //               NestedTabBarBook(),
-    //               NestedTabBarInvest(),
-    //             ],
-    //           ),
-    //         )
-    //       ]
-    //     ),
-    //   ),
-    // );
   }
 }
 
@@ -72,14 +44,14 @@ class _NestedTabBarBookState extends State<NestedTabBarBook> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 3,
       child: Scaffold(
         body: Column(
           children: [
             TabBar(
               tabs: const <Widget>[
                 Tab(text: '월간 소비'),
-                Tab(text: '월간 예산'),
+                // Tab(text: '월간 예산'),
                 Tab(text: '연간 소비'),
                 Tab(text: '특별 예산'),
               ],
@@ -131,7 +103,7 @@ class _NestedTabBarBookState extends State<NestedTabBarBook> with SingleTickerPr
               child: TabBarView(
                 children: <Widget>[
                   MonthlyConsumePage(key: UniqueKey(), year: year, month: month),
-                  BudgetSettingPage(key: UniqueKey(), year: year, month: month),
+                  // BudgetSettingPage(key: UniqueKey(), year: year, month: month),
                   YearlyConsumePage(key: UniqueKey(), year: year),
                   const ExtraBudgetGrid(),
                 ],
@@ -444,59 +416,3 @@ class _ExtraBudgetGridState extends State<ExtraBudgetGrid> {
     DatabaseAdmin().deleteExtraGroup(id);
   }
 }
-
-// class NestedTabBarInvest extends StatefulWidget {
-//   const NestedTabBarInvest({super.key});
-
-//   @override
-//   State<NestedTabBarInvest> createState() => _NestedTabBarInvestState();
-// }
-
-// class _NestedTabBarInvestState extends State<NestedTabBarInvest> {
-//   List<Holdings> currentHoldings = [];
-//   List<String> investCategories = [];
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _fetchHoldings();
-//   }
-
-//   Future<void> _fetchHoldings() async {
-//     List<Holdings> fetchedHoldings = await DatabaseAdmin().getCurrentHoldInvestments();
-//     setState(() {
-//       currentHoldings = fetchedHoldings;
-//       investCategories = currentHoldings.map((holding) => holding.investcategory).toList();
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return DefaultTabController(
-//       length: 2,
-//       child: Scaffold(
-//         body: Column(
-//           children: [
-//             const TabBar(
-//               tabs: <Widget>[
-//                 Tab(text: '현재 투자 목록'),
-//                 Tab(text: '수익률 현황'),
-//               ]
-//             ),
-//             Expanded(
-//               child: TabBarView(
-//                 children: <Widget>[
-//                   InvestHolingsPage(currentHoldings: currentHoldings, investCategories: investCategories),
-//                   const Center(child: Text("차후 업데이트", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 32),),)
-//                   // const BarchartHorizontal(),
-//                 ],
-//               ),
-//             )
-//           ]
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-

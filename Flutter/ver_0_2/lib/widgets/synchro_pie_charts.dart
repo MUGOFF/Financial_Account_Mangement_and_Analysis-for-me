@@ -41,13 +41,111 @@ class _PieChartsByCategoryYearState extends State<PieChartsByCategoryYear> {
   Future<void> _fetchChartDatas() async {
     List<_PieChartData> localChartData = [];
     double totalValue = 0;
+    double limitedtotalValue = 0;
     
-    List<Map<String, dynamic>> fetchedDatas = await DatabaseAdmin().getYearlySumByCategory(widget.year);
+    List<Map<String, dynamic>> fetchedDatas = (await DatabaseAdmin().getYearlySumByCategoryNegative(widget.year)).toList();
+    fetchedDatas.sort((prev, next) => next['totalAmount'].compareTo(prev['totalAmount']));
     for (var data in fetchedDatas) {
       totalValue = totalValue + data['totalAmount'];
     }
 
+    var limitedFetchedDatas = fetchedDatas.take(5);
+    for (var data in limitedFetchedDatas) {
+      limitedtotalValue = limitedtotalValue + data['totalAmount'];
+    }
+    for (var data in limitedFetchedDatas) {
+      localChartData.add(_PieChartData(data['category'], data['totalAmount'], data['totalAmount']/totalValue*100));
+    }
+
+    double etcValue = totalValue - limitedtotalValue;
+    localChartData.add(_PieChartData('etc', etcValue, etcValue/totalValue*100));
+
+    if (mounted) {
+      setState(() {
+        chartData = localChartData;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SfCircularChart(
+      legend: const Legend(isVisible: true, iconWidth: 25, iconHeight: 25),
+      series: <CircularSeries>[
+        PieSeries<_PieChartData, String>(
+          dataSource: chartData,
+          pointColorMapper:(_PieChartData data, _){
+            if(data.x == 'etc') {
+              return Colors.grey.shade600;
+            } else {
+              int code = data.x.hashCode.abs();
+              return Color.fromARGB(
+                255, // 알파 값 (255는 완전 불투명)
+                code % 256, // 빨강 값
+                (code ~/ 255) % 256, // 초록 값
+                ((code - 255) ~/ (256*3)) % 256, // 파랑 값
+              );
+            }
+          },
+          xValueMapper: (_PieChartData data, _) => data.x,
+          yValueMapper: (_PieChartData data, _) => data.y,
+          dataLabelMapper: (_PieChartData data, _) => '${data.yp.toStringAsFixed(2)}%',
+          onPointTap: widget.onPieSelected,
+          dataLabelSettings: const DataLabelSettings(
+            isVisible: true,
+            labelIntersectAction: LabelIntersectAction.shift,
+            labelPosition: ChartDataLabelPosition.inside,
+            textStyle: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)
+          ),
+        )
+      ]
+    );
+  }
+}
+
+///월간 카테고리별 소비
+/// - year: 연도
+/// - month: 월
+class PieChartsByCategoryMonth extends StatefulWidget {
+  final int year;
+  final int month;
+  final Function(ChartPointDetails) onPieSelected;
+
+  const PieChartsByCategoryMonth({
+    required this.year,
+    required this.month,
+    required this.onPieSelected,
+    super.key
+  });
+
+  @override
+  State<PieChartsByCategoryMonth> createState() => _PieChartsByCategoryMonthState();
+}
+
+class _PieChartsByCategoryMonthState extends State<PieChartsByCategoryMonth> {
+  Logger logger = Logger();
+  List<_PieChartData> chartData = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchChartDatas();
+  }
+
+  Future<void> _fetchChartDatas() async {
+    List<_PieChartData> localChartData = [];
+    double totalValue = 0;
+    
+    List<Map<String, dynamic>> fetchedDatas = (await DatabaseAdmin().getTransactionsSUMByCategoryMonthNegative(widget.year,widget.month)).toList();
+
+    fetchedDatas.sort((prev, next) => next['totalAmount'].compareTo(prev['totalAmount']));
+    
     for (var data in fetchedDatas) {
+      totalValue = totalValue + data['totalAmount'];
+    }
+
+    var limitedFetchedDatas = fetchedDatas.take(10);
+    for (var data in limitedFetchedDatas) {
       localChartData.add(_PieChartData(data['category'], data['totalAmount'], data['totalAmount']/totalValue*100));
     }
 

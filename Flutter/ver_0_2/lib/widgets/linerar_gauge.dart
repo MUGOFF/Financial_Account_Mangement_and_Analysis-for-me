@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
 
@@ -6,7 +7,8 @@ class PercentageGaugeBar extends StatefulWidget {
   final double childNumber;
   final double motherNumber;
   final bool isThick;
-  PercentageGaugeBar({required this.childNumber, required this.motherNumber, this.isThick=true, super.key});
+  final bool isPercentage;
+  PercentageGaugeBar({required this.childNumber, required this.motherNumber, this.isThick=true, this.isPercentage=true, super.key});
 
   final normalColor = Colors.green.shade800;
   final warningColor = Colors.yellow.shade800;
@@ -22,7 +24,8 @@ class _PercentageGaugeBarState extends State<PercentageGaugeBar> {
   Widget build(BuildContext context) {
     final Brightness brightness = Theme.of(context).brightness;
     final double percentageValue = 
-      widget.motherNumber == 0 ? 100 : 
+      widget.motherNumber <= 0 ? 100 : 
+      widget.childNumber < 0 ? 0 : 
       // widget.childNumber/widget.motherNumber*100 >= 100 ? 100 : 
       widget.childNumber/widget.motherNumber*100;
     return Stack(
@@ -56,7 +59,7 @@ class _PercentageGaugeBarState extends State<PercentageGaugeBar> {
           child: Align(
             alignment: const Alignment(0.5,1),
             child: Text(
-              '${percentageValue.toStringAsFixed(2)}%',
+              widget.isPercentage ? '${percentageValue.toStringAsFixed(2)}%' : NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR", ).format(widget.childNumber),
               style: const TextStyle(fontSize: 18, color: Color(0xffFFFFFF)),
             )
           ),

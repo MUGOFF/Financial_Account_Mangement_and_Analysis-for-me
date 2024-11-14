@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/models/transaction_category.dart';
@@ -11,6 +12,7 @@ class CategoryAdminPage extends StatefulWidget {
 }
 
 class _CategoryAdminPageState extends State<CategoryAdminPage> {
+  Logger logger = Logger();
   List<TransactionCategory> categories = [];
   List<String> itemList = [];
   String currentCategory = "수입"; // 기본 카테고리 설정
@@ -71,7 +73,7 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                       itemCount: itemList.length,
                       itemBuilder: (context, index) {
                         return GestureDetector(
-                          onTap: () {
+                          onLongPress: () {
                             setState(() {
                               selectedCard = itemList[index];
                               showFA = false; // 홀드 상태일 때 selectedCard에 텍스트 값 저장
@@ -220,12 +222,20 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
       elevation: 0,
       builder: (BuildContext context) {
         return PopScope(
-          onPopInvoked: (didPop) {
+          // onPopInvoked: (didPop) {
+          //   setState(() {
+          //     selectedCard = "";
+          //     showFA = true;
+          //   });
+          // },
+          canPop: false,
+          onPopInvokedWithResult: (bool didPop, Object? result) async {
             setState(() {
               selectedCard = "";
               showFA = true;
             });
-          },
+            Navigator.pop(context); // 모달을 닫기
+          }, 
           child: Container(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -242,12 +252,18 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                       context: context,
                       builder: (BuildContext context) {
                         return PopScope(
-                          onPopInvoked: (didPop) {
+                          // onPopInvoked: (didPop) {
+                          //   setState(() {
+                          //     selectedCard = "";
+                          //     showFA = true;
+                          //   });
+                          // },
+                          onPopInvokedWithResult: (bool didPop, Object? result) async {
                             setState(() {
                               selectedCard = "";
                               showFA = true;
                             });
-                          },
+                          }, 
                           child: AlertDialog(
                             title: Text(' $selectedCard 를 삭제하시겠습니까?'),
                             actions: <Widget>[
@@ -311,11 +327,17 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                       context: context,
                       builder: (BuildContext context) {
                         return PopScope(
-                          onPopInvoked: (didPop) {
+                          // onPopInvoked: (didPop) {
+                          //   setState(() {
+                          //     selectedCard = "";
+                          //   });
+                          // },
+                          onPopInvokedWithResult: (bool didPop, Object? result) async {
                             setState(() {
                               selectedCard = "";
+                              showFA = true;
                             });
-                          },
+                          }, 
                           child: AlertDialog(
                             title: const Text('카테고리 수정'),
                             content: TextField(

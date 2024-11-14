@@ -10,10 +10,11 @@ Logger logger = Logger();
 
 ///차트 데이터 기본클래스 생성
 class _BarChartData {
-  _BarChartData(this.x, this.y);
+  _BarChartData(this.x, this.y, this.label);
  
   final String x;
   final double y;
+  final String label;
 }
 
 ///월간 카테고리별 소비(비교)
@@ -61,19 +62,33 @@ class _ColumnChartsByCategoryMonthState extends State<ColumnChartsByCategoryMont
     List<_BarChartData> localPastChartData = [];
     double localmaxYvalue = 0;
     
-    List<Map<String, dynamic>> fetchedDatas = await DatabaseAdmin().getTransactionsSUMByCategoryandDate(widget.year,widget.month);
-    for (var data in fetchedDatas) {
-      localChartData.add(_BarChartData(data['category'], data['totalAmount']));
+    List<Map<String, dynamic>> fetchedDatas = (await DatabaseAdmin().getTransactionsSUMByCategoryandDate(widget.year,widget.month)).toList();
+
+    fetchedDatas.sort((prev, next) => next['totalAmount'].compareTo(prev['totalAmount']));
+    
+    var limitedFetchedDatas = fetchedDatas.take(5);
+    var categories = limitedFetchedDatas.map((data) => data['category']).toSet();
+
+    for (var data in limitedFetchedDatas) {
+      localChartData.add(_BarChartData(data['category'], data['totalAmount'] < 0 ? data['totalAmount']*-0.25: data['totalAmount'], NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(data['totalAmount']).toString()));
       if (localmaxYvalue < data['totalAmount']) {
         localmaxYvalue = data['totalAmount'];
       }
+      if (localmaxYvalue < data['totalAmount']*-0.25) {
+        localmaxYvalue = data['totalAmount']*-0.25;
+      }
     }
 
-    List<Map<String, dynamic>> fetchedPastDatas = await DatabaseAdmin().getTransactionsSUMByCategoryandDate(widget.pastyear,widget.pastmonth);
-    for (var data in fetchedPastDatas) {
-      localPastChartData.add(_BarChartData(data['category'], data['totalAmount']));
+    List<Map<String, dynamic>> fetchedPastDatas = (await DatabaseAdmin().getTransactionsSUMByCategoryandDate(widget.pastyear,widget.pastmonth)).toList();
+
+    var limitedFetchedPastDatas = fetchedPastDatas.where((data) => categories.contains(data['category'])).toList();
+    for (var data in limitedFetchedPastDatas) {
+      localPastChartData.add(_BarChartData(data['category'], data['totalAmount'] < 0 ? data['totalAmount']*-0.25: data['totalAmount'], NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(data['totalAmount']).toString()));
       if (localmaxYvalue < data['totalAmount']) {
         localmaxYvalue = data['totalAmount'];
+      }
+      if (localmaxYvalue < data['totalAmount']*-0.25) {
+        localmaxYvalue = data['totalAmount']*-0.25;
       }
     }
     if (mounted) {
@@ -104,6 +119,7 @@ class _ColumnChartsByCategoryMonthState extends State<ColumnChartsByCategoryMont
             dataSource: chartData,
             xValueMapper: (_BarChartData chartData, _) => chartData.x,
             yValueMapper: (_BarChartData chartData, _) => chartData.y,
+            dataLabelMapper: (_BarChartData chartData, _) => chartData.label,
             borderRadius: const BorderRadius.all(Radius.circular(25)),
             dataLabelSettings: const DataLabelSettings(
               isVisible: true,
@@ -118,6 +134,7 @@ class _ColumnChartsByCategoryMonthState extends State<ColumnChartsByCategoryMont
             dataSource: charPastData,
             xValueMapper: (_BarChartData charPastData, _) => charPastData.x,
             yValueMapper: (_BarChartData charPastData, _) => charPastData.y,
+            dataLabelMapper: (_BarChartData charPastData, _) => charPastData.label,
             borderRadius: const BorderRadius.all(Radius.circular(25)),
             dataLabelSettings: const DataLabelSettings(
               isVisible: true,
@@ -163,7 +180,7 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
     double localmaxYvalue = 0;
     List<Map<String, dynamic>> fetchedDatas = await DatabaseAdmin().getransactionsSUMBByGoodsCategoriesMonth(widget.year,widget.month,widget.category);
     for (var data in fetchedDatas) {
-      localChartData.add(_BarChartData(data['goods'], data['totalAmount']));
+      localChartData.add(_BarChartData(data['goods'], data['totalAmount'], data['totalAmount'].toString()));
       if (localmaxYvalue < data['totalAmount']) {
         localmaxYvalue = data['totalAmount'];
       }

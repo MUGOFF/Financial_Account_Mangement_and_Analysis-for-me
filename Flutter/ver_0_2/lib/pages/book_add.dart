@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:intl/intl.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:ver_0_2/widgets/date_picker.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
@@ -19,17 +20,24 @@ class BookAdd extends StatefulWidget {
 
 class _BookAddState extends State<BookAdd> {
   Logger logger = Logger();
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final FocusNode _focusAmountNode = FocusNode();
+  UnfocusDisposition disposition = UnfocusDisposition.scope;
+  PersistentBottomSheetController? _bottomSheetController;
+  final GlobalKey<FormState> _formBookAddKey = GlobalKey<FormState>();
+  final GlobalKey<ScaffoldState> _scaffoldBookAddKey = GlobalKey<ScaffoldState>();
   final TextEditingController _idController = TextEditingController();
   late final TextEditingController _dateController;
   late final TextEditingController _timeController;
   // final TextEditingController _accountController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _amountdisplayController = TextEditingController();
+  final TextEditingController _installmentController = TextEditingController();
   final TextEditingController _targetgoodsController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _memoController = TextEditingController();
   String currentCategory = "소비";
+  bool timeShow = false;
+  bool installmentShow = false;
   late String _pageType;
   int _selectedButton = 1;
   bool _isMemoEditing = true;
@@ -44,7 +52,22 @@ class _BookAddState extends State<BookAdd> {
     } else {
       _pageType = "입력";
     }
+    _focusAmountNode.addListener(() {
+      if (_focusAmountNode.hasFocus) {
+        // 키보드가 올라왔을 때 BottomSheet를 띄움
+        _bottomSheetController = _scaffoldBookAddKey.currentState?.showBottomSheet((context) => buildCustomKeyboardActions());
+      } else {
+        // 키보드가 내려갈 때 BottomSheet를 닫음
+        _bottomSheetController?.close();
+      }
+    });
     _initializeControllers(); 
+  }
+
+  @override
+  void dispose() {
+    _focusAmountNode.dispose();
+    super.dispose();
   }
 
 
@@ -56,14 +79,16 @@ class _BookAddState extends State<BookAdd> {
       _dateController = TextEditingController(text: parts[0].trim());
       _timeController = TextEditingController(text: parts[1].trim());
       // _accountController.text = widget.moneyTransaction!.account.toString();
-      _amountdisplayController.text = _thousandsFormmater(widget.moneyTransaction!.amount.toString());
       _amountController.text = widget.moneyTransaction!.amount.toString();
+      _amountdisplayController.text = _thousandsFormmater(_amountController.text);
       _targetgoodsController.text = widget.moneyTransaction!.goods;
       _categoryController.text = widget.moneyTransaction!.category;
       _memoController.text = widget.moneyTransaction!.description ?? '';
     } else {
       _dateController = TextEditingController(text: DateFormat('yyyy년 MM월 dd일').format(DateTime.now()));
       _timeController = TextEditingController(text:'${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}');
+      _amountController.text = "-0";
+      _amountdisplayController.text = _thousandsFormmater(_amountController.text);
     }
   }
 
@@ -80,268 +105,213 @@ class _BookAddState extends State<BookAdd> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('가계부 $_pageType'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  buildRadioButton(1, '소비', Colors.red),
-                  buildRadioButton(2, '수입', Colors.blue),
-                  buildRadioButton(3, '이체', Colors.grey),
-                ],
-              ),
-              const SizedBox(height: 16.0), // Add spacing between rows and buttons
-              // Date, String, Int, String, String Fields
-              buildDateTimeRow("날짜", _dateController, _timeController),
-              buildNumericRow("거래금액", _amountdisplayController),
-              // Row(
-              //   children: [
-              //     const Expanded(
-              //       flex: 1,
-              //       child: Row(
-              //         mainAxisAlignment: MainAxisAlignment.center,
-              //         children: [
-              //           Text("거래계좌"),
-              //         ],
-              //       ),
-              //     ),
-              //     Expanded(
-              //       flex: 3,
-              //       child: TextFormField(
-              //         readOnly: true,
-              //         controller: _accountController,
-              //         onTap: () {
-              //           _showAccountModal(context);
-              //         },
-              //         validator: (value) {
-              //           if (value == null || value.isEmpty) {
-              //             return 'Field is required';
-              //           }
-              //           return null;
-              //         },
-              //       ),
-              //     ),
-              //   ],
-              // ),
-              buildTextRow("거래대상", _targetgoodsController),
-              Row(
-                children: [
-                  const Expanded(
-                    flex: 1,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("거래분류"),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: TextFormField(
-                      readOnly: true,
-                      controller: _categoryController,
-                      onTap: () {
-                        _showCategoryModal(context);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  const Expanded(
-                    flex: 1,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("메모"),
-                      ],
-                    ),
-                  ),
-                  if(_isMemoEditing)
-                  Expanded(
-                    flex: 3,
-                    child: 
-                    TextFormField(
-                      controller: _memoController,
-                      autofocus: true,
-                      onEditingComplete: () {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        _focusAmountNode.unfocus(disposition: disposition);
+        _bottomSheetController?.close();
+      }, 
+      child: Scaffold(
+        key: _scaffoldBookAddKey,
+        appBar: AppBar(
+          title: AutoSizeText('가계부 $_pageType', maxLines: 1),
+          automaticallyImplyLeading: false,
+        ),
+        body: Padding(
+          padding: const EdgeInsets.fromLTRB(10,10,40,10),
+          child: Form(
+            key: _formBookAddKey,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    categoryRadioButton(
+                      1, '소비', Colors.red,
+                      () {
                         setState(() {
-                          _isMemoEditing = false;
+                          _selectedButton = 1;
+                          currentCategory = "소비";
+                          _amountController.text = "-0";
+                          _amountdisplayController.text = _thousandsFormmater(_amountController.text);
                         });
-                      },
-                    )
-                  ),
-                  if(!_isMemoEditing)
-                  Expanded(
-                    flex: 3,
-                    child: Container(
-                      height: 40,
-                      margin: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: const BoxDecoration(
-                        border: Border(bottom: BorderSide(color: Colors.black))
-                      ),
-                      child: buildRichText(_memoController),
+                      }
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0), // Add spacing between buttons
-              if(_pageType == "수정")
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('삭제 확인'),
-                            content: const Text('데이터를 삭제하시겠습니까?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  deleteDataFromDatabase(); // Delete data
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('삭제'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context); // Close the dialog
-                                },
-                                child: const Text('취소'),
-                              ),
-                            ],
-                          );
+                    categoryRadioButton(
+                      2, '수입', Colors.blue,
+                      () {
+                        setState(() {
+                          _selectedButton = 2;
+                          currentCategory = "수입";
+                          _amountController.text = "0";
+                          _amountdisplayController.text = _thousandsFormmater(_amountController.text);
+                        });
+                      }
+                    ),
+                    categoryRadioButton(
+                      3, '이체', Colors.grey,
+                      () {
+                        setState(() {
+                          _selectedButton = 3;
+                          currentCategory = "이체";
+                        });
+                      }
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16.0), // Add spacing between rows and buttons
+                // Date, String, Int, String, String Fields
+                buildDateTimeRow("날짜", _dateController, _timeController),
+                amountRow("거래금액", _amountdisplayController),
+                if(installmentShow)
+                Row(
+                  children: [
+                    const Expanded(
+                      flex: 1,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AutoSizeText("할부 개월수", maxLines: 1),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: TextFormField(
+                        controller: _installmentController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          suffix: Text('개월')
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                buildTextRow("거래대상", _targetgoodsController),
+                Row(
+                  children: [
+                    const Expanded(
+                      flex: 1,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AutoSizeText("거래분류", maxLines: 1),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: TextFormField(
+                        readOnly: true,
+                        controller: _categoryController,
+                        onTap: () {
+                          _showCategoryModal(context);
                         },
-                      );
-                    },
-                    child: const Text('삭제'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState?.validate() ?? false) {
-                        // Save data when Save button is pressed
-                        updateDataToDatabase();
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Expanded(
+                      flex: 1,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AutoSizeText("메모", maxLines: 1),
+                        ],
+                      ),
+                    ),
+                    if(_isMemoEditing)
+                    Expanded(
+                      flex: 3,
+                      child: 
+                      TextFormField(
+                        controller: _memoController,
+                        autofocus: true,
+                        onEditingComplete: () {
+                          setState(() {
+                            _isMemoEditing = false;
+                          });
+                        },
+                      )
+                    ),
+                    if(!_isMemoEditing)
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        height: 40,
+                        margin: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: const BoxDecoration(
+                          border: Border(bottom: BorderSide(color: Colors.black))
+                        ),
+                        child: buildRichText(_memoController),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16.0), // Add spacing between buttons
+                if(_pageType == "수정")
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () {
+                        // Handle Cancel button press
+                        _bottomSheetController?.close();
                         Navigator.pop(context);
-                      }
-                    },
-                    child: const Text('수정'),
-                  ),
-                ],
-              ),
-              if(_pageType == "입력")
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  OutlinedButton(
-                    onPressed: () {
-                      // Handle Cancel button press
-                      Navigator.pop(context);
-                    },
-                    child: const Text('취소'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState?.validate() ?? false) {
-                        // Save data when Save button is pressed
-                        insertDataToDatabase();
+                      },
+                      child: const Text('취소'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formBookAddKey.currentState?.validate() ?? false) {
+                          // Save data when Save button is pressed
+                          _bottomSheetController?.close();
+                          updateDataToDatabase();
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('수정'),
+                    ),
+                  ],
+                ),
+                if(_pageType == "입력")
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () {
+                        // Handle Cancel button press
+                        _bottomSheetController?.close();
                         Navigator.pop(context);
-                      }
-                    },
-                    child: const Text('저장'),
-                  ),
-                ],
-              ),
-            ],
+                      },
+                      child: const Text('취소'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formBookAddKey.currentState?.validate() ?? false) {
+                          // Save data when Save button is pressed
+                          _bottomSheetController?.close();
+                          insertDataToDatabase();
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('저장'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-      ),
+      )
     );
   }
-  // void _showAccountModal(BuildContext context) {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return FutureBuilder<List<dynamic>>(
-  //         future: Future.wait([
-  //           DatabaseAdmin().getAllBankAccounts(),
-  //           DatabaseAdmin().getAllCardAccounts(),
-  //         ]),
-  //         builder: (context, snapshot) {
-  //           if (snapshot.connectionState == ConnectionState.waiting) {
-  //             return const CircularProgressIndicator(); // 데이터 로딩 중이면 로딩 인디케이터 표시
-  //           }
-  //           if (snapshot.hasError) {
-  //             return Text('Error: ${snapshot.error}');
-  //           }
-  //           List<BankAccount> fetchedBankAccounts = snapshot.data?[0] ?? [];
-  //           List<CardAccount> fetchedCardAccounts = snapshot.data?[1] ?? [];
-  //           if (fetchedBankAccounts.isEmpty && fetchedCardAccounts.isEmpty) {
-  //             return const Text('No data available'); // 데이터가 없을 경우
-  //           }
-  //           return Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             children: [
-  //               if (fetchedBankAccounts.isNotEmpty) ...[
-  //                 const ListTile(
-  //                   title: Text(
-  //                     '은행 계좌',
-  //                     style: TextStyle(fontWeight: FontWeight.bold,)
-  //                   ),
-  //                   dense: true,
-  //                 ),
-  //                 ...fetchedBankAccounts.map((bankAccount) {
-  //                   return ListTile(
-  //                     title: Text(bankAccount.bankName),
-  //                     onTap: () {
-  //                       setState(() {
-  //                         _accountController.text = bankAccount.bankName.toString();
-  //                       });
-  //                       Navigator.pop(context);
-  //                     },
-  //                   );
-  //                 }),
-  //               ],
-  //               if (fetchedCardAccounts.isNotEmpty) ...[
-  //                 const ListTile(
-  //                   title: Text(
-  //                     '카드',
-  //                     style: TextStyle(fontWeight: FontWeight.bold,)
-  //                     ),
-  //                   dense: true,
-  //                 ),
-  //                 ...fetchedCardAccounts.map((cardAccount) {
-  //                   return ListTile(
-  //                     title: Text(cardAccount.cardName),
-  //                     onTap: () {
-  //                       setState(() {
-  //                         _accountController.text = cardAccount.cardName.toString();
-  //                         // Handle the selection of card account
-  //                       });
-  //                       Navigator.pop(context);
-  //                     },
-  //                   );
-  //                 }),
-  //               ],
-  //             ],
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
+
+
+  //----------------------------------------------------------------------------//
+
 
   void _showCategoryModal(BuildContext context) {
     showModalBottomSheet(
@@ -358,7 +328,7 @@ class _BookAddState extends State<BookAdd> {
             }
             List<TransactionCategory> fetchedCategorys = snapshot.data!;
             return Container(
-              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.3), // 원하는 최대 높이로 설정
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5), // 원하는 최대 높이로 설정
               child:SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -413,6 +383,128 @@ class _BookAddState extends State<BookAdd> {
           },
         );
       },
+    );
+  }
+
+  /// 커스텀 키보드 액션 버튼들 구성
+  Widget buildCustomKeyboardActions(){
+    return Container(
+      color: Colors.grey[200],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Divider(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _changeAmountOutlinedButton("±", () {
+                String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
+                if (amountText.startsWith('-')) {
+                  amountText = '-${amountText.substring(1).replaceAll('-', '')}';
+                } else {
+                  amountText = amountText.replaceAll('-', '');
+                }
+                _amountController.text = amountText;
+                _amountController.text = (double.parse(_amountController.text) % 1 == 0) ? (double.parse(_amountController.text) * -1).toStringAsFixed(0) : (double.parse(_amountController.text) * -1).toString();
+                _amountdisplayController.text = _thousandsFormmater(_amountController.text);
+              }),
+              _changeAmountOutlinedButton("1,000", () {
+                String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
+                if (amountText.startsWith('-')) {
+                  amountText = '-${amountText.substring(1).replaceAll('-', '')}';
+                } else {
+                  amountText = amountText.replaceAll('-', '');
+                }
+                _amountController.text = amountText;
+                _amountController.text = _amountController.text.startsWith('-') 
+                  ? ((double.parse(_amountController.text) % 1 == 0) ? (double.parse(_amountController.text) - 1000).toStringAsFixed(0) : (double.parse(_amountController.text) - 1000).toString())
+                  : ((double.parse(_amountController.text) % 1 == 0) ? (double.parse(_amountController.text) + 1000).toStringAsFixed(0) : (double.parse(_amountController.text) + 1000).toString());
+                _amountdisplayController.text = _thousandsFormmater(_amountController.text);
+              }),
+              _changeAmountOutlinedButton("5,000", () {
+                String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
+                if (amountText.startsWith('-')) {
+                  amountText = '-${amountText.substring(1).replaceAll('-', '')}';
+                } else {
+                  amountText = amountText.replaceAll('-', '');
+                }
+                _amountController.text = amountText;
+                _amountController.text = _amountController.text.startsWith('-')
+                  ? ((double.parse(_amountController.text) % 1 == 0) ? (double.parse(_amountController.text) - 5000).toStringAsFixed(0) : (double.parse(_amountController.text) - 5000).toString())
+                  : ((double.parse(_amountController.text) % 1 == 0) ? (double.parse(_amountController.text) + 5000).toStringAsFixed(0) : (double.parse(_amountController.text) + 5000).toString());
+                _amountdisplayController.text = _thousandsFormmater(_amountController.text);
+              }),
+              _changeAmountOutlinedButton("10,000", () {
+                String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
+                if (amountText.startsWith('-')) {
+                  amountText = '-${amountText.substring(1).replaceAll('-', '')}';
+                } else {
+                  amountText = amountText.replaceAll('-', '');
+                }
+                _amountController.text = amountText;
+                _amountController.text = _amountController.text.startsWith('-') 
+                  ? ((double.parse(_amountController.text) % 1 == 0) ? (double.parse(_amountController.text) - 10000).toStringAsFixed(0) : (double.parse(_amountController.text) - 10000).toString())
+                  : ((double.parse(_amountController.text) % 1 == 0) ? (double.parse(_amountController.text) + 10000).toStringAsFixed(0) : (double.parse(_amountController.text) + 10000).toString());
+                _amountdisplayController.text = _thousandsFormmater(_amountController.text);
+              }),
+              _changeAmountOutlinedButton("100,000", () {
+                String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
+                if (amountText.startsWith('-')) {
+                  amountText = '-${amountText.substring(1).replaceAll('-', '')}';
+                } else {
+                  amountText = amountText.replaceAll('-', '');
+                }
+                _amountController.text = amountText;
+                _amountController.text = _amountController.text.startsWith('-')
+                  ? ((double.parse(_amountController.text) % 1 == 0) ? (double.parse(_amountController.text) - 100000).toStringAsFixed(0) : (double.parse(_amountController.text) - 100000).toString())
+                  : ((double.parse(_amountController.text) % 1 == 0) ? (double.parse(_amountController.text) + 100000).toStringAsFixed(0) : (double.parse(_amountController.text) + 100000).toString());
+                _amountdisplayController.text = _thousandsFormmater(_amountController.text);
+              }),
+            ],
+          ),
+          const Divider(),
+        ],
+      ),
+    );
+  }
+
+  /// 키보드 위 간단 숫자 입력 버튼
+  Widget _changeAmountOutlinedButton(String text, Function() onPressed) {
+    return Expanded(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 너비에 따라 폰트 크기 조정
+          double fontSize = constraints.maxWidth * 0.15; // 예: 최대 너비의 15%
+          return Container(
+            margin: EdgeInsets.all(MediaQuery.of(context).size.width*0.005), // 버튼의 마진
+            child: OutlinedButton(
+              onPressed: () => onPressed(),
+              style: ButtonStyle(
+                padding: WidgetStateProperty.all<EdgeInsets>(
+                  EdgeInsets.all(MediaQuery.of(context).size.width*0.0005), // adaptive padding
+                ),
+                backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                  (Set<WidgetState> states) {
+                    return Colors.transparent;
+                  },
+                ),
+                side: WidgetStateProperty.resolveWith<BorderSide>(
+                  (Set<WidgetState> states) {
+                    return BorderSide(color: Colors.green.withOpacity(0.9));
+                  },
+                ),
+              ),
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: fontSize,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -481,7 +573,7 @@ class _BookAddState extends State<BookAdd> {
     );
   }
 
-  Widget buildNumericRow(String label, TextEditingController controller) {
+  Widget amountRow(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
@@ -491,14 +583,15 @@ class _BookAddState extends State<BookAdd> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(label),
+                Text(label), 
               ],
             ),
           ),
           Expanded(
-            flex: 3,
+            flex: _pageType == "입력"?  2: 3,
             child: TextFormField(
               controller: controller,
+              focusNode: _focusAmountNode,
               keyboardType: TextInputType.number,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -506,11 +599,40 @@ class _BookAddState extends State<BookAdd> {
                 }
                 return null;
               },
+              decoration: InputDecoration(
+                suffix: IconButton(
+                  onPressed: (){
+                    setState(() {
+                      _amountController.text = "0";
+                      _amountdisplayController.text = _thousandsFormmater(_amountController.text);
+                    });
+                  },
+                  icon: const Icon(Icons.backspace_outlined)
+                ),
+              ),
               style: const TextStyle(
-                fontWeight: FontWeight.bold, // Increased font size
+                fontWeight: FontWeight.bold,// Increased font size
               ),
               inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsSeparatorInputFormatter()],
             ),
+          ),
+          if(_pageType == "입력")
+          Expanded(
+            flex: 1,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Checkbox(
+                  value: installmentShow,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      installmentShow = value!;
+                    });
+                  },
+                ),
+                const Text('할부 여부')
+              ],
+            )
           ),
         ],
       ),
@@ -541,11 +663,30 @@ class _BookAddState extends State<BookAdd> {
                     tryValidator: true,
                   ),
                 ),
+                if(timeShow)
                 Expanded(
                   child: TimePicker(
                     controller: timeController,
                     tryValidator: true,
                   ),
+                ),
+                if(!timeShow)
+                Expanded(
+                  child: 
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Checkbox(
+                          value: timeShow,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              timeShow = value!;
+                            });
+                          },
+                        ),
+                        const Text('시간 설정하기')
+                      ],
+                    )
                 ),
               ],
             ),
@@ -555,14 +696,9 @@ class _BookAddState extends State<BookAdd> {
     );
   }
 
-  Widget buildRadioButton(int value, String text, Color color) {
+  Widget categoryRadioButton(int value, String text, Color color, void Function() onPressed) {
     return OutlinedButton(
-      onPressed: () {
-        setState(() {
-          _selectedButton = value;
-          currentCategory = text;
-        });
-      },
+      onPressed: onPressed,
       style: ButtonStyle(
         minimumSize: WidgetStateProperty.all<Size>(const Size(120, 30)),
         backgroundColor: WidgetStateProperty.resolveWith<Color>(
@@ -600,21 +736,51 @@ class _BookAddState extends State<BookAdd> {
       amountText = amountText.replaceAll('-', '');
     }
     _amountController.text = amountText;
-    final MoneyTransaction transaction = MoneyTransaction(
-      transactionTime: '${_dateController.text}T${_timeController.text}', // 여기서는 현재 시간을 사용할 수 있습니다. 
-      // account: _accountController.text,
-      // amount: currentCategory == "소비"? double.parse(_amountController.text).abs()*-1 : currentCategory == "수입"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
-      amount: double.parse(_amountController.text),
-      goods: _targetgoodsController.text,
-      category: _categoryController.text,
-      categoryType: currentCategory,
-      description: _categoryController.text=="특별 예산" &&  !_memoController.text.contains("#특별예산")? '#특별예산 ${_memoController.text}' : _memoController.text,
-      extraBudget: _categoryController.text=="특별 예산" ? true : false,
-    );
+    if(!timeShow) {
+      _timeController.text = '12:00';
+    }
 
-    // 이제 transaction 객체를 데이터베이스에 삽입합니다.
-    // 예시:
-    DatabaseAdmin().insertMoneyTransaction(transaction);
+    if (installmentShow) {
+      int installmentMonths = int.tryParse(_installmentController.text) ?? 1; // 할부 개월 수 가져오기
+      DateTime startDate = DateFormat('yyyy년 MM월 dd일').parse(_dateController.text); // 시작 날짜
+      for (int i = 0; i < installmentMonths; i++) {
+        // 해당 달의 날짜 계산
+        DateTime installmentDate = DateTime(startDate.year, startDate.month + i, startDate.day);
+        String transactionTime = '${DateFormat('yyyy년 MM월 dd일').format(installmentDate).toString()}T${_timeController.text}';
+        
+        // 할부에 맞는 transaction 생성
+        final MoneyTransaction transaction = MoneyTransaction(
+          transactionTime: transactionTime,
+          amount: double.parse((double.parse(_amountController.text) / installmentMonths).toStringAsFixed(2)), // 할부로 나눈 금액
+          goods: '${_targetgoodsController.text}_${i+1}차분',
+          category: _categoryController.text,
+          categoryType: currentCategory,
+          description: _categoryController.text == "특별 예산" && !_memoController.text.contains("#특별예산")
+              ? '#특별예산 #${i+1}개월차 ${_memoController.text}'
+              : '#${i+1}개월차 ${_memoController.text}',
+          extraBudget: _categoryController.text == "특별 예산" ? true : false,
+        );
+
+        // 데이터베이스에 삽입
+        DatabaseAdmin().insertMoneyTransaction(transaction);
+      }
+    } else {
+      final MoneyTransaction transaction = MoneyTransaction(
+        transactionTime: '${_dateController.text}T${_timeController.text}', // 여기서는 현재 시간을 사용할 수 있습니다. 
+        // account: _accountController.text,
+        // amount: currentCategory == "소비"? double.parse(_amountController.text).abs()*-1 : currentCategory == "수입"? double.parse(_amountController.text).abs() : double.parse(_amountController.text),
+        amount: double.parse(_amountController.text),
+        goods: _targetgoodsController.text,
+        category: _categoryController.text,
+        categoryType: currentCategory,
+        description: _categoryController.text=="특별 예산" &&  !_memoController.text.contains("#특별예산")? '#특별예산 ${_memoController.text}' : _memoController.text,
+        extraBudget: _categoryController.text=="특별 예산" ? true : false,
+      );
+
+      // 이제 transaction 객체를 데이터베이스에 삽입합니다.
+      // 예시:
+      DatabaseAdmin().insertMoneyTransaction(transaction);
+    }
   }
 
   void updateDataToDatabase() {
@@ -641,9 +807,6 @@ class _BookAddState extends State<BookAdd> {
     DatabaseAdmin().updateMoneyTransaction(transaction);
   }
 
-  void deleteDataFromDatabase() {
-    DatabaseAdmin().deleteMoneyTransaction(int.parse(_idController.text));
-  }
 }
 
 // 금액 형식으로 입력된 값을 변환하여 반환합니다.

@@ -1,5 +1,5 @@
 name: ver_0_2
-description: "A new Flutter project."
+description: "book account yearly monthyly"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+3
+version: 0.1.6+10
 
 environment:
   sdk: ^3.5.2
@@ -51,6 +51,8 @@ dependencies:
   syncfusion_flutter_datagrid: ^26.2.14
   flutter_colorpicker: ^1.0.3
   collection: ^1.18.0
+  auto_size_text: ^3.0.0
+  fluttertoast: ^8.2.8
 
 dev_dependencies:
   flutter_test:
