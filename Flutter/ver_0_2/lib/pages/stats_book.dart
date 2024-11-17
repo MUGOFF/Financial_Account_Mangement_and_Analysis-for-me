@@ -454,6 +454,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
   Logger logger = Logger();
   bool isloading = true;
   final TextEditingController _textFieldController = TextEditingController();
+  final TextEditingController _textFieldInputController = TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldBudgetMonthKey = GlobalKey<ScaffoldState>();
   final TextEditingController _categoryFieldController = TextEditingController();
   List<BudgetSetting> budgetSet = [];
@@ -481,6 +482,14 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
       ..addStatusListener((status) {
         _animationStatus = status;
       });
+    _textFieldController.addListener(_formatInput);
+  }
+
+  @override
+  void dispose() {
+    _textFieldController.removeListener(_formatInput);
+    _textFieldController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchDatas() async {
@@ -517,6 +526,21 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
       // logger.d(budgetCategoryData) ;   
       // logger.d(budgetSet[0].budgetList) ;   
     }
+  }
+
+  void _formatInput() {
+    String newText = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
+    if (newText.isEmpty) return;
+
+    final double value = double.parse(newText);
+    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
+
+    // 포맷된 텍스트를 다시 설정 (커서 위치를 조정하여 깜빡임 방지)
+    _textFieldController.value = TextEditingValue(
+      text: formattedText,
+      selection: TextSelection.collapsed(offset: formattedText.length),
+    );
+    _textFieldInputController.text = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
   }
 
   @override
@@ -586,7 +610,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
                               TextButton(
                                 onPressed: () {
                                   setState(() {
-                                    updateNewBudgetToDatabase('총 예산', double.parse(_textFieldController.text), budgetSet[0].budgetList!);
+                                    updateNewBudgetToDatabase('총 예산', double.parse(_textFieldInputController.text), budgetSet[0].budgetList!);
                                     _textFieldController.clear();
                                     _fetchDatas();
                                   });
@@ -815,7 +839,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
                         onPressed: () {
                           setState(() {
                             if(budgetSet[0].budgetList != null) {
-                              updateNewBudgetToDatabase(_categoryFieldController.text, double.parse(_textFieldController.text), budgetSet[0].budgetList!);
+                              updateNewBudgetToDatabase(_categoryFieldController.text, double.parse(_textFieldInputController.text), budgetSet[0].budgetList!);
                               _textFieldController.clear();
                               _categoryFieldController.clear();
                               _fetchDatas();
@@ -904,7 +928,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
                                     onPressed: () {
                                       setState(() {
                                         if(budgetSet[0].budgetList != null) {
-                                          updateNewBudgetToDatabase(key, double.parse(_textFieldController.text), budgetSet[0].budgetList!);
+                                          updateNewBudgetToDatabase(key, double.parse(_textFieldInputController.text), budgetSet[0].budgetList!);
                                           _textFieldController.clear();
                                           _fetchDatas();
                                         }
@@ -972,7 +996,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
     final BudgetSetting newBudget = BudgetSetting(
       year : widget.year,
       month : widget.month, 
-      budgetList: <String,double>{"총 예산": double.parse(_textFieldController.text)},
+      budgetList: <String,double>{"총 예산": double.parse(_textFieldInputController.text)},
     );
 
     DatabaseAdmin().insertBugetSettingTable(newBudget);
@@ -1133,18 +1157,18 @@ class _BudgetSettingYearlyPageState extends State<BudgetSettingYearlyPage> with 
   }
 
   void _formatInput() {
-    String newText = _textFieldController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    String newText = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
     if (newText.isEmpty) return;
 
-    final int value = int.parse(newText);
-    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
+    final double value = double.parse(newText);
+    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
 
     // 포맷된 텍스트를 다시 설정 (커서 위치를 조정하여 깜빡임 방지)
     _textFieldController.value = TextEditingValue(
       text: formattedText,
       selection: TextSelection.collapsed(offset: formattedText.length),
     );
-    _textFieldInputController.text = _textFieldController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    _textFieldInputController.text = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
   }
 
   @override

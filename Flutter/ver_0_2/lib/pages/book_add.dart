@@ -21,6 +21,7 @@ class BookAdd extends StatefulWidget {
 class _BookAddState extends State<BookAdd> {
   Logger logger = Logger();
   final FocusNode _focusAmountNode = FocusNode();
+  // final FocusNode _focusMemoNode = FocusNode();
   UnfocusDisposition disposition = UnfocusDisposition.scope;
   PersistentBottomSheetController? _bottomSheetController;
   final GlobalKey<FormState> _formBookAddKey = GlobalKey<FormState>();
@@ -40,7 +41,7 @@ class _BookAddState extends State<BookAdd> {
   bool installmentShow = false;
   late String _pageType;
   int _selectedButton = 1;
-  bool _isMemoEditing = true;
+  // bool _isMemoEditing = false;
   TextStyle normalStyle = const TextStyle(color: Colors.black, fontSize: 20);
   TextStyle tagStyle = TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20, backgroundColor: Colors.yellow.shade100);
 
@@ -49,8 +50,10 @@ class _BookAddState extends State<BookAdd> {
     super.initState();
     if(widget.moneyTransaction != null) {
       _pageType = "수정";
+      // _isMemoEditing = false;
     } else {
       _pageType = "입력";
+      // _isMemoEditing = true;
     }
     _focusAmountNode.addListener(() {
       if (_focusAmountNode.hasFocus) {
@@ -61,12 +64,20 @@ class _BookAddState extends State<BookAdd> {
         _bottomSheetController?.close();
       }
     });
+    // _focusMemoNode.addListener(() {
+    //   if (_focusMemoNode.hasFocus) {
+    //     _isMemoEditing = true;
+    //   } else {
+    //     _isMemoEditing = false;
+    //   }
+    // });
     _initializeControllers(); 
   }
 
   @override
   void dispose() {
     _focusAmountNode.dispose();
+    // _focusMemoNode.dispose();
     super.dispose();
   }
 
@@ -93,15 +104,29 @@ class _BookAddState extends State<BookAdd> {
   }
 
   String _thousandsFormmater(String numberText) {
-    final String newValueMinus = numberText.contains('-') ? '-' : '';
-    final newText = numberText.replaceAll('-', '').replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match match) => '${match[1]},',
-    );
-    final formattedText = '$newValueMinus  ₩  $newText';
+    String newText = numberText.replaceAll(RegExp(r'[^0-9.-]'), '');
+    if (newText.isEmpty) return "0";
+
+    final double value = double.parse(newText);
+    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
 
     return formattedText;
   }
+
+  // void _formatInput() {
+  //   String newText = _textFieldController.text.replaceAll(RegExp(r'[^0-9]'), '');
+  //   if (newText.isEmpty) return;
+
+  //   final int value = int.parse(newText);
+  //   final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
+
+  //   // 포맷된 텍스트를 다시 설정 (커서 위치를 조정하여 깜빡임 방지)
+  //   _textFieldController.value = TextEditingValue(
+  //     text: formattedText,
+  //     selection: TextSelection.collapsed(offset: formattedText.length),
+  //   );
+  //   _textFieldInputController.text = _textFieldController.text.replaceAll(RegExp(r'[^0-9]'), '');
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -217,36 +242,46 @@ class _BookAddState extends State<BookAdd> {
                       flex: 1,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AutoSizeText("메모", maxLines: 1),
+                          Text("메모"),
                         ],
                       ),
                     ),
-                    if(_isMemoEditing)
                     Expanded(
                       flex: 3,
                       child: 
+                      // _isMemoEditing ?
                       TextFormField(
                         controller: _memoController,
-                        autofocus: true,
-                        onEditingComplete: () {
-                          setState(() {
-                            _isMemoEditing = false;
-                          });
-                        },
+                        // focusNode: _focusMemoNode,
+                        // autofocus: true,
+                        // onEditingComplete: () {
+                        //   _focusMemoNode.unfocus();
+                        // },
+                        // onTapOutside:(PointerDownEvent event) {
+                        //   _focusMemoNode.unfocus();
+                        // }
                       )
-                    ),
-                    if(!_isMemoEditing)
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        height: 40,
-                        margin: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: const BoxDecoration(
-                          border: Border(bottom: BorderSide(color: Colors.black))
-                        ),
-                        child: buildRichText(_memoController),
-                      ),
+                      // : GestureDetector(
+                      //   onTap: () {
+                      //     setState(() {
+                      //       _isMemoEditing = true;
+                      //     });
+                      //     FocusScope.of(context).requestFocus(_focusMemoNode);
+                      //   },
+                      //   child: Container(
+                      //     // margin: const EdgeInsets.symmetric(vertical: 24),
+                      //     constraints: const BoxConstraints(
+                      //         // minWidth: 150,  // 최소 너비
+                      //         minHeight: 50, // 최소 높이
+                      //       ),
+                      //     decoration: const BoxDecoration(
+                      //       border: Border(bottom: BorderSide(color: Colors.grey))
+                      //     ),
+                      //     child: buildMemoText(_memoController),
+                      //   ),
+                      // ),
                     ),
                   ],
                 ),
@@ -508,39 +543,83 @@ class _BookAddState extends State<BookAdd> {
     );
   }
 
-  Widget buildRichText(TextEditingController controller) {
-    final RegExp tagPattern = RegExp(r'#[ㄱ-ㅎ가-힣0-9a-zA-Z_]+ ');
-    final String inputText = controller.text;
-    List<TextSpan> spans = [];
-    int lastMatchEnd = 0;
-    tagPattern.allMatches(inputText).forEach((match) {
-      if (match.start > lastMatchEnd) {
-        spans.add(TextSpan(
-          text: inputText.substring(lastMatchEnd, match.start),
-          style: normalStyle,
-        ));
-      }
-      spans.add(TextSpan(
-        text: inputText.substring(match.start, match.end),
-        style: tagStyle, 
-      ));
-      lastMatchEnd = match.end;
-    });
-    if (lastMatchEnd < inputText.length) {
-      spans.add(TextSpan(
-        text: inputText.substring(lastMatchEnd),
-        style: normalStyle,
-      ));
-    }
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _isMemoEditing = true;
-        });
-      },
-      child: RichText(text: TextSpan(children: spans)),
-    );
-  }
+  // Widget buildMemoText(TextEditingController controller) {
+  //   final RegExp tagPattern = RegExp(r'#[ㄱ-ㅎ가-힣0-9a-zA-Z_]+');
+  //   // final RegExp tagPattern = RegExp(r'^#\w+[#태그#]');
+  //   final String inputText = controller.text;
+  //   List<Text> spans = [];
+  //   List<TextButton> buttons = [];
+  //   int lastMatchEnd = 0;
+  //   // logger.d(tagPattern.allMatches(inputText).map((match) => match.group(0)).toList());
+  //   tagPattern.allMatches(inputText).forEach((match) {
+  //     if (match.start > lastMatchEnd) {
+  //       String substring = inputText.substring(lastMatchEnd, match.start);
+  //       if (substring.trim().isNotEmpty) {  // 공백만 있는지 확인
+  //         spans.add(Text(
+  //           substring,
+  //           style: normalStyle,
+  //         ));
+  //       }
+  //       // spans.add(Text(
+  //       //   inputText.substring(lastMatchEnd, match.start),
+  //       //   style: normalStyle,
+  //       // ));
+  //     }
+  //     buttons.add(TextButton.icon(
+  //       icon: const Icon(Icons.tag, size: 16,),
+  //       onPressed: (){},
+  //       label: Text(inputText.substring(match.start, match.end).replaceAll(RegExp(r'#'),''), style: const TextStyle(fontSize: 16),),    
+  //       // style: tagStyle, 
+  //     ));
+  //     lastMatchEnd = match.end;
+  //   });
+  //   if (lastMatchEnd < inputText.length) {
+  //     spans.add(Text(
+  //       inputText.substring(lastMatchEnd),
+  //       style: normalStyle,
+  //     ));
+  //   }
+
+  //   List<Widget> tagRows = [];
+  //   for (int i = 0; i < buttons.length; i += 5) {
+  //     tagRows.add(
+  //       Wrap(
+  //         spacing: 5.0,
+  //         runSpacing: 3.0,
+  //         children: buttons.sublist(i, i + 5 > buttons.length ? buttons.length : i + 5),
+  //       ),
+  //     );
+  //   }
+
+  //   List<Widget> memoRows = [];
+  //   for (int i = 0; i < spans.length; i += 5) {
+  //     tagRows.add(
+  //       Wrap(
+  //         spacing: 5.0,
+  //         runSpacing: 3.0,
+  //         children: spans.sublist(i, i + 5 > spans.length ? spans.length : i + 5),
+  //       ),
+  //     );
+  //   }
+    
+  //   return Column(
+  //     mainAxisSize: MainAxisSize.min,
+  //     // crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       ...tagRows, // 태그 버튼 묶음
+  //       // const SizedBox(height: 8),
+  //       ...memoRows, // 일반 텍스트 묶음
+  //     ],
+  //   );
+  //   // return Row(
+  //   //   onTap: () {
+  //   //     setState(() {
+  //   //       _isMemoEditing = true;
+  //   //     });
+  //   //   },
+  //   //   child: RichText(text: TextSpan(children: spans)),
+  //   // );
+  // }
 
   Widget buildTextRow(String label, TextEditingController controller) {
     return Padding(

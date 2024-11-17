@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:logger/logger.dart';
 import 'package:intl/intl.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:ver_0_2/widgets/drawer_end.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
@@ -61,8 +62,6 @@ class _BookState extends State<Book> {
   }
 
   String formatterK(num number) {
-    late String fString;
-    late String addon;
     String preproNumber;
     if(number % 1 == 0) {
       preproNumber = (number * -1).toStringAsFixed(0);
@@ -70,19 +69,13 @@ class _BookState extends State<Book> {
       preproNumber =  (number * -1).toString();
     }
 
-    if(preproNumber.contains('.')) {
-      fString = preproNumber.split('.')[0];
-      addon = ".${preproNumber.split('.')[1]}";
-    } else {
-      fString = preproNumber;
-      addon = "";
-    }
+    String newText = preproNumber.replaceAll(RegExp(r'[^0-9.-]'), '');
+    if (newText.isEmpty) return "0";
 
-    final String newText = fString.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match match) => '${match[1]},',
-    );
-    return '$newText$addon';
+    final double value = double.parse(newText);
+    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
+
+    return formattedText;
   }
 
   void _scrollListener() {
@@ -213,11 +206,12 @@ class _BookState extends State<Book> {
                       end: Alignment.centerLeft,
                     ),
                   ),
-                  child: ListTile(
-                    title: Text(transaction.goods),
-                    subtitle: Text(transaction.category),
-                    trailing: Text(formatterK(transaction.categoryType == '소비' ? transaction.amount * -1 : transaction.amount), style: TextStyle(fontSize: 20, color: transaction.categoryType == '소비' && transaction.amount > 0 ? Colors.grey : Colors.black)),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
-                    leading: isSelectionMode
+                  child: TransactionTileItem(
+                    title: transaction.goods,
+                    category: transaction.category,
+                    amount: AutoSizeText(formatterK(transaction.categoryType == '소비' ? transaction.amount * -1 : transaction.amount), style: TextStyle(fontSize: 20, color: transaction.categoryType == '소비' && transaction.amount > 0 ? Colors.grey : Colors.black), maxLines: 1),
+                    memoWidget: buildMemoText(transaction.description!),
+                    headIcon: isSelectionMode
                     ? Icon(
                       isSelected ? Icons.check : null,
                       color: isSelected ? Colors.green : Colors.transparent,
@@ -257,6 +251,50 @@ class _BookState extends State<Book> {
                       toggleSelection(transaction.id!);
                     }
                   ),
+                  // child: ListTile(
+                  //   title: Text(transaction.goods),
+                  //   subtitle: Text(transaction.category),
+                  //   trailing: Text(formatterK(transaction.categoryType == '소비' ? transaction.amount * -1 : transaction.amount), style: TextStyle(fontSize: 20, color: transaction.categoryType == '소비' && transaction.amount > 0 ? Colors.grey : Colors.black)),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
+                  //   leading: isSelectionMode
+                  //   ? Icon(
+                  //     isSelected ? Icons.check : null,
+                  //     color: isSelected ? Colors.green : Colors.transparent,
+                  //   )
+                  //   : null,
+                  //   onTap: isSelectionMode
+                  //     ? () => toggleSelection(transaction.id!)
+                  //     : () {
+                  //       Navigator.push(
+                  //         context,
+                  //         PageRouteBuilder(
+                  //           pageBuilder: (context, animation, secondaryAnimation) => BookAdd(moneyTransaction: transactions[index]),
+                  //           transitionsBuilder:
+                  //             (context, animation, secondaryAnimation, child) {
+                  //             const begin = Offset(1.0, 0.0);
+                  //             const end = Offset.zero;
+                  //             const curve = Curves.ease;
+
+                  //             var tween = Tween(begin: begin, end: end)
+                  //                 .chain(CurveTween(curve: curve));
+
+                  //             return SlideTransition(
+                  //               position: animation.drive(tween),
+                  //               child: child,
+                  //             );
+                  //           },
+                  //         ),
+                  //       ).then((result) {
+                  //         setState(() {
+                  //           _fetchTransactions();
+                  //         });
+                  //       }
+                  //     );
+                  //   },
+                  //   onLongPress: () {
+                  //     enterSelectionMode();
+                  //     toggleSelection(transaction.id!);
+                  //   }
+                  // ),
                 );
               },
             ),
@@ -517,5 +555,184 @@ class _BookState extends State<Book> {
       isSelectionMode = false;
     });
     bottomButtonController?.close(); // Close the bottom sheet
+  }
+
+  Widget buildMemoText(String memo) {
+    final RegExp tagPattern = RegExp(r'#[ㄱ-ㅎ가-힣0-9a-zA-Z_]+');
+    TextStyle normalStyle = const TextStyle(color: Colors.black, fontSize: 14);
+    // final RegExp tagPattern = RegExp(r'^#\w+[#태그#]');
+    final String inputText = memo;
+    List<Text> spans = [];
+    List<TextButton> buttons = [];
+    int lastMatchEnd = 0;
+    // logger.d(tagPattern.allMatches(inputText).map((match) => match.group(0)).toList());
+    tagPattern.allMatches(inputText).forEach((match) {
+      if (match.start > lastMatchEnd) {
+        String substring = inputText.substring(lastMatchEnd, match.start);
+        if (substring.trim().isNotEmpty) {  // 공백만 있는지 확인
+          spans.add(Text(
+            substring,
+            style: normalStyle,
+          ));
+        }
+      }
+      buttons.add(TextButton.icon(
+        icon: const Icon(Icons.tag, size: 16,),
+        onPressed: (){
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => TagStatViewPage(tagName: inputText.substring(match.start, match.end)),
+              transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                const begin = Offset(-1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(begin: begin, end: end)
+                    .chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            ),
+          ).then((result) {
+            setState(() {
+              _fetchTransactions();
+            });
+          });
+        },
+        label: Text(inputText.substring(match.start, match.end).replaceAll(RegExp(r'#'),''), style: const TextStyle(fontSize: 14),),    
+        style: TextButton.styleFrom(
+          backgroundColor: Colors.green.shade200, // 배경색
+          foregroundColor: Colors.blue, // 텍스트 색상
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(100), // 둥근 모서리
+          ),
+          // padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 0.0), // 버튼 내부 여백
+        ), 
+      ));
+      lastMatchEnd = match.end;
+    });
+    if (lastMatchEnd < inputText.length) {
+      spans.add(Text(
+        inputText.substring(lastMatchEnd),
+        style: normalStyle,
+      ));
+    }    
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ...buttons, // 태그 버튼 묶음
+        ...spans, // 일반 텍스트 묶음
+      ],
+    );
+  }
+}
+
+
+class TransactionTileItem extends StatelessWidget {
+  final Widget? headIcon;
+  final String title;
+  final String category;
+  final Widget amount;
+  final Widget memoWidget;
+  final void Function()? onTap;
+  final void Function()? onLongPress;
+
+  const TransactionTileItem({
+    super.key,
+    required this.headIcon,
+    required this.title,
+    required this.category,
+    required this.amount,
+    required this.memoWidget,
+    this.onTap,
+    this.onLongPress,
+  });
+
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                if(headIcon != null)
+                Expanded(
+                  flex: 1,
+                  child: headIcon!,
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18.0,
+                          ),
+                        ),
+                        const Padding(padding: EdgeInsets.symmetric(vertical: 2.0)),
+                        Text(
+                          category,
+                          style: const TextStyle(fontSize: 14.0),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: amount,
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 15),
+              child: memoWidget,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class TagStatViewPage extends StatelessWidget {
+  final String tagName;
+  const TagStatViewPage({
+    super.key,
+    required this.tagName
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('$tagName 통계'),
+      ),
+      body: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          
+        ],
+      )
+    );
   }
 }
