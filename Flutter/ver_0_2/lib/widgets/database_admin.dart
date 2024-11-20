@@ -534,6 +534,70 @@ class DatabaseAdmin {
     return transactionMaps;
   }
 
+  ///연도별 태그 소비 총합 가져오기
+  Future<List<Map<String, dynamic>>> getTagSumByYear(String tagName) async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> transactionMaps = await db.query(
+        'money_transactions',
+        columns: ['substr(transactionTime,1,4) as year' , 'SUM(amount) * -1 as totalAmount'],
+        where: "categoryType = '소비' AND description LIKE ?",
+        whereArgs: ['%$tagName%'],
+        groupBy: 'substr(transactionTime,1,4)'
+      );
+      
+      return transactionMaps;
+    } catch(e) {
+      return [];
+    }
+  }
+
+  ///월간별 태그 소비 총합 가져오기
+  Future<List<Map<String, dynamic>>> getTagSumByYearMonth(String tagName) async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> transactionMaps = await db.query(
+        'money_transactions',
+        columns: ['substr(transactionTime,1,9) as yearmonth' , 'SUM(amount) * -1 as totalAmount'],
+        where: "categoryType = '소비' AND description LIKE ?",
+        whereArgs: ['%$tagName%'],
+        groupBy: 'substr(transactionTime,1,9)'
+      );
+      
+      return transactionMaps;
+    } catch(e) {
+      return [];
+    }
+  }
+
+  ///태그 소비 리스트 가져오기
+  Future<List<MoneyTransaction>> getTransactionsByTag(String tagName) async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> transactionMaps = await db.query(
+        'money_transactions',
+        where: "description LIKE ?",
+        whereArgs: ['%$tagName%'],
+      );
+
+      return List.generate(transactionMaps.length, (i) {
+        return MoneyTransaction(
+          id: transactionMaps[i]['id'],
+          transactionTime: transactionMaps[i]['transactionTime'],
+          // account: transactionMaps[i]['account'],
+          amount: transactionMaps[i]['amount'],
+          goods: transactionMaps[i]['goods'],
+          category: transactionMaps[i]['category'],
+          categoryType: transactionMaps[i]['categoryType'],
+          description: transactionMaps[i]['description'],
+          extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
+        );
+      });
+    } catch(e) {
+      return [];
+    }
+  }
+
   ///특별 예산 항목 가져오기
   Future<List<MoneyTransaction>> getExtrabugetcategory() async {
     final db = await database;

@@ -112,3 +112,91 @@ class _LineChartsByYearCategoryState extends State<LineChartsByYearCategory> {
       );
     }
 }
+
+class LineChartsByYearMonthTag extends StatefulWidget {
+  final String tagName;
+
+  const LineChartsByYearMonthTag({
+    required this.tagName,
+    super.key
+  });
+
+  @override
+  State<LineChartsByYearMonthTag> createState() => _LineChartsByYearMonthTagState();
+}
+
+class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
+  Logger logger = Logger();
+  late TooltipBehavior _tooltip;
+  List<LineChartDataDatetime> chartData = [];
+  double maxYvalue = 100;
+  double interval = 100;
+
+  @override
+  void initState() {
+    _tooltip = TooltipBehavior(
+      enable: true,
+      canShowMarker: false,
+      textStyle: const TextStyle(fontSize: 20),
+      header: '',
+    );
+    super.initState();
+    _fetchChartDatas();
+  }
+
+  Future<void> _fetchChartDatas() async {
+    List<LineChartDataDatetime> localChartData = [];
+    double localmaxYvalue = 0;
+    
+    List<Map<String, dynamic>> fetchedDatas = await DatabaseAdmin().getTagSumByYearMonth(widget.tagName);
+    for (var data in fetchedDatas) {
+      localChartData.add(LineChartDataDatetime(DateTime.utc(int.parse(data['yearmonth'].substring(0,4)),int.parse(data['yearmonth'].substring(6,8))), data['totalAmount']));
+      if (localmaxYvalue < data['totalAmount']) {
+        localmaxYvalue = data['totalAmount'];
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        chartData = localChartData;
+        interval = localmaxYvalue == 0 ? 1 : max(pow(10, (log((localmaxYvalue/3).abs())/ln10).floor()).toDouble(),pow(10, (log((localmaxYvalue).abs())/ln10).floor()).toDouble()/2);
+        maxYvalue = ((localmaxYvalue/interval).ceil()*interval).toDouble();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+      return SfCartesianChart(
+        title: ChartTitle(
+          text: '${widget.tagName} 월간 양상',
+          alignment: ChartAlignment.center,
+          backgroundColor: Colors.white,
+          borderColor: Colors.transparent,
+          borderWidth: 10
+        ),
+        tooltipBehavior: _tooltip,
+        primaryXAxis: DateTimeAxis(
+          dateFormat: DateFormat.yM(),
+          intervalType: DateTimeIntervalType.months,
+          rangePadding: ChartRangePadding.round,
+        ),
+        primaryYAxis: NumericAxis(
+          minimum: 0,
+          maximum: maxYvalue,
+          interval: interval,
+          numberFormat: NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR"),   
+        ),
+        series: <CartesianSeries>[
+          SplineSeries<LineChartDataDatetime, DateTime>(
+            name: widget.tagName,
+            dataSource: chartData,
+            xValueMapper: (LineChartDataDatetime data, _) => data.x,
+            yValueMapper: (LineChartDataDatetime data, _) => data.y,
+            markerSettings: const MarkerSettings(isVisible: true, height : 16.0, width : 16.0),
+            dataLabelSettings: const DataLabelSettings(isVisible: false),
+          )
+        ]
+      );
+    }
+}

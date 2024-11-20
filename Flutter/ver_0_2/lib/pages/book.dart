@@ -4,10 +4,11 @@ import 'package:logger/logger.dart';
 import 'package:intl/intl.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:ver_0_2/pages/book_add.dart';
 import 'package:ver_0_2/widgets/drawer_end.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
-import 'package:ver_0_2/pages/book_add.dart';
+import 'package:ver_0_2/widgets/synchro_line_charts.dart';
 
 class Book extends StatefulWidget {
   const Book({super.key});
@@ -19,9 +20,11 @@ class Book extends StatefulWidget {
 class _BookState extends State<Book> {
   Logger logger = Logger();
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _sliverListKey = GlobalKey();
   PersistentBottomSheetController? bottomButtonController;
   bool _isVisible = true; // 플로팅 버튼이 보이는지 여부를 나타내는 변수
   int initialFilterState = 0;
+  double  itemSize = 110.0;
   int year = DateTime.now().year;
   int month = DateTime.now().month;
   List<MoneyTransaction> transactions = [];
@@ -58,6 +61,9 @@ class _BookState extends State<Book> {
     });
     setState(() {
       transactions = fetchedTransactions;
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
     });
   }
 
@@ -87,17 +93,41 @@ class _BookState extends State<Book> {
         _isVisible = true;
       });
     } else if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
-      if (_scrollController.hasClients) {
-        int index = (_scrollController.offset / 56).floor();
-        DateTime datetiemValue = DateFormat('yyyy년 MM월 dd일THH:mm').parse(transactions[index].transactionTime);
-        String currentTopDatetime= DateFormat('yyyy년 MM월 dd일').format(datetiemValue);
-        lastTopDatetime ??= currentTopDatetime;
+      if (_scrollController.hasClients) {        
+        int currentTopIndex = 0;
+        final sliverList = _sliverListKey.currentContext?.findRenderObject();
+        if (sliverList is RenderSliverList) {
+          // 스크롤 위치와 아이템의 화면 내 위치를 비교
+          double viewportOffset = _scrollController.offset;
+          RenderBox? child = sliverList.firstChild;
+          int? topIndex;
 
-        if (lastTopDatetime != currentTopDatetime) {
-          lastTopDatetime = currentTopDatetime;
+          while (child != null) {
+            final double itemPosition = sliverList.childScrollOffset(child)!;
+            // final double itemPosition = sliverList.childMainAxisPosition(child);
+            if (itemPosition >= viewportOffset) {
+              topIndex = sliverList.indexOf(child);
+              break;
+            }
+            child = sliverList.childAfter(child);
+          }
 
-          // Toast 메시지 표시
-          _showDateToast('$lastTopDatetime');
+          if (topIndex != null && topIndex != currentTopIndex) {
+            setState(() {
+              currentTopIndex = topIndex!;
+            });
+          }
+          DateTime datetiemValue = DateFormat('yyyy년 MM월 dd일THH:mm').parse(transactions[currentTopIndex].transactionTime);
+          String currentTopDatetime= DateFormat('yyyy년 MM월 dd일').format(datetiemValue);
+          lastTopDatetime ??= currentTopDatetime;//null이면 값 할당
+
+          if (lastTopDatetime != currentTopDatetime) {
+            lastTopDatetime = currentTopDatetime;
+
+            // Toast 메시지 표시
+            Fluttertoast.cancel();
+            _showDateToast('$lastTopDatetime');
+          }
         }
       }
       setState(() {
@@ -107,9 +137,7 @@ class _BookState extends State<Book> {
   }
 
 
-  void _showDateToast(String message) {
-    Fluttertoast.cancel();
-    
+  void _showDateToast(String message) {   
     Fluttertoast.showToast(
       msg: message,
       toastLength: Toast.LENGTH_SHORT,
@@ -187,70 +215,89 @@ class _BookState extends State<Book> {
             ),
           ),
           if (transactions.isNotEmpty) 
+          // Expanded(
+          //   child: ListView.builder(
+          //     shrinkWrap: true,
+          //     controller: _scrollController,
+          //     itemCount: transactions.length,
+          //     // itemExtent: itemSize,
+          //     itemBuilder: (context, index) {
           Expanded(
-            child: ListView.builder(
-              shrinkWrap: true,
+            child: 
+            CustomScrollView(
               controller: _scrollController,
-              itemCount: transactions.length,
-              itemBuilder: (context, index) {
-                MoneyTransaction transaction = transactions[index];
-                if (!filterValue.contains(transactions[index].categoryType)) {
-                  return const SizedBox.shrink();
-                }
-                final isSelected = selectedIds.contains(transaction.id);
-                return Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: transaction.categoryType == '소비' ? [Colors.red.shade200, Colors.red.shade50] : transaction.categoryType == '수입' ? [Colors.blue.shade200, Colors.blue.shade50] : [Colors.grey.shade200, Colors.grey.shade50],
-                      begin: Alignment.centerRight,
-                      end: Alignment.centerLeft,
-                    ),
-                  ),
-                  child: TransactionTileItem(
-                    title: transaction.goods,
-                    category: transaction.category,
-                    amount: AutoSizeText(formatterK(transaction.categoryType == '소비' ? transaction.amount * -1 : transaction.amount), style: TextStyle(fontSize: 20, color: transaction.categoryType == '소비' && transaction.amount > 0 ? Colors.grey : Colors.black), maxLines: 1),
-                    memoWidget: buildMemoText(transaction.description!),
-                    headIcon: isSelectionMode
-                    ? Icon(
-                      isSelected ? Icons.check : null,
-                      color: isSelected ? Colors.green : Colors.transparent,
-                    )
-                    : null,
-                    onTap: isSelectionMode
-                      ? () => toggleSelection(transaction.id!)
-                      : () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) => BookAdd(moneyTransaction: transactions[index]),
-                            transitionsBuilder:
-                              (context, animation, secondaryAnimation, child) {
-                              const begin = Offset(1.0, 0.0);
-                              const end = Offset.zero;
-                              const curve = Curves.ease;
-
-                              var tween = Tween(begin: begin, end: end)
-                                  .chain(CurveTween(curve: curve));
-
-                              return SlideTransition(
-                                position: animation.drive(tween),
-                                child: child,
-                              );
-                            },
-                          ),
-                        ).then((result) {
-                          setState(() {
-                            _fetchTransactions();
-                          });
-                        }
-                      );
-                    },
-                    onLongPress: () {
-                      enterSelectionMode();
-                      toggleSelection(transaction.id!);
+              slivers: [
+                SliverList(
+                  key: _sliverListKey,
+                  delegate: SliverChildBuilderDelegate((context, index)  {
+                    MoneyTransaction transaction = transactions[index];
+                    if (!filterValue.contains(transactions[index].categoryType)) {
+                      return const SizedBox.shrink();
                     }
-                  ),
+                    final isSelected = selectedIds.contains(transaction.id);
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: transaction.categoryType == '소비' ? [Colors.red.shade200, Colors.red.shade50] : transaction.categoryType == '수입' ? [Colors.blue.shade200, Colors.blue.shade50] : [Colors.grey.shade200, Colors.grey.shade50],
+                          begin: Alignment.centerRight,
+                          end: Alignment.centerLeft,
+                        ),
+                      ),
+                      child: TransactionTileItem(
+                        title: transaction.goods,
+                        category: transaction.category,
+                        amount: AutoSizeText(formatterK(transaction.categoryType == '소비' ? transaction.amount * -1 : transaction.amount), style: TextStyle(fontSize: 20, color: transaction.categoryType == '소비' && transaction.amount > 0 ? Colors.grey : Colors.black), maxLines: 1),
+                        memoWidget: buildMemoText(transaction.description!),
+                        headIcon: isSelectionMode
+                        ? Icon(
+                          isSelected ? Icons.check : null,
+                          color: isSelected ? Colors.green : Colors.transparent,
+                        )
+                        : null,
+                        onTap: isSelectionMode
+                          ? () => toggleSelection(transaction.id!)
+                          : () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => BookAdd(moneyTransaction: transactions[index]),
+                                transitionsBuilder:
+                                  (context, animation, secondaryAnimation, child) {
+                                  const begin = Offset(1.0, 0.0);
+                                  const end = Offset.zero;
+                                  const curve = Curves.ease;
+
+                                  var tween = Tween(begin: begin, end: end)
+                                      .chain(CurveTween(curve: curve));
+
+                                  return SlideTransition(
+                                    position: animation.drive(tween),
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            ).then((result) {
+                              setState(() {
+                                _fetchTransactions();
+                              });
+                            }
+                          );
+                        },
+                        onLongPress: () {
+                          enterSelectionMode();
+                          toggleSelection(transaction.id!);
+                        }
+                      ),
+                    );
+                  }, childCount: transactions.length),
+                )
+              ]
+            )
+          ),
+          if (transactions.isEmpty)
+          const Center(child: Text('금월 데이터가 없습니다')),
+        ]
+      ),
                   // child: ListTile(
                   //   title: Text(transaction.goods),
                   //   subtitle: Text(transaction.category),
@@ -295,14 +342,6 @@ class _BookState extends State<Book> {
                   //     toggleSelection(transaction.id!);
                   //   }
                   // ),
-                );
-              },
-            ),
-          ),
-          if (transactions.isEmpty)
-          const Center(child: Text('금월 데이터가 없습니다')),
-        ]
-      ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -730,7 +769,24 @@ class TagStatViewPage extends StatelessWidget {
       body: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          
+          Flexible(
+            child: Container(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5,),
+              child: LineChartsByYearMonthTag(
+                key: UniqueKey(),
+                tagName: tagName
+              ),
+            ),
+          ),
+          Flexible(
+            child: Container(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5,),
+              child: LineChartsByYearMonthTag(
+                key: UniqueKey(),
+                tagName: tagName
+              ),
+            ),
+          ),
         ],
       )
     );
