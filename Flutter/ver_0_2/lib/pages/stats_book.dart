@@ -57,6 +57,7 @@ class _DateMonthBarState extends State<DateMonthBar> {
             icon: const Icon(Icons.keyboard_double_arrow_left),
             onPressed: widget.yearBack,
           ),
+          if(widget.monthBack != null)
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new),
             onPressed: widget.monthBack,
@@ -64,6 +65,7 @@ class _DateMonthBarState extends State<DateMonthBar> {
           GestureDetector(
             child: Text(' ${widget.year} 년 ${widget.month} 월'),
           ),
+          if(widget.monthForward != null)
           IconButton(
             icon: const Icon(Icons.arrow_forward_ios),
             onPressed: (widget.year >= DateTime.now().year && widget.month >= DateTime.now().month) ?  null :
@@ -84,23 +86,34 @@ class _DateMonthBarState extends State<DateMonthBar> {
 class MonthlyConsumePage extends StatefulWidget {
   final int year;
   final int month;
-  const MonthlyConsumePage({required this.year, required this.month, super.key});
+  final bool isNotCompareBar;
+  final Function(bool) onCompareBarToggle;
+  const MonthlyConsumePage({
+    required this.year,
+    required this.month,
+    required this.isNotCompareBar,
+    required this.onCompareBarToggle,
+    super.key
+  });
 
   @override
   State<MonthlyConsumePage> createState() => _MonthlyConsumePageState();
 }
 
-class _MonthlyConsumePageState extends State<MonthlyConsumePage> {
+class _MonthlyConsumePageState extends State<MonthlyConsumePage>{
   final PageController _pageController = PageController();
   int pastyear = DateTime.now().year;
   int pastmonth = DateTime.now().month;
-  bool isNotCompareBar = false;
+  double totalExpense = 0;
+  double totalExpenseNegative = 0;
+  // bool isNotCompareBar = false;
   String selectCategory = "";
 
   @override
   void initState() {
     super.initState();
     setPastDate();
+    _fetchExpenseDatas();
   }
 
   @override
@@ -122,6 +135,29 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage> {
     });
   }
 
+  Future<void> _fetchExpenseDatas() async {
+    double totalValue = 0;
+    double totalNValue = 0;
+    
+    List<Map<String, dynamic>> fetchedDatas = (await DatabaseAdmin().getTransactionsSUMByCategoryandDate(widget.year,widget.month)).toList();
+    fetchedDatas.sort((prev, next) => next['totalAmount'].compareTo(prev['totalAmount']));
+    for (var data in fetchedDatas) {
+      totalValue = totalValue + data['totalAmount'];
+    }
+
+    List<Map<String, dynamic>> fetchedNegativeDatas = (await DatabaseAdmin().getTransactionsSUMByCategoryMonthNegative(widget.year,widget.month)).toList();
+    fetchedNegativeDatas.sort((prev, next) => next['totalAmount'].compareTo(prev['totalAmount']));
+    for (var data in fetchedNegativeDatas) {
+      totalNValue = totalNValue + data['totalAmount'];
+    }
+
+    if (mounted) {
+      setState(() {
+        totalExpense = totalValue;
+        totalExpenseNegative = totalNValue;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,35 +177,27 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if(!isNotCompareBar)
-                        const Text('전월 비교',style: TextStyle(fontSize: 20)),
-                        if(isNotCompareBar)
-                        const Text('비용 비율',style: TextStyle(fontSize: 20)),
+                        if(!widget.isNotCompareBar)
+                        const Text('전월 비교',style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                        if(widget.isNotCompareBar)
+                        const Text('비용 비율',style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                         const SizedBox(width: 5,),
                         Switch.adaptive(
-                          value: isNotCompareBar,
+                          value: widget.isNotCompareBar,
                           activeColor: Colors.teal,
                           activeTrackColor: Colors.teal.shade200,
                           inactiveThumbColor: Colors.teal,
                           inactiveTrackColor: Colors.teal.shade200,
                           onChanged: (bool value) {
+                            widget.onCompareBarToggle(value);
                             setState(() {
-                              isNotCompareBar = value;
+                              // widget.isNotCompareBar = value;
                               setPastDate();
                               selectCategory = "";
                             });
                           },
                         ),
                         const SizedBox(width: 20,),
-                      ],
-                    ),
-                    if(!isNotCompareBar)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('${widget.year}-${widget.month.toString().padLeft(2, '0')}',style: const TextStyle(fontSize: 20),),
-                        const Text('  vs  ',style: TextStyle(fontSize: 20),),
-                        Text('$pastyear-${pastmonth.toString().padLeft(2, '0')}',style: const TextStyle(fontSize: 20),),
                       ],
                     ),
                   ]
@@ -208,8 +236,68 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage> {
                 ),
               ],
             ),
+            if(!widget.isNotCompareBar)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('${widget.year}-${widget.month.toString().padLeft(2, '0')}',style: const TextStyle(fontSize: 20),),
+                const Text('  vs  ',style: TextStyle(fontSize: 20),),
+                Text('$pastyear-${pastmonth.toString().padLeft(2, '0')}',style: const TextStyle(fontSize: 20),),
+              ],
+            ),
+            if(widget.isNotCompareBar)
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     TweenAnimationBuilder<double>(
+            //       tween: Tween<double>(begin: 0, end: 1),
+            //       duration: const Duration(seconds: 1),
+            //       builder: (context, value, child) {
+            //         final animatedExpense = totalExpense * value;
+            //         final animatedExpenseNegative = totalExpenseNegative * value;
+            //         return AutoSizeText(
+            //           '${NumberFormat.simpleCurrency(decimalDigits: totalExpense % 1 == 0? 0:2, locale: "ko-KR").format(animatedExpense)}(사용값: ${NumberFormat.simpleCurrency(decimalDigits: totalExpenseNegative % 1 == 0? 0:2, locale: "ko-KR").format(animatedExpenseNegative)})',
+            //           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            //           maxLines: 1,
+            //         );
+            //       }
+            //     )
+            //   ]
+            // ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: totalExpense),
+                  duration: const Duration(seconds: 1),
+                  builder: (context, value, child) {
+                    return Text(
+                      'In total ${NumberFormat.simpleCurrency(
+                        decimalDigits: totalExpense % 1 == 0 ? 0 : 2,
+                        locale: "ko-KR",
+                      ).format(value)}',
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8), // 두 텍스트 간 여백
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: totalExpenseNegative),
+                  duration: const Duration(seconds: 1),
+                  builder: (context, value, child) {
+                    return Text(
+                      'Expense ${NumberFormat.simpleCurrency(
+                        decimalDigits: totalExpenseNegative % 1 == 0 ? 0 : 2,
+                        locale: "ko-KR",
+                      ).format(value)}',
+                      style: const TextStyle(fontSize: 20, fontStyle: FontStyle.italic, color: Colors.red),
+                    );
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: 50),
-            if(!isNotCompareBar)
+            if(!widget.isNotCompareBar)
             Expanded(
               child: ColumnChartsByCategoryMonth(
                 key: UniqueKey(),
@@ -233,7 +321,7 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage> {
                 },
               ),
             ),
-            if(isNotCompareBar)
+            if(widget.isNotCompareBar)
             Expanded(
               child: PieChartsByCategoryMonth(
                 key: UniqueKey(),
@@ -330,9 +418,9 @@ class _YearlyConsumePageState extends State<YearlyConsumePage> {
                     // Row(
                     //   mainAxisAlignment: MainAxisAlignment.center,
                     //   children: [
-                    //     if(!isNotCompareBar)
+                    //     if(!widget.isNotCompareBar)
                     //     const Text('전년 비교',style: TextStyle(fontSize: 20)),
-                    //     if(isNotCompareBar)
+                    //     if(widget.isNotCompareBar)
                     //     const Text('비용 비율',style: TextStyle(fontSize: 20)),
                     //     const SizedBox(width: 5,),
                     //     Switch.adaptive(

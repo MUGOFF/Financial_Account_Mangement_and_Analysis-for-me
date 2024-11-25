@@ -39,6 +39,7 @@ class _NestedTabBarBookState extends State<NestedTabBarBook> with SingleTickerPr
   int currentIndex = 0;
   int year = DateTime.now().year;
   int month = DateTime.now().month;
+  bool isNotCompareBar = false;
   
   
   @override
@@ -61,7 +62,7 @@ class _NestedTabBarBookState extends State<NestedTabBarBook> with SingleTickerPr
                 });
               },
             ),
-            if (currentIndex < 3) 
+            if (currentIndex < 2) 
             Column(
               children: [
                 DateMonthBar(
@@ -72,7 +73,7 @@ class _NestedTabBarBookState extends State<NestedTabBarBook> with SingleTickerPr
                       year = year - 1;
                     });
                   },
-                  monthBack: currentIndex !=2 ? () {
+                  monthBack: currentIndex != 1 ? () {
                     setState(() {
                       month = month - 1;
                       if(month == 0) {
@@ -81,7 +82,7 @@ class _NestedTabBarBookState extends State<NestedTabBarBook> with SingleTickerPr
                       }
                     });
                   } : null,
-                  monthForward: currentIndex !=2 ? () {
+                  monthForward: currentIndex != 1 ? () {
                     setState(() {
                       month = month + 1;
                       if(month == 13) {
@@ -102,7 +103,15 @@ class _NestedTabBarBookState extends State<NestedTabBarBook> with SingleTickerPr
             Expanded(
               child: TabBarView(
                 children: <Widget>[
-                  MonthlyConsumePage(key: UniqueKey(), year: year, month: month),
+                  MonthlyConsumePage(
+                    key: UniqueKey(), year: year, month: month,
+                    isNotCompareBar: isNotCompareBar, // 전달
+                    onCompareBarToggle: (value) {
+                      setState(() {
+                        isNotCompareBar = value; // 상태 업데이트
+                      });
+                    }
+                  ),
                   // BudgetSettingPage(key: UniqueKey(), year: year, month: month),
                   YearlyConsumePage(key: UniqueKey(), year: year),
                   const ExtraBudgetGrid(),

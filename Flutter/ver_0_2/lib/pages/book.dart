@@ -9,6 +9,7 @@ import 'package:ver_0_2/widgets/drawer_end.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
 import 'package:ver_0_2/widgets/synchro_line_charts.dart';
+import 'package:ver_0_2/widgets/synchro_data_grid.dart';
 
 class Book extends StatefulWidget {
   const Book({super.key});
@@ -771,17 +772,19 @@ class TagStatViewPage extends StatelessWidget {
         children: [
           Flexible(
             child: Container(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5,),
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5,),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: LineChartsByYearMonthTag(
                 key: UniqueKey(),
                 tagName: tagName
               ),
             ),
           ),
+          const SizedBox(height: 30),
           Flexible(
             child: Container(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5,),
-              child: LineChartsByYearMonthTag(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5,),
+              child: TagDataGrid(
                 key: UniqueKey(),
                 tagName: tagName
               ),
