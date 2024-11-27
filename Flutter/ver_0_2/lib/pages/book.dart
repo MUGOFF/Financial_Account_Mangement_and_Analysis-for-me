@@ -244,17 +244,7 @@ class _BookState extends State<Book> {
                           end: Alignment.centerLeft,
                         ),
                       ),
-                      child: TransactionTileItem(
-                        title: transaction.goods,
-                        category: transaction.category,
-                        amount: AutoSizeText(formatterK(transaction.categoryType == '소비' ? transaction.amount * -1 : transaction.amount), style: TextStyle(fontSize: 20, color: transaction.categoryType == '소비' && transaction.amount > 0 ? Colors.grey : Colors.black), maxLines: 1),
-                        memoWidget: buildMemoText(transaction.description!),
-                        headIcon: isSelectionMode
-                        ? Icon(
-                          isSelected ? Icons.check : null,
-                          color: isSelected ? Colors.green : Colors.transparent,
-                        )
-                        : null,
+                      child: GestureDetector(
                         onTap: isSelectionMode
                           ? () => toggleSelection(transaction.id!)
                           : () {
@@ -284,10 +274,25 @@ class _BookState extends State<Book> {
                             }
                           );
                         },
+                        onDoubleTap: isSelectionMode
+                          ? ()  => toggleSelectionAll()
+                          : null,
                         onLongPress: () {
                           enterSelectionMode();
                           toggleSelection(transaction.id!);
-                        }
+                        },
+                        child: TransactionTileItem(
+                          title: transaction.goods,
+                          category: transaction.category,
+                          amount: AutoSizeText(formatterK(transaction.categoryType == '소비' ? transaction.amount * -1 : transaction.amount), style: TextStyle(fontSize: 20, color: transaction.categoryType == '소비' && transaction.amount > 0 ? Colors.grey : Colors.black), maxLines: 1),
+                          memoWidget: buildMemoText(transaction.description!),
+                          headIcon: isSelectionMode
+                          ? Icon(
+                            isSelected ? Icons.check : null,
+                            color: isSelected ? Colors.green : Colors.transparent,
+                          )
+                          : null,
+                        ),
                       ),
                     );
                   }, childCount: transactions.length),
@@ -582,6 +587,25 @@ class _BookState extends State<Book> {
     if (selectedIds.isEmpty) exitSelectionMode();
   }
 
+  void toggleSelectionAll() {
+    setState(() {
+    // 현재 페이지의 거래 ID만 사용
+    List<int> currentPageIds = (transactions).map((tx) => tx.id!).toList();
+
+    if (selectedIds.containsAll(currentPageIds)) {
+      // 현재 페이지의 모든 거래가 선택된 상태라면 선택 해제
+      selectedIds.removeAll(currentPageIds);
+    } else {
+      // 현재 페이지의 거래를 모두 선택
+      selectedIds.addAll(currentPageIds);
+    }
+  });
+
+  if (selectedIds.isEmpty) {
+    exitSelectionMode();
+  }
+  }
+
   void enterSelectionMode() {
     setState(() {
       isSelectionMode = true;
@@ -745,7 +769,21 @@ class TransactionTileItem extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 15),
-              child: memoWidget,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  if(headIcon != null)
+                  const Expanded(
+                    flex: 1,
+                    child: SizedBox(),
+                  ),
+                  Expanded(
+                    flex: 4,
+                    child: memoWidget,
+                  )
+                ]
+              )
             ),
           ],
         ),

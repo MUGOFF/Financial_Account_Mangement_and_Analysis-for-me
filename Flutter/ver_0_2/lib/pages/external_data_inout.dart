@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 // import 'package:excel/excel.dart';
 import 'package:csv/csv.dart';
+import 'package:cp949_codec/cp949_codec.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 // import 'package:ver_0_2/widgets/models/bank_account.dart';
 // import 'package:ver_0_2/widgets/models/card_account.dart';
@@ -117,6 +118,7 @@ class _BookDialogContentState extends State<BookDialogContent> {
   late PageController _pageController;
   int _currentPageIndex = 0;
   FilePickerResult? filePicked;
+  String fileCodec = 'UTF8';
   List<dynamic> modelColumnrelations = [];
   List<dynamic> setData = [];
 
@@ -169,9 +171,10 @@ class _BookDialogContentState extends State<BookDialogContent> {
             children: [
               /// 파일 선택 페이지
               FirstPage(
-                onFilePathSelected: (path) {
+                onFilePathSelected: (path, codec) {
                   setState(() {
                     filePicked = path;
+                    fileCodec = codec;
                   });
                   _pageController.nextPage(
                     duration: const Duration(milliseconds: 300),
@@ -192,6 +195,7 @@ class _BookDialogContentState extends State<BookDialogContent> {
                   );
                 }, 
                 filePicked: filePicked,
+                fileCodec: fileCodec,
               ),
               /// 데이터 형식 판별 페이지
               LastPage(
@@ -199,6 +203,7 @@ class _BookDialogContentState extends State<BookDialogContent> {
                   Navigator.of(context).pop();
                 },
                 filePicked: filePicked,
+                fileCodec: fileCodec,
                 modelColumnrelations: modelColumnrelations,
                 setData: setData,
               ),
@@ -211,7 +216,7 @@ class _BookDialogContentState extends State<BookDialogContent> {
 }
 
 class FirstPage extends StatefulWidget {
-  final Function(FilePickerResult?) onFilePathSelected;
+  final Function(FilePickerResult?, String) onFilePathSelected;
 
   /// onFilePathSelected: 외부 파일 선택 시 발동 함수
   ///
@@ -234,17 +239,35 @@ class _FirstPageState extends State<FirstPage> {
       );
       if (result != null) {
         try {
-          var input = File(result.files.single.path!).openRead();
-          var fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
+          logger.d('CP949 TRY');
+          var input = await File(result.files.single.path!).readAsBytes();
+          // var input = File(result.files.single.path!).openRead();
+          // 타입 변환: Stream<List<int>> -> Stream<Uint8List>
+          // var uint8Stream = input.map((chunk) => Uint8List.fromList(chunk));
+          // var uint8Stream = input.map((chunk) => Uint8List.fromList(chunk));
+          // String decodedContent = const CP949Codec().decoder.convert(input);
+          // var fields = const CsvToListConverter().convert(decodedContent);
+          var fields = const CsvToListConverter().convert(const CP949Codec().decoder.convert(input));
+          // var fields = await uint8Stream.transform(const CP949Codec().decoder).transform(const CsvToListConverter()).toList();
           if (fields.isNotEmpty) {
-            widget.onFilePathSelected(result);
+            widget.onFilePathSelected(result, 'CP949');
           } 
-        } catch (e) {
-          logger.e('Error picking file type or format: $e');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Error picking file type or format')),
-            );
+        } catch(e) {
+          logger.d('UTF8 TRY');
+          logger.e('Error picking file type CP949: $e');
+          try {
+            var input = File(result.files.single.path!).openRead();
+            var fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
+            if (fields.isNotEmpty) {
+              widget.onFilePathSelected(result, 'UTF8');
+            } 
+          } catch (e) {
+            logger.e('Error picking file type or format: $e');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Error picking file type or format')),
+              );
+            }
           }
         }
       } else {
@@ -273,7 +296,8 @@ class _FirstPageState extends State<FirstPage> {
             style: ElevatedButton.styleFrom(
               shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(30))
             ),
-            child: const Text('.csv(UTF-8)'),
+            // child: const Text('.csv(UTF-8)'),
+            child: const Text('.csv'),
           ),
         ),
         
@@ -285,12 +309,13 @@ class _FirstPageState extends State<FirstPage> {
 ///세번쨰 페이지, 칼럼 정렬
 class SecondPage extends StatefulWidget {
   final FilePickerResult? filePicked;
+  final String fileCodec;
   final Function(List<dynamic>, List<dynamic>) onButtonPressed;
 
   /// onButtonPressed: 다음 페이지 선택 시 발동 함수
   /// 
   /// - 외부 위젯으로 값 전달
-  const SecondPage({required this.filePicked, required this.onButtonPressed, super.key});
+  const SecondPage({required this.filePicked, required this.fileCodec, required this.onButtonPressed, super.key});
 
   @override
   State<SecondPage> createState() => _SecondPageState();
@@ -323,8 +348,14 @@ class _SecondPageState extends State<SecondPage> {
     try {
       if (filePicked.files.isNotEmpty) {
         String? fileName = filePicked.files.single.path;
-        var input = File(fileName!).openRead();
-        var fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
+        List<List<dynamic>> fields = [];
+        if (widget.fileCodec == 'UTF8') {
+          var input = File(fileName!).openRead();
+          fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
+        } else {
+          var input =await File(fileName!).readAsBytes();
+          fields = const CsvToListConverter().convert(const CP949Codec().decoder.convert(input));
+        }
         if (fields.isNotEmpty) {
           columnNames = fields.first.map((field) => field.toString()).toList();
           dataRows = fields.skip(1).toList();    
@@ -487,10 +518,11 @@ class _SecondPageState extends State<SecondPage> {
 class LastPage extends StatefulWidget {
   final VoidCallback onButtonPressed;
   final FilePickerResult? filePicked;
+  final String fileCodec;
   final List<dynamic> modelColumnrelations;
   final List<dynamic> setData;
 
-  const LastPage({required this.filePicked, required this.onButtonPressed, required this.modelColumnrelations, required this.setData, super.key});
+  const LastPage({required this.filePicked, required this.fileCodec, required this.onButtonPressed, required this.modelColumnrelations, required this.setData, super.key});
 
   @override
   State<LastPage> createState() => _LastPageState();
@@ -527,8 +559,18 @@ class _LastPageState extends State<LastPage> {
     try {
       if (filePicked.files.isNotEmpty) {
         String? fileName = filePicked.files.single.path;
-        var input = File(fileName!).openRead();
-        var fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
+        List<List<dynamic>> fields = [];
+        if (widget.fileCodec == 'UTF8') {
+          var input = File(fileName!).openRead();
+          fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
+        } else {
+          var input =await File(fileName!).readAsBytes();
+          fields = const CsvToListConverter().convert(const CP949Codec().decoder.convert(input));
+        }
+        // var input = File(fileName!).openRead();
+        // var fields = widget.fileCodec == 'UTF8'
+        //   ? await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList()
+        //   : await input.transform(const CP949Codec().decoder).transform(const CsvToListConverter()).toList();
         if (fields.isNotEmpty) {
           columnNames = fields.first.map((field) => field.toString()).toList();
           dataRows = fields.skip(1).toList();
