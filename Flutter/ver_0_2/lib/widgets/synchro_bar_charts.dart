@@ -149,7 +149,7 @@ class _ColumnChartsByCategoryMonthState extends State<ColumnChartsByCategoryMont
   }
 }
 
-///두가지 비용 데이터 바차트 비교 //////
+///카테고리 세부 내역 바차트
 class BarchartGoodsInCategories extends StatefulWidget {
   final int year;
   final int month;
@@ -165,10 +165,14 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
   List<_BarChartData> chartData = [];
   double maxYvalue = 100;
   double interval = 100;
-  final TooltipBehavior _tooltip= TooltipBehavior(
-    enable: true,
-    textStyle: const TextStyle(fontSize: 20),
-  );
+  // final TooltipBehavior _tooltip= TooltipBehavior(
+  //   enable: true,
+  //   shouldAlwaysShow: true,
+  //   borderWidth: 5,
+  //   textStyle: const TextStyle(fontSize: 20, overflow: TextOverflow.ellipsis),
+  //   tooltipPosition: TooltipPosition.pointer,
+  //   format: 'point.x: \n point.y',
+  // );
  
   @override
   void initState() {
@@ -205,14 +209,22 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
         borderColor: Colors.transparent,
         borderWidth: 10
       ),
-      primaryXAxis: const CategoryAxis(),
+      primaryXAxis: const CategoryAxis(
+        // labelRotation: 90,
+        labelPosition: ChartDataLabelPosition.inside,
+        labelStyle: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          overflow: TextOverflow.ellipsis
+        )
+      ),
       primaryYAxis: NumericAxis(
         minimum: 0,
         maximum: maxYvalue,
         interval: interval,
         numberFormat: NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR"),      
       ),
-      tooltipBehavior: _tooltip,
+      // tooltipBehavior: _tooltip,
       series: <CartesianSeries<_BarChartData, String>>[
         BarSeries<_BarChartData, String>(
           width: 0.8,
@@ -224,6 +236,10 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
           sortingOrder: SortingOrder.ascending,
           name: widget.category,
           color: Colors.teal.shade200,
+          dataLabelSettings: const DataLabelSettings(
+            isVisible: true,
+            textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,)
+          )
         )
       ]
     );

@@ -68,7 +68,7 @@ class _LineChartsByYearCategoryState extends State<LineChartsByYearCategory> {
       setState(() {
         chartData = localChartData;
         interval = localmaxYvalue == 0 ? 1 : max(pow(10, (log((localmaxYvalue/3).abs())/ln10).floor()).toDouble(),pow(10, (log((localmaxYvalue).abs())/ln10).floor()).toDouble()/2);
-        maxYvalue = ((localmaxYvalue/interval).ceil()*interval).toDouble();
+        maxYvalue = ((localmaxYvalue/interval).ceil()*interval).toDouble()+(localmaxYvalue*0.01).ceil();
       });
     }
   }
