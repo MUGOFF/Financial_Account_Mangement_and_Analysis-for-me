@@ -210,11 +210,11 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
         borderWidth: 10
       ),
       primaryXAxis: const CategoryAxis(
-        // labelRotation: 90,
         labelPosition: ChartDataLabelPosition.inside,
+        labelRotation: 45,
         labelStyle: TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.bold,
+          color: Color.fromRGBO(250, 250, 250, 0.4),
           overflow: TextOverflow.ellipsis
         )
       ),
@@ -238,6 +238,7 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
           color: Colors.teal.shade200,
           dataLabelSettings: const DataLabelSettings(
             isVisible: true,
+            labelAlignment: ChartDataLabelAlignment.outer,
             textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,)
           )
         )
