@@ -598,6 +598,32 @@ class DatabaseAdmin {
     }
   }
 
+  Future<List<String>> getTransactionsTags() async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> tagResults = await db.rawQuery('''
+        SELECT DISTINCT TRIM(SUBSTR(description, INSTR(description, '#'))) AS tag
+        FROM money_transactions
+        WHERE description LIKE '%#%'
+      ''');
+      
+      // 태그 목록 생성
+      final List<String> tags = tagResults
+          .map((row) => row['tag'] as String)
+          .expand((tagString) {
+            // 공백으로 구분된 태그 분리
+            final RegExp tagPattern = RegExp(r'#\w+');
+            return tagPattern.allMatches(tagString).map((m) => m.group(0)!);
+          })
+          .toSet() // 중복 제거
+          .toList();
+
+      return tags;
+    } catch(e) {
+      return [];
+    }
+  }
+
   ///특별 예산 항목 가져오기
   Future<List<MoneyTransaction>> getExtrabugetcategory() async {
     final db = await database;

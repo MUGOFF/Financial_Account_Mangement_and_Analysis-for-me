@@ -165,14 +165,15 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
   List<_BarChartData> chartData = [];
   double maxYvalue = 100;
   double interval = 100;
-  // final TooltipBehavior _tooltip= TooltipBehavior(
-  //   enable: true,
-  //   shouldAlwaysShow: true,
-  //   borderWidth: 5,
-  //   textStyle: const TextStyle(fontSize: 20, overflow: TextOverflow.ellipsis),
-  //   tooltipPosition: TooltipPosition.pointer,
-  //   format: 'point.x: \n point.y',
-  // );
+  final TooltipBehavior _tooltip= TooltipBehavior(
+    enable: true,
+    // shouldAlwaysShow: true,
+    header: "",
+    borderWidth: 5,
+    textStyle: const TextStyle(fontSize: 20, overflow: TextOverflow.ellipsis),
+    tooltipPosition: TooltipPosition.pointer,
+    format: 'point.x',
+  );
  
   @override
   void initState() {
@@ -184,7 +185,8 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
     List<_BarChartData> localChartData = [];
     double localmaxYvalue = 0;
     List<Map<String, dynamic>> fetchedDatas = await DatabaseAdmin().getransactionsSUMBByGoodsCategoriesMonth(widget.year,widget.month,widget.category);
-    for (var data in fetchedDatas) {
+    var limitedFetchedDatas = fetchedDatas.take(15);
+    for (var data in limitedFetchedDatas) {
       localChartData.add(_BarChartData(data['goods'], data['totalAmount'], data['totalAmount'].toString()));
       if (localmaxYvalue < data['totalAmount']) {
         localmaxYvalue = data['totalAmount'];
@@ -203,7 +205,7 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
   Widget build(BuildContext context) {
     return SfCartesianChart(
       title: ChartTitle(
-        text: '${widget.year}-${widget.month.toString().padLeft(2, '0')} ${widget.category} 항목',
+        text: '${widget.year}-${widget.month.toString().padLeft(2, '0')} ${widget.category} 항목 상위 15개',
         alignment: ChartAlignment.center,
         backgroundColor: Colors.white,
         borderColor: Colors.transparent,
@@ -211,7 +213,7 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
       ),
       primaryXAxis: const CategoryAxis(
         labelPosition: ChartDataLabelPosition.inside,
-        labelRotation: 45,
+        // labelRotation: 45,
         labelStyle: TextStyle(
           fontSize: 16,
           color: Color.fromRGBO(250, 250, 250, 0.4),
@@ -224,7 +226,7 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
         interval: interval,
         numberFormat: NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR"),      
       ),
-      // tooltipBehavior: _tooltip,
+      tooltipBehavior: _tooltip,
       series: <CartesianSeries<_BarChartData, String>>[
         BarSeries<_BarChartData, String>(
           width: 0.8,

@@ -21,7 +21,7 @@ class BookAdd extends StatefulWidget {
 class _BookAddState extends State<BookAdd> {
   Logger logger = Logger();
   final FocusNode _focusAmountNode = FocusNode();
-  // final FocusNode _focusMemoNode = FocusNode();
+  final FocusNode _focusMemoNode = FocusNode();
   UnfocusDisposition disposition = UnfocusDisposition.scope;
   PersistentBottomSheetController? _bottomSheetController;
   final GlobalKey<FormState> _formBookAddKey = GlobalKey<FormState>();
@@ -44,6 +44,9 @@ class _BookAddState extends State<BookAdd> {
   // bool _isMemoEditing = false;
   TextStyle normalStyle = const TextStyle(color: Colors.black, fontSize: 20);
   TextStyle tagStyle = TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20, backgroundColor: Colors.yellow.shade100);
+  List<String> allTags = [];
+  List<String> suggestedTags = [];
+  OverlayEntry? _overlayEntry;
 
   @override
   void initState() {
@@ -71,13 +74,23 @@ class _BookAddState extends State<BookAdd> {
     //     _isMemoEditing = false;
     //   }
     // });
-    _initializeControllers(); 
+    _initializeControllers();
+     _memoController.addListener(() {
+      final input = _memoController.text;
+      logger.i(input);
+      setState(() {
+        suggestedTags = allTags
+            .where((tag) => RegExp(RegExp.escape(input), caseSensitive: false).hasMatch(tag))
+            .toList();
+      });
+    });
   }
 
   @override
   void dispose() {
     _focusAmountNode.dispose();
-    // _focusMemoNode.dispose();
+    _focusMemoNode.dispose();
+    _memoController.dispose();
     super.dispose();
   }
 
@@ -101,6 +114,8 @@ class _BookAddState extends State<BookAdd> {
       _amountController.text = "-0";
       _amountdisplayController.text = _thousandsFormmater(_amountController.text);
     }
+    allTags = await DatabaseAdmin().getTransactionsTags();
+    logger.d(allTags);
   }
 
   String _thousandsFormmater(String numberText) {
@@ -112,6 +127,98 @@ class _BookAddState extends State<BookAdd> {
 
     return formattedText;
   }
+
+  // 태그 추천 표시
+  void _showTagSuggestions(String tagFragment) {
+    final RenderBox renderBox = _focusMemoNode.context!.findRenderObject() as RenderBox;
+    final Offset position = renderBox.localToGlobal(Offset.zero); // TextFormField
+    // 태그 추천 목록 업데이트
+    suggestedTags = allTags
+        .where((tag) => tag.toLowerCase().startsWith(tagFragment.toLowerCase()))
+        .toList();
+
+    if (_overlayEntry != null) {
+      _overlayEntry!.remove();
+      _overlayEntry = null;
+    }
+
+    if (suggestedTags.isNotEmpty) {
+      _overlayEntry = OverlayEntry(
+        builder: (context) => Positioned(
+          left: 16.0,
+          right: 16.0,
+          top: position.dy + renderBox.size.height + 8.0,
+          // top: MediaQuery.of(context).size.height / 2 - 100,
+          child: Material(
+            elevation: 4.0,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: suggestedTags.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(suggestedTags[index]),
+                  onTap: () {
+                    _insertTagIntoText(suggestedTags[index]);
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      Overlay.of(context).insert(_overlayEntry!);
+    }
+  }
+
+  // 태그를 텍스트에 삽입
+  void _insertTagIntoText(String tag) {
+    final text = _memoController.text;
+    final cursorPosition = _memoController.selection.baseOffset;
+
+    // 현재 커서 위치까지의 텍스트 분리
+    final beforeCursor = text.substring(0, cursorPosition);
+    final afterCursor = text.substring(cursorPosition);
+
+    // 태그 삽입 및 커서 위치 조정
+    final newText = '$beforeCursor${tag.replaceAll(RegExp(r'#'), '')} $afterCursor';
+    _memoController.text = newText;
+
+    // 커서를 태그 바로 뒤로 이동
+    _memoController.selection = TextSelection.fromPosition(
+      TextPosition(offset: beforeCursor.length + tag.length),
+    );
+
+    // 추천 목록 닫기
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  // 입력 중 태그 추천 처리
+  void _onTextChanged(String value) {
+    final cursorPosition = _memoController.selection.baseOffset;
+
+    if (cursorPosition <= 0 || cursorPosition > value.length) {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+      return;
+    }
+
+    // 현재 커서 앞부분 텍스트 추출
+    final beforeCursor = value.substring(0, cursorPosition);
+
+    // 태그가 감지되면 추천 목록 표시
+    final tagMatch = RegExp(r'#[^\s]*$').firstMatch(beforeCursor);
+    if (tagMatch != null) {
+      final tagFragment = tagMatch.group(0)!; // 현재 태그 부분
+      _showTagSuggestions(tagFragment);
+    } else {
+      // 태그가 없으면 추천 닫기
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+    }
+  }
+  
 
   // void _formatInput() {
   //   String newText = _textFieldController.text.replaceAll(RegExp(r'[^0-9]'), '');
@@ -250,19 +357,43 @@ class _BookAddState extends State<BookAdd> {
                     ),
                     Expanded(
                       flex: 3,
-                      child: 
-                      // _isMemoEditing ?
-                      TextFormField(
-                        controller: _memoController,
-                        // focusNode: _focusMemoNode,
-                        // autofocus: true,
-                        // onEditingComplete: () {
-                        //   _focusMemoNode.unfocus();
-                        // },
-                        // onTapOutside:(PointerDownEvent event) {
-                        //   _focusMemoNode.unfocus();
-                        // }
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _memoController,
+                            focusNode: _focusMemoNode,
+                            // autofocus: true,
+                            // onEditingComplete: () {
+                            //   _focusMemoNode.unfocus();
+                            // },
+                            // onTapOutside:(PointerDownEvent event) {
+                            //   _focusMemoNode.unfocus();
+                            // }
+                            onChanged: _onTextChanged,
+                          ),
+                          // if(suggestedTags.isNotEmpty)
+                          // Container(
+                          //   margin: const EdgeInsets.only(top: 8),
+                          //   decoration: BoxDecoration(
+                          //     color: Colors.grey[200],
+                          //     border: Border.all(color: Colors.grey),
+                          //     borderRadius: BorderRadius.circular(8),
+                          //   ),
+                          //   child: ListView.builder(
+                          //     shrinkWrap: true,
+                          //     itemCount: suggestedTags.length,
+                          //     itemBuilder: (context, index) {
+                          //       final tag = suggestedTags[index];
+                          //       return ListTile(
+                          //         title: Text(tag),
+                          //         // onTap: () => _onTagSelected(tag),
+                          //       );
+                          //     },
+                          //   ),
+                          // ),
+                        ]
                       )
+                      // _isMemoEditing ?
                       // : GestureDetector(
                       //   onTap: () {
                       //     setState(() {
