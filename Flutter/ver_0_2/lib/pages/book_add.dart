@@ -75,15 +75,15 @@ class _BookAddState extends State<BookAdd> {
     //   }
     // });
     _initializeControllers();
-     _memoController.addListener(() {
-      final input = _memoController.text;
-      logger.i(input);
-      setState(() {
-        suggestedTags = allTags
-            .where((tag) => RegExp(RegExp.escape(input), caseSensitive: false).hasMatch(tag))
-            .toList();
-      });
-    });
+    //  _memoController.addListener(() {
+    //   final input = _memoController.text;
+    //   logger.i(input);
+    //   setState(() {
+    //     suggestedTags = allTags
+    //         .where((tag) => RegExp(RegExp.escape(input), caseSensitive: false).hasMatch(tag))
+    //         .toList();
+    //   });
+    // });
   }
 
   @override
@@ -122,6 +122,11 @@ class _BookAddState extends State<BookAdd> {
     String newText = numberText.replaceAll(RegExp(r'[^0-9.-]'), '');
     if (newText.isEmpty) return "0";
 
+    if(newText.contains('-'))
+    {
+      newText = '-${newText.replaceAll(RegExp(r'-'), '')}';
+    }
+
     final double value = double.parse(newText);
     final formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
 
@@ -131,10 +136,12 @@ class _BookAddState extends State<BookAdd> {
   // 태그 추천 표시
   void _showTagSuggestions(String tagFragment) {
     final RenderBox renderBox = _focusMemoNode.context!.findRenderObject() as RenderBox;
-    final Offset position = renderBox.localToGlobal(Offset.zero); // TextFormField
+    final Offset position = renderBox.localToGlobal(Offset.zero);
+    final pattern = RegExp('^${RegExp.escape(tagFragment)}', caseSensitive: false);
     // 태그 추천 목록 업데이트
     suggestedTags = allTags
-        .where((tag) => tag.toLowerCase().startsWith(tagFragment.toLowerCase()))
+        // .where((tag) => RegExp(RegExp.escape(input), caseSensitive: false).hasMatch(tag))
+        .where((tag) =>  pattern.hasMatch(tag))
         .toList();
 
     if (_overlayEntry != null) {
@@ -809,6 +816,7 @@ class _BookAddState extends State<BookAdd> {
                 }
                 return null;
               },
+              // onChanged: (String value),
               decoration: InputDecoration(
                 suffix: IconButton(
                   onPressed: (){
