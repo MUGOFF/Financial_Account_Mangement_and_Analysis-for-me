@@ -328,15 +328,15 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage>{
                 year: widget.year,
                 month: widget.month,
                 onPieSelected: (ChartPointDetails pointInteractionDetails) {
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
                   if(pointInteractionDetails.dataPoints != null) {
                     var detailList = pointInteractionDetails.dataPoints;
-                    if (pointInteractionDetails.pointIndex != null) {
+                    if (pointInteractionDetails.pointIndex != null && detailList![pointInteractionDetails.pointIndex!].x != 'etc') {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
                       setState(() {
-                        selectCategory = detailList![pointInteractionDetails.pointIndex!].x;
+                        selectCategory = detailList[pointInteractionDetails.pointIndex!].x;
                       });
                     }
                   }
@@ -365,168 +365,6 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage>{
   }
 }
 
-///연간 소비 목록
-class YearlyConsumePage extends StatefulWidget {
-  final int year;
-  const YearlyConsumePage({required this.year, super.key});
-
-  @override
-  State<YearlyConsumePage> createState() => _YearlyConsumePageState();
-}
-
-class _YearlyConsumePageState extends State<YearlyConsumePage> {
-  final PageController _pageController = PageController();
-  int pastyear = DateTime.now().year;
-  int month = DateTime.now().month;
-  bool isNotCompareBar = false;
-  String selectCategory = "";
-
-  @override
-  void initState() {
-    super.initState();
-    setPastDate();
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void setPastDate(){
-    setState(() {
-      pastyear = widget.year-1;
-      selectCategory = "";
-    });
-  }
-
-
-  @override
-  Widget build(BuildContext context) {
-    return PageView(
-      controller: _pageController,
-      scrollDirection: Axis.vertical,
-      children: [
-        Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Spacer(flex: 3),
-                Column(
-                  children: [
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.center,
-                    //   children: [
-                    //     if(!widget.isNotCompareBar)
-                    //     const Text('전년 비교',style: TextStyle(fontSize: 20)),
-                    //     if(widget.isNotCompareBar)
-                    //     const Text('비용 비율',style: TextStyle(fontSize: 20)),
-                    //     const SizedBox(width: 5,),
-                    //     Switch.adaptive(
-                    //       value: isNotCompareBar,
-                    //       activeColor: Colors.teal,
-                    //       activeTrackColor: Colors.teal.shade200,
-                    //       inactiveThumbColor: Colors.teal,
-                    //       inactiveTrackColor: Colors.teal.shade200,
-                    //       onChanged: (bool value) {
-                    //         setState(() {
-                    //           isNotCompareBar = value;
-                    //           setPastDate();
-                    //           selectCategory = "";
-                    //         });
-                    //       },
-                    //     ),
-                    //     const SizedBox(width: 20,),
-                    //   ],
-                    // ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('${widget.year}',style: const TextStyle(fontSize: 20),),
-                      ],
-                    ),
-                  ]
-                ),
-                const Spacer(flex: 1),
-                Padding(
-                  padding: const EdgeInsets.only(right: 16.0), // 오른쪽 마진
-                  child: ElevatedButton(
-                    onPressed:(){
-                      Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) => BudgetSettingYearlyPage(year: widget.year),
-                            transitionsBuilder:
-                              (context, animation, secondaryAnimation, child) {
-                              const begin = Offset(0.0, 1.0);
-                              const end = Offset.zero;
-                              const curve = Curves.ease;
-
-                              var tween = Tween(begin: begin, end: end)
-                                  .chain(CurveTween(curve: curve));
-
-                              return SlideTransition(
-                                position: animation.drive(tween),
-                                child: child,
-                              );
-                            },
-                          ),
-                        ).then((result) {
-                          setState(() {
-                          });
-                        }
-                      );
-                    },
-                    child: const  Text('연간 예산\n 설정', textAlign: TextAlign.center,)
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 50),
-            Expanded(
-              child: PieChartsByCategoryYear(
-                key: UniqueKey(),
-                year: widget.year,
-                onPieSelected: (ChartPointDetails pointInteractionDetails) {
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                  if(pointInteractionDetails.dataPoints != null) {
-                    var detailList = pointInteractionDetails.dataPoints;
-                    if (pointInteractionDetails.pointIndex != null) {
-                      setState(() {
-                        selectCategory = detailList![pointInteractionDetails.pointIndex!].x;
-                      });
-                    }
-                  }
-                },
-              ),
-            ),
-            // const SizedBox(height: 50),
-          ],
-        ),
-        if(selectCategory != "")
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Expanded(
-                child: LineChartsByYearCategory(
-                  key: UniqueKey(),
-                  year: widget.year,
-                  category: selectCategory
-                ),
-              ),
-              const SizedBox(height: 50),
-            ],
-          )
-        )
-      ],
-    );
-  }
-}
 
 ///예산 설정 페이지
 class BudgetSettingPage extends StatefulWidget {
@@ -620,13 +458,21 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
     String newText = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
     if (newText.isEmpty) return;
 
+    int firstDotIndex = newText.indexOf('.');
+    if (firstDotIndex != -1) {
+      newText = '${newText.substring(0, firstDotIndex + 1)}${newText.substring(firstDotIndex + 1).replaceAll('.', '')}';
+    }
+
     final double value = double.parse(newText);
-    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
+    final formattedText = NumberFormat.simpleCurrency(decimalDigits: value%1==0? 0: 2, locale: "ko-KR").format(value);
 
     // 포맷된 텍스트를 다시 설정 (커서 위치를 조정하여 깜빡임 방지)
+    final cursorPosition = _textFieldController.selection.base.offset;
     _textFieldController.value = TextEditingValue(
       text: formattedText,
-      selection: TextSelection.collapsed(offset: formattedText.length),
+      selection: TextSelection.collapsed(
+        offset: formattedText.length < cursorPosition ? formattedText.length : cursorPosition,
+      ),
     );
     _textFieldInputController.text = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
   }
@@ -1154,7 +1000,168 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
   }
 }
 
+///연간 소비 목록
+class YearlyConsumePage extends StatefulWidget {
+  final int year;
+  const YearlyConsumePage({required this.year, super.key});
 
+  @override
+  State<YearlyConsumePage> createState() => _YearlyConsumePageState();
+}
+
+class _YearlyConsumePageState extends State<YearlyConsumePage> {
+  final PageController _pageController = PageController();
+  int pastyear = DateTime.now().year;
+  int month = DateTime.now().month;
+  bool isNotCompareBar = false;
+  String selectCategory = "";
+
+  @override
+  void initState() {
+    super.initState();
+    setPastDate();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void setPastDate(){
+    setState(() {
+      pastyear = widget.year-1;
+      selectCategory = "";
+    });
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return PageView(
+      controller: _pageController,
+      scrollDirection: Axis.vertical,
+      children: [
+        Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Spacer(flex: 3),
+                Column(
+                  children: [
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: [
+                    //     if(!widget.isNotCompareBar)
+                    //     const Text('전년 비교',style: TextStyle(fontSize: 20)),
+                    //     if(widget.isNotCompareBar)
+                    //     const Text('비용 비율',style: TextStyle(fontSize: 20)),
+                    //     const SizedBox(width: 5,),
+                    //     Switch.adaptive(
+                    //       value: isNotCompareBar,
+                    //       activeColor: Colors.teal,
+                    //       activeTrackColor: Colors.teal.shade200,
+                    //       inactiveThumbColor: Colors.teal,
+                    //       inactiveTrackColor: Colors.teal.shade200,
+                    //       onChanged: (bool value) {
+                    //         setState(() {
+                    //           isNotCompareBar = value;
+                    //           setPastDate();
+                    //           selectCategory = "";
+                    //         });
+                    //       },
+                    //     ),
+                    //     const SizedBox(width: 20,),
+                    //   ],
+                    // ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('${widget.year}',style: const TextStyle(fontSize: 20),),
+                      ],
+                    ),
+                  ]
+                ),
+                const Spacer(flex: 1),
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0), // 오른쪽 마진
+                  child: ElevatedButton(
+                    onPressed:(){
+                      Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) => BudgetSettingYearlyPage(year: widget.year),
+                            transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                              const begin = Offset(0.0, 1.0);
+                              const end = Offset.zero;
+                              const curve = Curves.ease;
+
+                              var tween = Tween(begin: begin, end: end)
+                                  .chain(CurveTween(curve: curve));
+
+                              return SlideTransition(
+                                position: animation.drive(tween),
+                                child: child,
+                              );
+                            },
+                          ),
+                        ).then((result) {
+                          setState(() {
+                          });
+                        }
+                      );
+                    },
+                    child: const  Text('연간 예산\n 설정', textAlign: TextAlign.center,)
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 50),
+            Expanded(
+              child: PieChartsByCategoryYear(
+                key: UniqueKey(),
+                year: widget.year,
+                onPieSelected: (ChartPointDetails pointInteractionDetails) {
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                  if(pointInteractionDetails.dataPoints != null) {
+                    var detailList = pointInteractionDetails.dataPoints;
+                    if (pointInteractionDetails.pointIndex != null) {
+                      setState(() {
+                        selectCategory = detailList![pointInteractionDetails.pointIndex!].x;
+                      });
+                    }
+                  }
+                },
+              ),
+            ),
+            // const SizedBox(height: 50),
+          ],
+        ),
+        if(selectCategory != "")
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Expanded(
+                child: LineChartsByYearCategory(
+                  key: UniqueKey(),
+                  year: widget.year,
+                  category: selectCategory
+                ),
+              ),
+              const SizedBox(height: 50),
+            ],
+          )
+        )
+      ],
+    );
+  }
+}
 
 ///연간 예산 설정 페이지
 class BudgetSettingYearlyPage extends StatefulWidget {
@@ -1248,14 +1255,23 @@ class _BudgetSettingYearlyPageState extends State<BudgetSettingYearlyPage> with 
     String newText = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
     if (newText.isEmpty) return;
 
-    final double value = double.parse(newText);
-    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
+    int firstDotIndex = newText.indexOf('.');
+    if (firstDotIndex != -1) {
+      newText = '${newText.substring(0, firstDotIndex + 1)}${newText.substring(firstDotIndex + 1).replaceAll('.', '')}';
+    }
 
-    // 포맷된 텍스트를 다시 설정 (커서 위치를 조정하여 깜빡임 방지)
+
+    final double value = double.parse(newText);
+    final formattedText = NumberFormat.simpleCurrency(decimalDigits: value%1==0? 0: 2, locale: "ko-KR").format(value);
+
+    final cursorPosition = _textFieldController.selection.base.offset;
     _textFieldController.value = TextEditingValue(
       text: formattedText,
-      selection: TextSelection.collapsed(offset: formattedText.length),
+      selection: TextSelection.collapsed(
+        offset: formattedText.length < cursorPosition ? formattedText.length : cursorPosition,
+      ),
     );
+    // _textFieldController.text = formattedText;
     _textFieldInputController.text = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');
   }
 

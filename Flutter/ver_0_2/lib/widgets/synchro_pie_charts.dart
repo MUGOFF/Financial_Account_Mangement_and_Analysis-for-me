@@ -70,7 +70,7 @@ class _PieChartsByCategoryYearState extends State<PieChartsByCategoryYear> {
   @override
   Widget build(BuildContext context) {
     return SfCircularChart(
-      legend: const Legend(isVisible: true, iconWidth: 25, iconHeight: 25),
+      legend: const Legend(isVisible: true, iconWidth: 25, iconHeight: 25, overflowMode: LegendItemOverflowMode.wrap),
       series: <CircularSeries>[
         PieSeries<_PieChartData, String>(
           dataSource: chartData,
@@ -135,6 +135,7 @@ class _PieChartsByCategoryMonthState extends State<PieChartsByCategoryMonth> {
   Future<void> _fetchChartDatas() async {
     List<_PieChartData> localChartData = [];
     double totalValue = 0;
+    double limitedtotalValue = 0;
     
     List<Map<String, dynamic>> fetchedDatas = (await DatabaseAdmin().getTransactionsSUMByCategoryMonthNegative(widget.year,widget.month)).toList();
 
@@ -144,10 +145,22 @@ class _PieChartsByCategoryMonthState extends State<PieChartsByCategoryMonth> {
       totalValue = totalValue + data['totalAmount'];
     }
 
-    var limitedFetchedDatas = fetchedDatas.take(10);
+    // var limitedFetchedDatas = fetchedDatas.take(5);
+    // for (var data in limitedFetchedDatas) {
+    //   localChartData.add(_PieChartData(data['category'], data['totalAmount'], data['totalAmount']/totalValue*100));
+    // }
+
+    var limitedFetchedDatas = fetchedDatas.take(5);
+    for (var data in limitedFetchedDatas) {
+      limitedtotalValue = limitedtotalValue + data['totalAmount'];
+    }
     for (var data in limitedFetchedDatas) {
       localChartData.add(_PieChartData(data['category'], data['totalAmount'], data['totalAmount']/totalValue*100));
     }
+
+    double etcValue = totalValue - limitedtotalValue;
+    localChartData.add(_PieChartData('etc', etcValue, etcValue/totalValue*100));
+
 
     if (mounted) {
       setState(() {
@@ -159,7 +172,7 @@ class _PieChartsByCategoryMonthState extends State<PieChartsByCategoryMonth> {
   @override
   Widget build(BuildContext context) {
     return SfCircularChart(
-      legend: const Legend(isVisible: true, iconWidth: 25, iconHeight: 25),
+      legend: const Legend(isVisible: true, iconWidth: 25, iconHeight: 25, overflowMode: LegendItemOverflowMode.wrap),
       series: <CircularSeries>[
         PieSeries<_PieChartData, String>(
           dataSource: chartData,

@@ -122,10 +122,10 @@ class _BookAddState extends State<BookAdd> {
     String newText = numberText.replaceAll(RegExp(r'[^0-9.-]'), '');
     if (newText.isEmpty) return "0";
 
-    if(newText.contains('-'))
-    {
-      newText = '-${newText.replaceAll(RegExp(r'-'), '')}';
-    }
+    // if(newText.contains('-'))
+    // {
+    //   newText = '-${newText.replaceAll(RegExp(r'-'), '')}';
+    // }
 
     final double value = double.parse(newText);
     final formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
@@ -249,6 +249,7 @@ class _BookAddState extends State<BookAdd> {
       onPopInvokedWithResult: (bool didPop, Object? result) async {
         _focusAmountNode.unfocus(disposition: disposition);
         _bottomSheetController?.close();
+        // Navigator.pop(context);
       }, 
       child: Scaffold(
         key: _scaffoldBookAddKey,
