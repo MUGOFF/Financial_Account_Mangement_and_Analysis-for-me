@@ -32,7 +32,7 @@ class DatabaseAdmin {
     String path = join(await getDatabasesPath(), 'debug_app.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 4,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -42,6 +42,7 @@ class DatabaseAdmin {
         _deleteNameinExtraGroupTable(db);
         _addColumnHiddenPrameterToMoneyTransactionTable(db);
         _addTriggerForParameterUpdate(db);
+          processExistingData(db);
         // _createBankAccountTable(db);
         // _createCardAccountTable(db);
         // _createExpirationInvestmentTable(db);
@@ -55,6 +56,9 @@ class DatabaseAdmin {
         }
         if (oldVersion < 3) {
           _addTriggerForParameterUpdate(db);
+        }
+        if (oldVersion < 4) {
+          processExistingData(db);
         }
         // if (oldVersion < 4) {
         //   _createCurrentHoldingTable(db);
@@ -394,6 +398,31 @@ class DatabaseAdmin {
     );
   }
 
+  Future<void> processExistingData(Database db) async {
+    // 1. 기존 데이터 가져오기
+    List<Map<String, dynamic>> existingRecords = await db.query('money_transactions');
+
+    // 2. 트리거와 동일한 로직 적용
+    for (var record in existingRecords) {
+      // JSON 생성
+      String parameter = jsonEncode({
+        'trans_code': {
+          'date': record['transactionTime'],
+          'goods': record['goods'],
+          'amount': record['amount'],
+        },
+      });
+
+      // 3. 데이터베이스 업데이트
+      await db.update(
+        'money_transactions',
+        {'parameter': parameter},
+        where: 'id = ?',
+        whereArgs: [record['id']],
+      );
+    }
+  }
+
   // void _addExtraBoolTransactionTable(Database db) async  {
   //   db.execute(
   //     """
@@ -609,77 +638,79 @@ class DatabaseAdmin {
   }
 
   /// 태그 소비 리스트 가져오기 및 동일한 'installment' 항목을 기준으로 통합
-Future<List<MoneyTransaction>> getTransactionsByTag(String tagName) async {
-  try {
-    final db = await database;
+  Future<List<MoneyTransaction>> getTransactionsByTag(String tagName) async {
+    try {
+      final db = await database;
 
-    // 태그가 포함된 거래들을 찾는 쿼리
-    final List<Map<String, dynamic>> transactionMaps = await db.query(
-      'money_transactions',
-      where: "description LIKE ?",
-      whereArgs: ['%$tagName%'],
-    );
-
-    final List<MoneyTransaction> rawList =List.generate(transactionMaps.length, (i) {
-      return MoneyTransaction(
-        id: transactionMaps[i]['id'],
-        transactionTime: transactionMaps[i]['transactionTime'],
-        // account: transactionMaps[i]['account'],
-        amount: transactionMaps[i]['amount'],
-        goods: transactionMaps[i]['goods'],
-        category: transactionMaps[i]['category'],
-        categoryType: transactionMaps[i]['categoryType'],
-        description: transactionMaps[i]['description'],
-        parameter: transactionMaps[i]['parameter'],
-        extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
+      // 태그가 포함된 거래들을 찾는 쿼리
+      final List<Map<String, dynamic>> transactionMaps = await db.query(
+        'money_transactions',
+        where: "description LIKE ?",
+        whereArgs: ['%$tagName%'],
       );
-    });
 
-    // installBaseId에 맞는 거래들을 그룹화
-    Map<String, dynamic> groupedTransactions = {};
+      final List<MoneyTransaction> rawList =List.generate(transactionMaps.length, (i) {
+        return MoneyTransaction(
+          id: transactionMaps[i]['id'],
+          transactionTime: transactionMaps[i]['transactionTime'],
+          // account: transactionMaps[i]['account'],
+          amount: transactionMaps[i]['amount'],
+          goods: transactionMaps[i]['goods'],
+          category: transactionMaps[i]['category'],
+          categoryType: transactionMaps[i]['categoryType'],
+          description: transactionMaps[i]['description'],
+          parameter: transactionMaps[i]['parameter'],
+          extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
+        );
+      });
 
-    for (MoneyTransaction transaction in rawList) {
-      String? parameter = transaction.parameter;
+      // installBaseId에 맞는 거래들을 그룹화
+      Map<String, dynamic> groupedTransactions = {};
+      for (MoneyTransaction transaction in rawList) {
+        String? parameter = transaction.parameter;
 
-      Map<String, dynamic> parameterMap = jsonDecode(parameter!);
-        if (parameterMap['installment'] == null) {
-          parameterMap['installment'] = [];
-        }
+        // logger.d(parameter);
+        Map<String, dynamic> parameterMap = jsonDecode(parameter!);
 
-      // 'installment' 항목을 체크하고 base_id와 비교
-      if (parameterMap['installment'] != null) {
-        String baseId = parameterMap['installment']['base_id'];
-        
-        if (transaction.id == int.parse(baseId)) {
-          groupedTransactions[baseId] = transaction;
+        // 'installment' 항목을 체크하고 base_id와 비교
+        if (parameterMap['installment'] != null) {
+          String baseId = parameterMap['installment']['base_id'];
+          
+          if (groupedTransactions.containsKey(baseId)) {
+            groupedTransactions[baseId]!.amount += transaction.amount;
+          } else {
+            groupedTransactions[baseId] = transaction;
+          }
         } else {
-          groupedTransactions[baseId]!.amount += transaction.amount;
+          groupedTransactions[transaction.id.toString()] = transaction;
         }
       }
+      // logger.d(groupedTransactions);
+      List<MoneyTransaction> combinedTransactions = groupedTransactions.values.cast<MoneyTransaction>().toList();
+      // List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
+      //   logger.i(i);
+      //   return MoneyTransaction(
+      //     id: groupedTransactions[i]['id'],
+      //     transactionTime: groupedTransactions[i]['transactionTime'],
+      //     // account: groupedTransactions[i]['account'],
+      //     amount: groupedTransactions[i]['amount'],
+      //     goods: groupedTransactions[i]['goods'],
+      //     category: groupedTransactions[i]['category'],
+      //     categoryType: groupedTransactions[i]['categoryType'],
+      //     description: groupedTransactions[i]['description'],
+      //     parameter: groupedTransactions[i]['parameter'],
+      //     extraBudget: groupedTransactions[i]['extraBudget'] == 0 ? false : true,
+      //   );
+      // });
+      
+      // logger.i(combinedTransactions);
+      return combinedTransactions;
+
+    } catch (e) {
+      logger.e('Error fetching transactions by tag and installment: $e');
+      return [];
     }
-
-    List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
-      return MoneyTransaction(
-        id: groupedTransactions[i.toString()]['id'],
-        transactionTime: groupedTransactions[i.toString()]['transactionTime'],
-        // account: groupedTransactions[i.toString()]['account'],
-        amount: groupedTransactions[i.toString()]['amount'],
-        goods: groupedTransactions[i.toString()]['goods'],
-        category: groupedTransactions[i.toString()]['category'],
-        categoryType: groupedTransactions[i.toString()]['categoryType'],
-        description: groupedTransactions[i.toString()]['description'],
-        parameter: groupedTransactions[i.toString()]['parameter'],
-        extraBudget: groupedTransactions[i.toString()]['extraBudget'] == 0 ? false : true,
-      );
-    });
-
-    return combinedTransactions;
-
-  } catch (e) {
-    logger.e('Error fetching transactions by tag and installment: $e');
-    return [];
   }
-}
   // ///태그 소비 리스트 가져오기
   // Future<List<MoneyTransaction>> getTransactionsByTag(String tagName) async {
   //   try {

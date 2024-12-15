@@ -985,7 +985,7 @@ class _BookAddState extends State<BookAdd> {
         // 데이터베이스에 삽입
         if(i == 0) {
           insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-          installID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+          installID = insertID;
           DatabaseAdmin().addInstallmentToParameter(insertID, installID);
         } else {
           insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
@@ -1008,7 +1008,7 @@ class _BookAddState extends State<BookAdd> {
       // 이제 transaction 객체를 데이터베이스에 삽입합니다.
       // 예시:
       insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-      installID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+      installID = insertID;
       DatabaseAdmin().addInstallmentToParameter(insertID, installID);
     }
   }
