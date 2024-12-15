@@ -185,7 +185,7 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
     List<_BarChartData> localChartData = [];
     double localmaxYvalue = 0;
     List<Map<String, dynamic>> fetchedDatas = await DatabaseAdmin().getransactionsSUMBByGoodsCategoriesMonth(widget.year,widget.month,widget.category);
-    var limitedFetchedDatas = fetchedDatas.take(15);
+    var limitedFetchedDatas = fetchedDatas.take(10);
     for (var data in limitedFetchedDatas) {
       localChartData.add(_BarChartData(data['goods'], data['totalAmount'], data['totalAmount'].toString()));
       if (localmaxYvalue < data['totalAmount']) {
@@ -205,7 +205,7 @@ class _BarchartGoodsInCategoriesState extends State<BarchartGoodsInCategories> {
   Widget build(BuildContext context) {
     return SfCartesianChart(
       title: ChartTitle(
-        text: '${widget.year}-${widget.month.toString().padLeft(2, '0')} ${widget.category} 항목 상위 15개',
+        text: '${widget.year}-${widget.month.toString().padLeft(2, '0')} ${widget.category} 항목 상위 10개',
         alignment: ChartAlignment.center,
         backgroundColor: Colors.white,
         borderColor: Colors.transparent,

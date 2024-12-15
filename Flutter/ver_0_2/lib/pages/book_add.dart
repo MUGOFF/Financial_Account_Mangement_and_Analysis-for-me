@@ -947,7 +947,9 @@ class _BookAddState extends State<BookAdd> {
     );
   }
 
-  void insertDataToDatabase() {
+  Future<void> insertDataToDatabase() async {
+    int insertID = 1;
+    int installID = 1;
     String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
     if (_amountController.text.startsWith('-')) {
       amountText = '-${amountText.substring(1).replaceAll('-', '')}';
@@ -981,7 +983,14 @@ class _BookAddState extends State<BookAdd> {
         );
 
         // 데이터베이스에 삽입
-        DatabaseAdmin().insertMoneyTransaction(transaction);
+        if(i == 0) {
+          insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+          installID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+          DatabaseAdmin().addInstallmentToParameter(insertID, installID);
+        } else {
+          insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+          DatabaseAdmin().addInstallmentToParameter(insertID, installID);
+        }
       }
     } else {
       final MoneyTransaction transaction = MoneyTransaction(
@@ -998,7 +1007,9 @@ class _BookAddState extends State<BookAdd> {
 
       // 이제 transaction 객체를 데이터베이스에 삽입합니다.
       // 예시:
-      DatabaseAdmin().insertMoneyTransaction(transaction);
+      insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+      installID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+      DatabaseAdmin().addInstallmentToParameter(insertID, installID);
     }
   }
 

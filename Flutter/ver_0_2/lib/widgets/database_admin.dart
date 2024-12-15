@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+// import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 // import 'package:ver_0_2/widgets/models/bank_account.dart';
 // import 'package:ver_0_2/widgets/models/card_account.dart';
@@ -31,7 +32,7 @@ class DatabaseAdmin {
     String path = join(await getDatabasesPath(), 'debug_app.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -39,6 +40,8 @@ class DatabaseAdmin {
         _createBugetSettingTable(db);
         _createExtraBugetSettingTable(db);
         _deleteNameinExtraGroupTable(db);
+        _addColumnHiddenPrameterToMoneyTransactionTable(db);
+        _addTriggerForParameterUpdate(db);
         // _createBankAccountTable(db);
         // _createCardAccountTable(db);
         // _createExpirationInvestmentTable(db);
@@ -47,10 +50,12 @@ class DatabaseAdmin {
         // _insertInitialHoldings(db);
       },
       onUpgrade: (db, oldVersion, newVersion) {
-        // if (oldVersion < 3) {
-        //   _createExpirationInvestmentTable(db);
-        //   _createNonExpirationInvestmentTable(db);
-        // }
+        if (oldVersion < 2) {
+          _addColumnHiddenPrameterToMoneyTransactionTable(db);
+        }
+        if (oldVersion < 3) {
+          _addTriggerForParameterUpdate(db);
+        }
         // if (oldVersion < 4) {
         //   _createCurrentHoldingTable(db);
         //   _insertInitialHoldings(db);
@@ -359,14 +364,35 @@ class DatabaseAdmin {
     );
   }
 
-  // void _addColumnToMoneyTransactionTable(Database db) async  {
-  //   db.execute(
-  //     """
-  //     ALTER TABLE money_transactions
-  //     ADD COLUMN categoryType TEXT
-  //     """
-  //   );
-  // }
+  void _addColumnHiddenPrameterToMoneyTransactionTable(Database db) async  {
+    db.execute(
+      """
+      ALTER TABLE money_transactions
+      ADD COLUMN parameter TEXT
+      """
+    );
+  }
+
+  void _addTriggerForParameterUpdate(Database db) async {
+    db.execute(
+      """
+      CREATE TRIGGER update_parameter_trigger
+      AFTER INSERT OR UPDATE OF transactionTime, goods, amount
+      ON money_transactions
+      BEGIN
+        UPDATE money_transactions
+        SET parameter = json_object(
+          'trans_code', json_object(
+            'date', NEW.transactionTime,
+            'goods', NEW.goods,
+            'amount', NEW.amount
+          )
+        )
+        WHERE id = NEW.id;
+      END;
+      """
+    );
+  }
 
   // void _addExtraBoolTransactionTable(Database db) async  {
   //   db.execute(
@@ -427,6 +453,17 @@ class DatabaseAdmin {
     );
   }
 
+  Future<int> idMoneyTransaction(MoneyTransaction moneyTransaction) async {
+    final db = await database;
+    // updateAccountBalance(updatedTransaction);
+    return await db.update(
+      'money_transactions',
+      moneyTransaction.toMap(),
+      where: 'id = ?',
+      whereArgs: [moneyTransaction.id],
+    );
+  }
+
   ///월간 거래내역 가져오기
   Future<List<MoneyTransaction>> getTransactionsByMonth(int year, int month) async {
     final db = await database;
@@ -445,6 +482,7 @@ class DatabaseAdmin {
         category: transactionMaps[i]['category'],
         categoryType: transactionMaps[i]['categoryType'],
         description: transactionMaps[i]['description'],
+        parameter: transactionMaps[i]['parameter'],
         extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
       );
     });
@@ -570,33 +608,106 @@ class DatabaseAdmin {
     }
   }
 
-  ///태그 소비 리스트 가져오기
-  Future<List<MoneyTransaction>> getTransactionsByTag(String tagName) async {
-    try {
-      final db = await database;
-      final List<Map<String, dynamic>> transactionMaps = await db.query(
-        'money_transactions',
-        where: "description LIKE ?",
-        whereArgs: ['%$tagName%'],
-      );
+  /// 태그 소비 리스트 가져오기 및 동일한 'installment' 항목을 기준으로 통합
+Future<List<MoneyTransaction>> getTransactionsByTag(String tagName) async {
+  try {
+    final db = await database;
 
-      return List.generate(transactionMaps.length, (i) {
-        return MoneyTransaction(
-          id: transactionMaps[i]['id'],
-          transactionTime: transactionMaps[i]['transactionTime'],
-          // account: transactionMaps[i]['account'],
-          amount: transactionMaps[i]['amount'],
-          goods: transactionMaps[i]['goods'],
-          category: transactionMaps[i]['category'],
-          categoryType: transactionMaps[i]['categoryType'],
-          description: transactionMaps[i]['description'],
-          extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
-        );
-      });
-    } catch(e) {
-      return [];
+    // 태그가 포함된 거래들을 찾는 쿼리
+    final List<Map<String, dynamic>> transactionMaps = await db.query(
+      'money_transactions',
+      where: "description LIKE ?",
+      whereArgs: ['%$tagName%'],
+    );
+
+    final List<MoneyTransaction> rawList =List.generate(transactionMaps.length, (i) {
+      return MoneyTransaction(
+        id: transactionMaps[i]['id'],
+        transactionTime: transactionMaps[i]['transactionTime'],
+        // account: transactionMaps[i]['account'],
+        amount: transactionMaps[i]['amount'],
+        goods: transactionMaps[i]['goods'],
+        category: transactionMaps[i]['category'],
+        categoryType: transactionMaps[i]['categoryType'],
+        description: transactionMaps[i]['description'],
+        parameter: transactionMaps[i]['parameter'],
+        extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
+      );
+    });
+
+    // installBaseId에 맞는 거래들을 그룹화
+    Map<String, dynamic> groupedTransactions = {};
+
+    for (MoneyTransaction transaction in rawList) {
+      String? parameter = transaction.parameter;
+
+      Map<String, dynamic> parameterMap = jsonDecode(parameter!);
+        if (parameterMap['installment'] == null) {
+          parameterMap['installment'] = [];
+        }
+
+      // 'installment' 항목을 체크하고 base_id와 비교
+      if (parameterMap['installment'] != null) {
+        String baseId = parameterMap['installment']['base_id'];
+        
+        if (transaction.id == int.parse(baseId)) {
+          groupedTransactions[baseId] = transaction;
+        } else {
+          groupedTransactions[baseId]!.amount += transaction.amount;
+        }
+      }
     }
+
+    List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
+      return MoneyTransaction(
+        id: groupedTransactions[i.toString()]['id'],
+        transactionTime: groupedTransactions[i.toString()]['transactionTime'],
+        // account: groupedTransactions[i.toString()]['account'],
+        amount: groupedTransactions[i.toString()]['amount'],
+        goods: groupedTransactions[i.toString()]['goods'],
+        category: groupedTransactions[i.toString()]['category'],
+        categoryType: groupedTransactions[i.toString()]['categoryType'],
+        description: groupedTransactions[i.toString()]['description'],
+        parameter: groupedTransactions[i.toString()]['parameter'],
+        extraBudget: groupedTransactions[i.toString()]['extraBudget'] == 0 ? false : true,
+      );
+    });
+
+    return combinedTransactions;
+
+  } catch (e) {
+    logger.e('Error fetching transactions by tag and installment: $e');
+    return [];
   }
+}
+  // ///태그 소비 리스트 가져오기
+  // Future<List<MoneyTransaction>> getTransactionsByTag(String tagName) async {
+  //   try {
+  //     final db = await database;
+  //     final List<Map<String, dynamic>> transactionMaps = await db.query(
+  //       'money_transactions',
+  //       where: "description LIKE ?",
+  //       whereArgs: ['%$tagName%'],
+  //     );
+
+  //     return List.generate(transactionMaps.length, (i) {
+  //       return MoneyTransaction(
+  //         id: transactionMaps[i]['id'],
+  //         transactionTime: transactionMaps[i]['transactionTime'],
+  //         // account: transactionMaps[i]['account'],
+  //         amount: transactionMaps[i]['amount'],
+  //         goods: transactionMaps[i]['goods'],
+  //         category: transactionMaps[i]['category'],
+  //         categoryType: transactionMaps[i]['categoryType'],
+  //         description: transactionMaps[i]['description'],
+  //         parameter: transactionMaps[i]['parameter'],
+  //         extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
+  //       );
+  //     });
+  //   } catch(e) {
+  //     return [];
+  //   }
+  // }
 
   Future<List<String>> getTransactionsTags() async {
     try {
@@ -612,7 +723,8 @@ class DatabaseAdmin {
           .map((row) => row['tag'] as String)
           .expand((tagString) {
             // 공백으로 구분된 태그 분리
-            final RegExp tagPattern = RegExp(r'#\w+');
+            // final RegExp tagPattern = RegExp(r'#\w+');
+            final RegExp tagPattern = RegExp(r'#[\p{L}\p{N}_]+', unicode: true);
             return tagPattern.allMatches(tagString).map((m) => m.group(0)!);
           })
           .toSet() // 중복 제거
@@ -642,9 +754,81 @@ class DatabaseAdmin {
         category: transactionMaps[i]['category'],
         categoryType: transactionMaps[i]['categoryType'],
         description: transactionMaps[i]['description'],
+        parameter: transactionMaps[i]['parameter'],
         extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
       );
     });
+  }
+
+  Future<bool> checkIfTransCodeExists(String date, String goods, double amount) async {
+    final db = await database;
+    try {
+      // JSON에서 trans_code 값을 비교하는 쿼리 실행
+      final List<Map<String, dynamic>> result = await db.query(
+        """
+        SELECT COUNT(*) as count
+        FROM money_transactions
+        WHERE json_extract(parameter, '\$.trans_code.date') = ?
+          AND json_extract(parameter, '\$.trans_code.goods') = ?
+          AND json_extract(parameter, '\$.trans_code.amount') = ?
+        """,
+        whereArgs: [date, goods, amount]
+      );
+
+      // 결과에서 count 값이 0보다 크면 동일한 trans_code가 존재
+      return result.isNotEmpty && result.first['count'] > 0;
+    } catch (e) {
+      logger.e('Error checking trans_code: $e');
+      return false;
+    }
+  }
+
+  Future<void> addInstallmentToParameter(int transactionId, int installBaseId) async {
+    final db = await database;
+    try {
+      // 기존 parameter 데이터 가져오기
+      final List<Map<String, dynamic>> result = await db.query(
+        'money_transactions',
+        where: 'id = ?',
+        whereArgs: [transactionId],
+      );
+
+      if (result.isNotEmpty) {
+        // 기존 parameter 값을 JSON 형식으로 가져오기
+        String? parameter = result.first['parameter'];
+
+        // parameter가 null인 경우 빈 JSON 객체로 초기화
+        parameter ??= '{}';
+
+        // JSON 파싱 및 installment 추가
+        Map<String, dynamic> parameterMap = jsonDecode(parameter);
+        if (parameterMap['installment'] == null) {
+          parameterMap['installment'] = [];
+        }
+
+        // installment 항목에 날짜와 goods 추가
+        parameterMap['installment'].add({
+          'base_id' : installBaseId,
+        });
+
+        // 업데이트된 parameter를 다시 JSON 문자열로 변환
+        String updatedParameter = jsonEncode(parameterMap);
+
+        // parameter 업데이트
+        await db.update(
+          'money_transactions',
+          {'parameter': updatedParameter},
+          where: 'id = ?',
+          whereArgs: [transactionId],
+        );
+
+        logger.i('Installment added successfully to transaction $transactionId');
+      } else {
+        logger.e('Transaction not found with ID: $transactionId');
+      }
+    } catch (e) {
+      logger.e('Error adding installment to parameter: $e');
+    }
   }
 
 ///

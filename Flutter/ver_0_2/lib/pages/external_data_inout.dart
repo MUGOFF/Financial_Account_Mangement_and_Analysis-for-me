@@ -719,7 +719,9 @@ class _LastPageState extends State<LastPage> {
   }
 
   /// modelColumnrelations = [transactionTime, amount, goods, category, categoryType, memo. installment]
-  void insertDatasToDatabase(List<List<dynamic>> dataRows) {
+  Future<void> insertDatasToDatabase(List<List<dynamic>> dataRows) async{
+    int insertID = 1;
+    int installID = 1;
     try {
       for (var row in dataRows) {
         String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
@@ -743,10 +745,26 @@ class _LastPageState extends State<LastPage> {
                 description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
                 extraBudget: formattedcategory=="특별 예산" ? true : false,
               );
-              try {
-                DatabaseAdmin().insertMoneyTransaction(transaction);
-              } catch (e) {
-                logger.e('error: $e, not enough row data: $row');
+
+              // transCode 중복 확인
+              bool exists = await DatabaseAdmin().checkIfTransCodeExists(
+                transaction.transactionTime,
+                transaction.goods,
+                transaction.amount,
+              );
+              if (!exists) {
+                try {
+                  if(i == 0) {
+                    insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+                    installID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+                    DatabaseAdmin().addInstallmentToParameter(insertID, installID);
+                  } else {
+                    insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+                    DatabaseAdmin().addInstallmentToParameter(insertID, installID);
+                  }
+                } catch (e) {
+                  logger.e('error: $e, not enough row data: $row');
+                }
               }
             }
           } else {
@@ -759,11 +777,25 @@ class _LastPageState extends State<LastPage> {
               description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
               extraBudget: formattedcategory=="특별 예산" ? true : false,
             );
-            try {
-              DatabaseAdmin().insertMoneyTransaction(transaction);
-            } catch (e) {
-              logger.e('error: $e, not enough row data: $row');
-            }
+              bool exists = await DatabaseAdmin().checkIfTransCodeExists(
+                transaction.transactionTime,
+                transaction.goods,
+                transaction.amount,
+              );
+              if (!exists) {
+                try {
+                  insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+                  installID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+                  DatabaseAdmin().addInstallmentToParameter(insertID, installID);
+                } catch (e) {
+                  logger.e('error: $e, not enough row data: $row');
+                }
+              }
+            // try {
+            //   DatabaseAdmin().insertMoneyTransaction(transaction);
+            // } catch (e) {
+            //   logger.e('error: $e, not enough row data: $row');
+            // }
           }
         } catch(e) {
           logger.e('error: $e, formData row: $row');

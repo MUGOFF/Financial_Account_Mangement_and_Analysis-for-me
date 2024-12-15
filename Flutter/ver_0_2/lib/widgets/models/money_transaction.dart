@@ -8,6 +8,7 @@ class MoneyTransaction {
   final String category;
   final String categoryType;
   final String? description;
+  final String? parameter;
   final bool extraBudget;
 
   MoneyTransaction({
@@ -20,6 +21,7 @@ class MoneyTransaction {
     this.category="미분류",
     this.categoryType="미지정",
     this.description ="",
+    this.parameter ="",
     this.extraBudget = false,
   });
 
@@ -34,6 +36,7 @@ class MoneyTransaction {
       'category': category!="" ? category : "미분류",
       'categoryType': categoryType!="" ? categoryType : "미지정",
       'description': description!="" ? description : " ",
+      'parameter': parameter!="" ? parameter : "{}",
       'extraBudget': extraBudget ? 1 : 0,
     };
   }
