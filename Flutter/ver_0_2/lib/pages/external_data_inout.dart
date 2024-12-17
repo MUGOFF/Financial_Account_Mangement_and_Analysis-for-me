@@ -756,7 +756,7 @@ class _LastPageState extends State<LastPage> {
                 try {
                   if(i == 0) {
                     insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-                    installID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+                    installID = insertID;
                     DatabaseAdmin().addInstallmentToParameter(insertID, installID);
                   } else {
                     insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
@@ -785,7 +785,7 @@ class _LastPageState extends State<LastPage> {
               if (!exists) {
                 try {
                   insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-                  installID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+                  installID = insertID;
                   DatabaseAdmin().addInstallmentToParameter(insertID, installID);
                 } catch (e) {
                   logger.e('error: $e, not enough row data: $row');
