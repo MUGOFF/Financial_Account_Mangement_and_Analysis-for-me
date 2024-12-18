@@ -32,7 +32,7 @@ class DatabaseAdmin {
     String path = join(await getDatabasesPath(), 'debug_app.db');
     return openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -41,8 +41,9 @@ class DatabaseAdmin {
         _createExtraBugetSettingTable(db);
         _deleteNameinExtraGroupTable(db);
         _addColumnHiddenPrameterToMoneyTransactionTable(db);
-        _addTriggerForParameterUpdate(db);
-          processExistingData(db);
+        // _addTriggerForParameterUpdate(db);
+        _addTriggerForParameterUpdate_recreate(db);
+        processExistingData(db);
         // _createBankAccountTable(db);
         // _createCardAccountTable(db);
         // _createExpirationInvestmentTable(db);
@@ -55,10 +56,13 @@ class DatabaseAdmin {
           _addColumnHiddenPrameterToMoneyTransactionTable(db);
         }
         if (oldVersion < 3) {
-          _addTriggerForParameterUpdate(db);
+          // _addTriggerForParameterUpdate(db);
         }
         if (oldVersion < 4) {
           processExistingData(db);
+        }
+        if (oldVersion < 5) {
+          _addTriggerForParameterUpdate_recreate(db);
         }
         // if (oldVersion < 4) {
         //   _createCurrentHoldingTable(db);
@@ -377,11 +381,57 @@ class DatabaseAdmin {
     );
   }
 
-  void _addTriggerForParameterUpdate(Database db) async {
-    db.execute(
+  // void _addTriggerForParameterUpdate(Database db) async {
+  //   db.execute(
+  //     """
+  //     CREATE TRIGGER update_parameter_trigger
+  //     AFTER INSERT OR UPDATE
+  //     ON money_transactions
+  //     BEGIN
+  //       UPDATE money_transactions
+  //       SET parameter = json_object(
+  //         'trans_code', json_object(
+  //           'date', NEW.transactionTime,
+  //           'goods', NEW.goods,
+  //           'amount', NEW.amount
+  //         )
+  //       )
+  //       WHERE id = NEW.id;
+  //     END;
+  //     """
+  //   );
+  // }
+  void _addTriggerForParameterUpdate_recreate(Database db) async {
+    // 기존 트리거 제거
+    await db.execute("DROP TRIGGER IF EXISTS update_parameter_trigger");
+    await db.execute("DROP TRIGGER IF EXISTS update_parameter_trigger_insert");
+    await db.execute("DROP TRIGGER IF EXISTS update_parameter_trigger_update");
+
+    // INSERT 트리거
+    await db.execute(
       """
-      CREATE TRIGGER update_parameter_trigger
-      AFTER INSERT OR UPDATE OF transactionTime, goods, amount
+      CREATE TRIGGER update_parameter_trigger_insert
+      AFTER INSERT
+      ON money_transactions
+      BEGIN
+        UPDATE money_transactions
+        SET parameter = json_object(
+          'trans_code', json_object(
+            'date', NEW.transactionTime,
+            'goods', NEW.goods,
+            'amount', NEW.amount
+          )
+        )
+        WHERE id = NEW.id;
+      END;
+      """
+    );
+
+    // UPDATE 트리거
+    await db.execute(
+      """
+      CREATE TRIGGER update_parameter_trigger_update
+      AFTER UPDATE
       ON money_transactions
       BEGIN
         UPDATE money_transactions
@@ -668,6 +718,7 @@ class DatabaseAdmin {
       Map<String, dynamic> groupedTransactions = {};
       for (MoneyTransaction transaction in rawList) {
         String? parameter = transaction.parameter;
+        logger.d(parameter);
 
         // logger.d(parameter);
         Map<String, dynamic> parameterMap = jsonDecode(parameter!);
@@ -795,7 +846,7 @@ class DatabaseAdmin {
     final db = await database;
     try {
       // JSON에서 trans_code 값을 비교하는 쿼리 실행
-      final List<Map<String, dynamic>> result = await db.query(
+      final List<Map<String, dynamic>> result = await db.rawQuery(
         """
         SELECT COUNT(*) as count
         FROM money_transactions
@@ -803,7 +854,7 @@ class DatabaseAdmin {
           AND json_extract(parameter, '\$.trans_code.goods') = ?
           AND json_extract(parameter, '\$.trans_code.amount') = ?
         """,
-        whereArgs: [date, goods, amount]
+        [date, goods, amount]
       );
 
       // 결과에서 count 값이 0보다 크면 동일한 trans_code가 존재
@@ -827,6 +878,7 @@ class DatabaseAdmin {
       if (result.isNotEmpty) {
         // 기존 parameter 값을 JSON 형식으로 가져오기
         String? parameter = result.first['parameter'];
+        logger.d(parameter);
 
         // parameter가 null인 경우 빈 JSON 객체로 초기화
         parameter ??= '{}';
@@ -834,16 +886,15 @@ class DatabaseAdmin {
         // JSON 파싱 및 installment 추가
         Map<String, dynamic> parameterMap = jsonDecode(parameter);
         if (parameterMap['installment'] == null) {
-          parameterMap['installment'] = [];
+          parameterMap['installment'] = '{}';
         }
 
         // installment 항목에 날짜와 goods 추가
-        parameterMap['installment'].add({
-          'base_id' : installBaseId,
-        });
+        parameterMap['installment']['base_id'] = installBaseId;
 
         // 업데이트된 parameter를 다시 JSON 문자열로 변환
         String updatedParameter = jsonEncode(parameterMap);
+        logger.d(updatedParameter);
 
         // parameter 업데이트
         await db.update(

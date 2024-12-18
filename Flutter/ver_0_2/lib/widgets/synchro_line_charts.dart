@@ -45,8 +45,10 @@ class _LineChartsByYearCategoryState extends State<LineChartsByYearCategory> {
   void initState() {
     _tooltip = TooltipBehavior(
       enable: true,
-      canShowMarker: false,
+      header: "",
+      // canShowMarker: false,
       textStyle: const TextStyle(fontSize: 20),
+      format: 'point.x',
     );
     super.initState();
     _fetchChartDatas();
@@ -102,10 +104,11 @@ class _LineChartsByYearCategoryState extends State<LineChartsByYearCategory> {
             yValueMapper: (LineChartDataDatetime data, _) => data.y,
             markerSettings: const MarkerSettings(isVisible: true, height : 16.0, width : 16.0),
             dataLabelSettings: const DataLabelSettings(
-              isVisible: false,
-              labelIntersectAction: LabelIntersectAction.shift,
-              labelPosition: ChartDataLabelPosition.inside,
-              textStyle: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)
+              isVisible: true,
+              // labelIntersectAction: LabelIntersectAction.shift,
+              labelAlignment: ChartDataLabelAlignment.top,
+              // labelPosition: ChartDataLabelPosition.outside,
+              textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
             ),
           )
         ]

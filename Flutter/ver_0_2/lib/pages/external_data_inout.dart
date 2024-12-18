@@ -251,15 +251,17 @@ class _FirstPageState extends State<FirstPage> {
           // var fields = await uint8Stream.transform(const CP949Codec().decoder).transform(const CsvToListConverter()).toList();
           if (fields.isNotEmpty) {
             widget.onFilePathSelected(result, 'CP949');
+            logger.i('CP949 END');
           } 
         } catch(e) {
-          logger.d('UTF8 TRY');
           logger.e('Error picking file type CP949: $e');
+          logger.d('UTF8 TRY');
           try {
             var input = File(result.files.single.path!).openRead();
             var fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
             if (fields.isNotEmpty) {
               widget.onFilePathSelected(result, 'UTF8');
+              logger.i('UTF8 END');
             } 
           } catch (e) {
             logger.e('Error picking file type or format: $e');
@@ -533,10 +535,20 @@ class _LastPageState extends State<LastPage> {
   bool? isDateOnly = false;
   String? dateFormat;
   final List<String> dateFormats = [
-    'yyyy-MM-dd', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy년 MM월 dd일', 'yyyy/MM/dd'
+    'yyyy-MM-dd',
+    'MM/dd/yyyy',
+    'dd/MM/yyyy',
+    'yyyy년 MM월 dd일',
+    'yyyy/MM/dd',
+    'yyyy.MM.dd',
+    'MM.dd.yyyy',
+    'dd.MM.yyyy',
   ];
   final List<String> timeFormats = [
-    'hh:mm:ss', 'hh시 mm분 ss초', 'hh:mm' , 'hh시 mm분'
+    'hh:mm:ss',
+    'hh:mm',
+    'hh시 mm분 ss초',
+    'hh시 mm분',
   ];
   final List<String> datetimeFormats = [];
   List<String> columnNames = [];
@@ -777,20 +789,20 @@ class _LastPageState extends State<LastPage> {
               description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
               extraBudget: formattedcategory=="특별 예산" ? true : false,
             );
-              bool exists = await DatabaseAdmin().checkIfTransCodeExists(
-                transaction.transactionTime,
-                transaction.goods,
-                transaction.amount,
-              );
-              if (!exists) {
-                try {
-                  insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-                  installID = insertID;
-                  DatabaseAdmin().addInstallmentToParameter(insertID, installID);
-                } catch (e) {
-                  logger.e('error: $e, not enough row data: $row');
-                }
+            bool exists = await DatabaseAdmin().checkIfTransCodeExists(
+              transaction.transactionTime,
+              transaction.goods,
+              transaction.amount,
+            );
+            if (!exists) {
+              try {
+                insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+                installID = insertID;
+                DatabaseAdmin().addInstallmentToParameter(insertID, installID);
+              } catch (e) {
+                logger.e('error: $e, not enough row data: $row');
               }
+            }
             // try {
             //   DatabaseAdmin().insertMoneyTransaction(transaction);
             // } catch (e) {
