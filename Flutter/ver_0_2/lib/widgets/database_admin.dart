@@ -32,7 +32,7 @@ class DatabaseAdmin {
     String path = join(await getDatabasesPath(), 'debug_app.db');
     return openDatabase(
       path,
-      version: 5,
+      version: 7,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -42,7 +42,7 @@ class DatabaseAdmin {
         _deleteNameinExtraGroupTable(db);
         _addColumnHiddenPrameterToMoneyTransactionTable(db);
         // _addTriggerForParameterUpdate(db);
-        _addTriggerForParameterUpdate_recreate(db);
+        _addTriggerForParameterUpdateRenewal(db);
         processExistingData(db);
         // _createBankAccountTable(db);
         // _createCardAccountTable(db);
@@ -61,8 +61,8 @@ class DatabaseAdmin {
         if (oldVersion < 4) {
           processExistingData(db);
         }
-        if (oldVersion < 5) {
-          _addTriggerForParameterUpdate_recreate(db);
+        if (oldVersion < 7) {
+          _addTriggerForParameterUpdateRenewal(db);
         }
         // if (oldVersion < 4) {
         //   _createCurrentHoldingTable(db);
@@ -401,7 +401,7 @@ class DatabaseAdmin {
   //     """
   //   );
   // }
-  void _addTriggerForParameterUpdate_recreate(Database db) async {
+  void _addTriggerForParameterUpdateRenewal(Database db) async {
     // 기존 트리거 제거
     await db.execute("DROP TRIGGER IF EXISTS update_parameter_trigger");
     await db.execute("DROP TRIGGER IF EXISTS update_parameter_trigger_insert");
@@ -415,11 +415,14 @@ class DatabaseAdmin {
       ON money_transactions
       BEGIN
         UPDATE money_transactions
-        SET parameter = json_object(
-          'trans_code', json_object(
-            'date', NEW.transactionTime,
-            'goods', NEW.goods,
-            'amount', NEW.amount
+        SET parameter = json_patch(
+          parameter,
+          json_object(
+            'trans_code', json_object(
+              'date', NEW.transactionTime,
+              'goods', NEW.goods,
+              'amount', NEW.amount
+            )
           )
         )
         WHERE id = NEW.id;
@@ -435,11 +438,14 @@ class DatabaseAdmin {
       ON money_transactions
       BEGIN
         UPDATE money_transactions
-        SET parameter = json_object(
-          'trans_code', json_object(
-            'date', NEW.transactionTime,
-            'goods', NEW.goods,
-            'amount', NEW.amount
+        SET parameter = json_patch(
+          parameter,
+          json_object(
+            'trans_code', json_object(
+              'date', NEW.transactionTime,
+              'goods', NEW.goods,
+              'amount', NEW.amount
+            )
           )
         )
         WHERE id = NEW.id;
@@ -693,51 +699,78 @@ class DatabaseAdmin {
       final db = await database;
 
       // 태그가 포함된 거래들을 찾는 쿼리
-      final List<Map<String, dynamic>> transactionMaps = await db.query(
+      final List<Map<String, dynamic>> rawList = await db.query(
         'money_transactions',
         where: "description LIKE ?",
         whereArgs: ['%$tagName%'],
       );
 
-      final List<MoneyTransaction> rawList =List.generate(transactionMaps.length, (i) {
-        return MoneyTransaction(
-          id: transactionMaps[i]['id'],
-          transactionTime: transactionMaps[i]['transactionTime'],
-          // account: transactionMaps[i]['account'],
-          amount: transactionMaps[i]['amount'],
-          goods: transactionMaps[i]['goods'],
-          category: transactionMaps[i]['category'],
-          categoryType: transactionMaps[i]['categoryType'],
-          description: transactionMaps[i]['description'],
-          parameter: transactionMaps[i]['parameter'],
-          extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
-        );
-      });
+      // final List<MoneyTransaction> rawList =List.generate(transactionMaps.length, (i) {
+      //   return MoneyTransaction(
+      //     id: transactionMaps[i]['id'],
+      //     transactionTime: transactionMaps[i]['transactionTime'],
+      //     // account: transactionMaps[i]['account'],
+      //     amount: transactionMaps[i]['amount'],
+      //     goods: transactionMaps[i]['goods'],
+      //     category: transactionMaps[i]['category'],
+      //     categoryType: transactionMaps[i]['categoryType'],
+      //     description: transactionMaps[i]['description'],
+      //     parameter: transactionMaps[i]['parameter'],
+      //     extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
+      //   );
+      // });
 
       // installBaseId에 맞는 거래들을 그룹화
-      Map<String, dynamic> groupedTransactions = {};
-      for (MoneyTransaction transaction in rawList) {
-        String? parameter = transaction.parameter;
-        logger.d(parameter);
+      Map<String, MoneyTransaction> groupedTransactions = {};
+      for (Map<String, dynamic> transactionMap in rawList) {
+        // logger.d(transactionMap);
 
-        // logger.d(parameter);
+        String? parameter = transactionMap['parameter'];
         Map<String, dynamic> parameterMap = jsonDecode(parameter!);
 
         // 'installment' 항목을 체크하고 base_id와 비교
         if (parameterMap['installment'] != null) {
-          String baseId = parameterMap['installment']['base_id'];
-          
+          String baseId = parameterMap['installment']['base_id'].toString();
+
           if (groupedTransactions.containsKey(baseId)) {
-            groupedTransactions[baseId]!.amount += transaction.amount;
+            // 기존에 있는 항목에 amount를 합산
+            MoneyTransaction existingTransaction = groupedTransactions[baseId]!;
+            double newAmount = existingTransaction.amount + transactionMap['amount'];
+            groupedTransactions[baseId] = existingTransaction.copyWith(amount: newAmount);
           } else {
-            groupedTransactions[baseId] = transaction;
+            // 새로운 항목을 추가
+            groupedTransactions[baseId] = MoneyTransaction(
+              id: transactionMap['id'],
+              transactionTime: transactionMap['transactionTime'],
+              amount: transactionMap['amount'],
+              goods: transactionMap['goods'],
+              category: transactionMap['category'],
+              categoryType: transactionMap['categoryType'],
+              description: transactionMap['description'],
+              parameter: transactionMap['parameter'],
+              extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
+            );
           }
         } else {
-          groupedTransactions[transaction.id.toString()] = transaction;
+          // installment가 없는 경우 별도로 추가
+          String transactionId = transactionMap['id'].toString();
+          groupedTransactions[transactionId] = MoneyTransaction(
+            id: transactionMap['id'],
+            transactionTime: transactionMap['transactionTime'],
+            amount: transactionMap['amount'],
+            goods: transactionMap['goods'],
+            category: transactionMap['category'],
+            categoryType: transactionMap['categoryType'],
+            description: transactionMap['description'],
+            parameter: transactionMap['parameter'],
+            extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
+          );
         }
       }
-      // logger.d(groupedTransactions);
-      List<MoneyTransaction> combinedTransactions = groupedTransactions.values.cast<MoneyTransaction>().toList();
+
+      // 결과를 리스트로 변환
+      List<MoneyTransaction> combinedTransactions = groupedTransactions.values.toList();
+
       // List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
       //   logger.i(i);
       //   return MoneyTransaction(
@@ -878,7 +911,6 @@ class DatabaseAdmin {
       if (result.isNotEmpty) {
         // 기존 parameter 값을 JSON 형식으로 가져오기
         String? parameter = result.first['parameter'];
-        logger.d(parameter);
 
         // parameter가 null인 경우 빈 JSON 객체로 초기화
         parameter ??= '{}';
@@ -886,16 +918,15 @@ class DatabaseAdmin {
         // JSON 파싱 및 installment 추가
         Map<String, dynamic> parameterMap = jsonDecode(parameter);
         if (parameterMap['installment'] == null) {
-          parameterMap['installment'] = '{}';
+          parameterMap['installment'] = {};
         }
 
-        // installment 항목에 날짜와 goods 추가
+
         parameterMap['installment']['base_id'] = installBaseId;
 
         // 업데이트된 parameter를 다시 JSON 문자열로 변환
         String updatedParameter = jsonEncode(parameterMap);
-        logger.d(updatedParameter);
-
+        // logger.d(updatedParameter);
         // parameter 업데이트
         await db.update(
           'money_transactions',

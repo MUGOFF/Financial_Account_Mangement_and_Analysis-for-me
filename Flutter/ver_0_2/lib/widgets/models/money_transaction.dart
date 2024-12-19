@@ -48,4 +48,30 @@ class MoneyTransaction {
       'category': category!="" ? category : "미분류",
     };
   }
+
+  MoneyTransaction copyWith({
+    int? id,
+    DateTime? updateTime,
+    String? transactionTime,
+    double? amount,
+    String? goods,
+    String? category,
+    String? categoryType,
+    String? description,
+    String? parameter,
+    bool? extraBudget,
+  }) {
+    return MoneyTransaction(
+      id: id ?? this.id,
+      updateTime: updateTime ?? this.updateTime,
+      transactionTime: transactionTime ?? this.transactionTime,
+      amount: amount ?? this.amount,
+      goods: goods ?? this.goods,
+      category: category ?? this.category,
+      categoryType: categoryType ?? this.categoryType,
+      description: description ?? this.description,
+      parameter: parameter ?? this.parameter,
+      extraBudget: extraBudget ?? this.extraBudget,
+    );
+  }
 }
