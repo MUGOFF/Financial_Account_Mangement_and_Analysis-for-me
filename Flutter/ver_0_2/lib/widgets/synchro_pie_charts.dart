@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
@@ -16,11 +17,13 @@ class _PieChartData {
 ///연간 카테고리별 소비
 class PieChartsByCategoryYear extends StatefulWidget {
   final int year;
-  final Function(ChartPointDetails) onPieSelected;
+  // final Function(ChartPointDetails) onPieMonoSelected;
+  final Function(ChartPointDetails) onPieDoubleSelected;
 
   const PieChartsByCategoryYear({
     required this.year,
-    required this.onPieSelected,
+    // required this.onPieMonoSelected,
+    required this.onPieDoubleSelected,
     super.key
   });
 
@@ -31,10 +34,27 @@ class PieChartsByCategoryYear extends StatefulWidget {
 class _PieChartsByCategoryYearState extends State<PieChartsByCategoryYear> {
   Logger logger = Logger();
   List<_PieChartData> chartData = [];
+  late TooltipBehavior _tooltip;
 
   @override
   void initState() {
     super.initState();
+    _tooltip = TooltipBehavior(
+      enable: true,
+      // shouldAlwaysShow: true,
+      header: "",
+      borderWidth: 5,
+      textStyle: const TextStyle(fontSize: 20, overflow: TextOverflow.ellipsis),
+      tooltipPosition: TooltipPosition.pointer,
+      // format: 'point.y',
+      builder: (dynamic data, dynamic point, dynamic series,
+      int pointIndex, int seriesIndex) {
+        return  Container(
+          padding: const EdgeInsets.all(7),
+          child: Text(NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(data.y), style: const TextStyle(color: Colors.white, fontSize: 24)),
+        );
+      }
+    );
     _fetchChartDatas();
   }
 
@@ -71,6 +91,7 @@ class _PieChartsByCategoryYearState extends State<PieChartsByCategoryYear> {
   Widget build(BuildContext context) {
     return SfCircularChart(
       legend: const Legend(isVisible: true, iconWidth: 25, iconHeight: 25, overflowMode: LegendItemOverflowMode.wrap),
+      tooltipBehavior: _tooltip,
       series: <CircularSeries>[
         PieSeries<_PieChartData, String>(
           dataSource: chartData,
@@ -90,7 +111,8 @@ class _PieChartsByCategoryYearState extends State<PieChartsByCategoryYear> {
           xValueMapper: (_PieChartData data, _) => data.x,
           yValueMapper: (_PieChartData data, _) => data.y,
           dataLabelMapper: (_PieChartData data, _) => '${data.yp.toStringAsFixed(2)}%',
-          onPointTap: widget.onPieSelected,
+          // onPointTap: widget.onPieMonoSelected,
+          onPointDoubleTap: widget.onPieDoubleSelected,
           dataLabelSettings: const DataLabelSettings(
             isVisible: true,
             labelIntersectAction: LabelIntersectAction.shift,
@@ -201,7 +223,7 @@ class _PieChartsByCategoryMonthState extends State<PieChartsByCategoryMonth> {
   }
 }
 
-
+/// 특별 예산 원원그래프
 class PieChartByExtraBudget extends StatefulWidget {
   final List<Map<String, double>> dataMap;
 
@@ -216,11 +238,28 @@ class PieChartByExtraBudget extends StatefulWidget {
 
 class _PieChartByExtraBudgetState extends State<PieChartByExtraBudget> {
   Logger logger = Logger();
+  late TooltipBehavior _tooltip;
   List<_PieChartData> chartData = [];
 
   @override
   void initState() {
     super.initState();
+    _tooltip = TooltipBehavior(
+      enable: true,
+      // shouldAlwaysShow: true,
+      header: "",
+      borderWidth: 5,
+      textStyle: const TextStyle(fontSize: 20, overflow: TextOverflow.ellipsis),
+      tooltipPosition: TooltipPosition.pointer,
+      // format: 'point.y',
+      builder: (dynamic data, dynamic point, dynamic series,
+      int pointIndex, int seriesIndex) {
+        return  Container(
+          padding: const EdgeInsets.all(7),
+          child: Text('${data.x}: ${NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(data.y*-1)}', style: const TextStyle(color: Colors.white, fontSize: 24)),
+        );
+      }
+    );
     _fetchChartDatas();
   }
 
@@ -246,7 +285,8 @@ class _PieChartByExtraBudgetState extends State<PieChartByExtraBudget> {
   @override
   Widget build(BuildContext context) {
       return SfCircularChart(
-        legend: const Legend(isVisible: true, iconWidth: 25, iconHeight: 25),
+        legend: const Legend(isVisible: true, iconWidth: 25, iconHeight: 25, overflowMode: LegendItemOverflowMode.wrap),
+        tooltipBehavior: _tooltip,
         series: <CircularSeries>[
           PieSeries<_PieChartData, String>(
             dataSource: chartData,

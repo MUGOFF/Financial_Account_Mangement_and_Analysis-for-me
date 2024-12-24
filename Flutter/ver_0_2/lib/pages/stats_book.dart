@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'dart:async';
-import 'package:collection/collection.dart';
+// import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logger/logger.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -8,12 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'package:syncfusion_flutter_datagrid/datagrid.dart';
-import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
 import 'package:ver_0_2/widgets/synchro_bar_charts.dart';
 import 'package:ver_0_2/widgets/synchro_pie_charts.dart';
 import 'package:ver_0_2/widgets/synchro_line_charts.dart';
+import 'package:ver_0_2/widgets/synchro_data_grid.dart';
 import 'package:ver_0_2/widgets/linerar_gauge.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/models/budget_setting.dart';
@@ -246,24 +245,6 @@ class _MonthlyConsumePageState extends State<MonthlyConsumePage>{
               ],
             ),
             if(widget.isNotCompareBar)
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.center,
-            //   children: [
-            //     TweenAnimationBuilder<double>(
-            //       tween: Tween<double>(begin: 0, end: 1),
-            //       duration: const Duration(seconds: 1),
-            //       builder: (context, value, child) {
-            //         final animatedExpense = totalExpense * value;
-            //         final animatedExpenseNegative = totalExpenseNegative * value;
-            //         return AutoSizeText(
-            //           '${NumberFormat.simpleCurrency(decimalDigits: totalExpense % 1 == 0? 0:2, locale: "ko-KR").format(animatedExpense)}(사용값: ${NumberFormat.simpleCurrency(decimalDigits: totalExpenseNegative % 1 == 0? 0:2, locale: "ko-KR").format(animatedExpenseNegative)})',
-            //           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            //           maxLines: 1,
-            //         );
-            //       }
-            //     )
-            //   ]
-            // ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -1050,31 +1031,6 @@ class _YearlyConsumePageState extends State<YearlyConsumePage> {
                 const Spacer(flex: 3),
                 Column(
                   children: [
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.center,
-                    //   children: [
-                    //     if(!widget.isNotCompareBar)
-                    //     const Text('전년 비교',style: TextStyle(fontSize: 20)),
-                    //     if(widget.isNotCompareBar)
-                    //     const Text('비용 비율',style: TextStyle(fontSize: 20)),
-                    //     const SizedBox(width: 5,),
-                    //     Switch.adaptive(
-                    //       value: isNotCompareBar,
-                    //       activeColor: Colors.teal,
-                    //       activeTrackColor: Colors.teal.shade200,
-                    //       inactiveThumbColor: Colors.teal,
-                    //       inactiveTrackColor: Colors.teal.shade200,
-                    //       onChanged: (bool value) {
-                    //         setState(() {
-                    //           isNotCompareBar = value;
-                    //           setPastDate();
-                    //           selectCategory = "";
-                    //         });
-                    //       },
-                    //     ),
-                    //     const SizedBox(width: 20,),
-                    //   ],
-                    // ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -1123,7 +1079,7 @@ class _YearlyConsumePageState extends State<YearlyConsumePage> {
               child: PieChartsByCategoryYear(
                 key: UniqueKey(),
                 year: widget.year,
-                onPieSelected: (ChartPointDetails pointInteractionDetails) {
+                onPieDoubleSelected: (ChartPointDetails pointInteractionDetails) {
                   _pageController.nextPage(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
@@ -1818,160 +1774,6 @@ class _BudgetSettingYearlyPageState extends State<BudgetSettingYearlyPage> with 
   }
 }
 
-
-
-class ExtraTransactionGrid {
-  ExtraTransactionGrid({required this.dataid, required this.name, required this.category, required this.amount});
-  final String dataid;
-  final String name;
-  String category;
-  final int amount;
-}
-
-class ExtraTransactionSource extends DataGridSource {
-  final List<ExtraTransactionGrid> extraTransaction;
-  final Function(String, String)? afterEdit;
-  ExtraTransactionSource({required this. extraTransaction, this.afterEdit}) {
-    dataGridRows = extraTransaction
-      .map<DataGridRow>((dataGridRow) => DataGridRow(cells: [
-        DataGridCell<String>(columnName: 'id', value: dataGridRow.dataid),
-        DataGridCell<String>(columnName: 'name', value: dataGridRow.name),
-        DataGridCell<String>(
-            columnName: 'category', value: dataGridRow.category),
-        DataGridCell<int>(
-            columnName: 'amount', value: dataGridRow.amount),
-      ]))
-      .toList();
-  }
-  @override
-  List<DataGridRow> get rows => dataGridRows;
-  
-  List<DataGridRow> dataGridRows = [];
-
-
-  @override
-  DataGridRowAdapter? buildRow(DataGridRow row) {
-    return DataGridRowAdapter(
-        cells: row.getCells().map<Widget>((dataGridCell) {
-      return Container(
-          alignment: (dataGridCell.columnName == 'amount')
-              ? Alignment.centerRight
-              : Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Text(
-            (dataGridCell.columnName == 'amount')
-              ?  NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR", ).format(dataGridCell.value.abs()).toString()
-              : dataGridCell.value.toString(),
-            style: (dataGridCell.columnName == 'id') ? const TextStyle(fontSize: 8) : const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            overflow: TextOverflow.ellipsis,
-          ));
-    }).toList());
-  }
-
-  /// Helps to hold the new value of all editable widgets.
-  /// Based on the new value we will commit the new value into the corresponding
-  /// DataGridCell on the onCellSubmit method.
-  dynamic newCellValue;
-
-  TextEditingController editingController = TextEditingController();
-  
-  @override
-  bool onCellBeginEdit(
-      DataGridRow dataGridRow, RowColumnIndex rowColumnIndex, GridColumn column) {
-    if (column.columnName != 'category') {
-      // Return false, to restrict entering into the editing.
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  @override
-  Future<bool> canSubmitCell(DataGridRow dataGridRow, RowColumnIndex rowColumnIndex,
-      GridColumn column) async{
-    if (column.columnName == 'id' && newCellValue == null) {
-      // Return false, to retain in edit mode.
-      // To avoid null value for cell
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  @override
-  void onCellCancelEdit(DataGridRow dataGridRow, RowColumnIndex rowColumnIndex,
-      GridColumn column) {
-    // handle the cancel editing code here
-  }
-
-  @override
-  Future<void> onCellSubmit(DataGridRow dataGridRow, RowColumnIndex rowColumnIndex,
-      GridColumn column)  async {
-    final dynamic oldValue = dataGridRow
-            .getCells()
-            .firstWhereOrNull((DataGridCell dataGridCell) =>
-                dataGridCell.columnName == column.columnName)
-            ?.value ??
-        '';
-
-    final int dataRowIndex = dataGridRows.indexOf(dataGridRow);
-
-    if (newCellValue == null || oldValue == newCellValue) {
-      return;
-    }
-
-    if (column.columnName == 'category') {
-      dataGridRows[dataRowIndex].getCells()[rowColumnIndex.columnIndex] =
-          DataGridCell<String>(columnName: 'category', value: newCellValue);
-      extraTransaction[dataRowIndex].category = newCellValue.toString();
-      afterEdit?.call(newCellValue.toString(), extraTransaction[dataRowIndex].dataid);
-    }
-  }
-
-  @override
-  Widget? buildEditWidget(DataGridRow dataGridRow,RowColumnIndex rowColumnIndex, GridColumn column, CellSubmit submitCell) {
-    // Text going to display on editable widget
-    final String displayText = dataGridRow
-            .getCells()
-            .firstWhereOrNull((DataGridCell dataGridCell) =>
-                dataGridCell.columnName == column.columnName)
-            ?.value
-            ?.toString() ??
-        '';
-
-    // The new cell value must be reset.
-    // To avoid committing the [DataGridCell] value that was previously edited
-    // into the current non-modified [DataGridCell].
-    newCellValue = null;
-    editingController. text = displayText;
-    return Container(
-      padding: const EdgeInsets.all(8.0),
-      alignment: Alignment.centerLeft,
-      child: TextField(
-        autofocus: true,
-        controller: editingController,
-        textAlign: TextAlign.left,
-        decoration: const InputDecoration(
-          contentPadding: EdgeInsets.fromLTRB(0, 0, 0, 16.0),
-        ),
-        onChanged: (String value) {
-          if (value.isNotEmpty) {
-            newCellValue = value;
-          } else {
-            newCellValue = null;
-          }
-        },
-        onSubmitted: (String value) {
-
-          submitCell();
-        },
-      ),
-    );
-  }
-}
-
-
-
 ///특별 예산 상세 페이지
 class ExtraBudgetGroupDetail extends StatefulWidget {
   final int id;
@@ -1982,13 +1784,12 @@ class ExtraBudgetGroupDetail extends StatefulWidget {
 }
 
 class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
-  final DataGridController _dataGridController = DataGridController();
-  final List<ExtraTransactionGrid> _tableData = <ExtraTransactionGrid>[];
+  Logger logger = Logger ();
+  List<ExtraTransactionGrid> tableData = <ExtraTransactionGrid>[];
   String title = "";
   Color titleColor = Colors.white;
   List<int> selectedTransactionData = [];
   List<Map<String, dynamic>> _tableRawData = [];
-  late ExtraTransactionSource _tableDataSource;
   List<Map<String,double>> _chartMap = [];
 
 
@@ -1998,34 +1799,24 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
     fetchDatas();
   }
 
-  @override
-  void dispose() {
-    _dataGridController.dispose();
-    super.dispose();
-  }
-
   Future<void> fetchDatas() async{
     await fetchBaseDatas();
-    fetchTabelDataGrid();
-    fetchChartMap();
+    // fetchChartMap();
   }
 
   Future<void> fetchBaseDatas() async{
     ExtraBudgetGroup? fetchGroupData;
     fetchGroupData = await DatabaseAdmin().getExtraGroupDatasById(widget.id);
+    // logger.e(fetchGroupData);
     setState(() {
       if(fetchGroupData != null) {
         title = fetchGroupData.dataList!['title'];
         titleColor = Color(fetchGroupData.dataList!['backGroundColor']);
         if (fetchGroupData.dataList!.containsKey('tableData')) {
           _tableRawData = List<Map<String, dynamic>>.from(fetchGroupData.dataList!['tableData']);
+          // logger.d(_tableRawData);
           fetchTableData();
         }
-        // if (fetchGroupData.dataList!.containsKey('subTableData')) {
-        //   for (var datarow in fetchGroupData.dataList!['subTableData']) {
-        //     _tableData.add(ExtraTransactionGrid(datarow['id'],datarow['name'],datarow['category'],datarow['amount']));
-        //   }
-        // }
       } else {
         Navigator.pop(context);
       }
@@ -2033,46 +1824,41 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
   }
 
   void fetchTableData() {
+    List<ExtraTransactionGrid> localtableData = [];
+    for(var rows in _tableRawData) {
+      selectedTransactionData.add(rows['id']);
+      localtableData.add(ExtraTransactionGrid(
+        dataid: rows['dataid'],
+        name: rows['goods'],
+        category: rows['category'],
+        amount: rows['amount'],
+      ));
+    }
     setState(() {
-      for(var rows in _tableRawData) {
-        _tableData.removeWhere((row) => !_tableRawData.any((rawRow) => rawRow['dataid'] == row.dataid));
-        if (_tableData.isEmpty || !(_tableData.any((tableRow) => tableRow.dataid == rows['dataid']))) {
-          selectedTransactionData.add(rows['id']);
-          _tableData.add(ExtraTransactionGrid(
-            dataid: rows['dataid'],
-            name: rows['goods'],
-            category: rows['category'],
-            amount: rows['amount'],
-          ));
-        }
-      }
+      tableData = localtableData;
+      selectedTransactionData = selectedTransactionData.toSet().toList();
+      fetchChartMap();
     });
-  }  
-
-
-  void fetchTabelDataGrid() {
-    setState(() {
-      _tableDataSource = ExtraTransactionSource(
-        extraTransaction: _tableData,
-        afterEdit: (String newValue, String dataID) {
-          setState(() {
-            var rowToUpdate = _tableRawData.firstWhereOrNull((row) => row['dataid'] == dataID);
-            if (rowToUpdate != null) {
-              rowToUpdate['category'] = newValue;
-              updateDataToDatabase(_tableRawData);
-            }
-            fetchChartMap();
-          });
-        }
-      );
-    });
-  }
+  } 
+      // for(var rows in _tableRawData) {
+      //   tableData.removeWhere((row) => !_tableRawData.any((rawRow) => rawRow['dataid'] == row.dataid));
+      //   if (tableData.isEmpty || !(tableData.any((tableRow) => tableRow.dataid == rows['dataid']))) {
+      //     selectedTransactionData.add(rows['id']);
+      //     logger.d(1 );
+      //     logger.d(rows['category']);
+      //     tableData.add(ExtraTransactionGrid(
+      //       dataid: rows['dataid'],
+      //       name: rows['goods'],
+      //       category: rows['category'],
+      //       amount: rows['amount'],
+      //     ));
+      //   }
+      // }
 
   void fetchChartMap(){
     List<Map<String,double>> localMap = [];
     Map<String, double> categoryTotal = {};
-
-    for (var transaction in _tableData) {
+    for (var transaction in tableData) {
       if (categoryTotal.containsKey(transaction.category)) {
         categoryTotal[transaction.category] = categoryTotal[transaction.category]! + transaction.amount.toDouble();
       } else {
@@ -2085,8 +1871,16 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
     Map<String, double> map = {key: value};
       localMap.add(map);
     });
+    // logger.i('localMap$localMap');
     setState(() {
      _chartMap = localMap;
+    //  logger.i(_chartMap);
+    });
+  }
+
+  void updatePage() {
+    setState(() {
+      fetchDatas();
     });
   }
 
@@ -2103,14 +1897,53 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
         ),
         backgroundColor: titleColor,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            color: (titleColor.red +titleColor.green + titleColor.blue) /3 > 127
-              ?Colors.black : Colors.white,
-            onPressed: () {
-              _showDialog();
+          // IconButton(
+          //   icon: const Icon(Icons.more_vert),
+          //   color: (titleColor.red +titleColor.green + titleColor.blue) /3 > 127
+          //     ?Colors.black : Colors.white,
+          //   onPressed: () {
+          //     _showDialog();
+          //   },
+          // ),
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert,
+              color: (titleColor.red + titleColor.green + titleColor.blue) / 3 > 127
+                  ? Colors.black
+                  : Colors.white,
+            ),
+            onSelected: (value) {
+              // 메뉴 항목 선택 시 동작 정의
+              // print("Selected: $value");
+              switch (value) {
+                case 'transacton_adminstration':
+                  _showDialog();
+                  break;
+                case 'option2':
+                  // selectedWidget = const Book();
+                  break;
+                case 'option3':
+                  // selectedWidget = const StatisticsView();
+                  break;
+              }
             },
-          ),
+            itemBuilder: (BuildContext context) {
+              return const [
+                PopupMenuItem<String>(
+                  value: 'transacton_adminstration',
+                  child: Text('거래 내역 관리'),
+                ),
+                PopupMenuItem<String>(
+                  value: 'option2',
+                  child: Text('Option 2'),
+                ),
+                PopupMenuItem<String>(
+                  value: 'option3',
+                  child: Text('Option 3'),
+                ),
+              ];
+            },
+          )
         ],
       ),
       body: SingleChildScrollView(
@@ -2142,87 +1975,11 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: SfDataGridTheme(
-                      data: SfDataGridThemeData(headerColor: Theme.of(context).colorScheme.inversePrimary),
-                      child:SfDataGrid(
-                        source: _tableDataSource,
-                        controller: _dataGridController,
-                        columnWidthMode: ColumnWidthMode.fill,
-                        headerGridLinesVisibility : GridLinesVisibility.none,
-                        gridLinesVisibility: GridLinesVisibility.vertical,
-                        allowEditing: true,
-                        navigationMode: GridNavigationMode.cell,
-                        onCellTap:  (DataGridCellTapDetails details) {
-                          _dataGridController.beginEdit(
-                            RowColumnIndex(details.rowColumnIndex.rowIndex-1,details.rowColumnIndex.columnIndex)
-                          );
-                        },
-                        selectionMode: SelectionMode.single,
-                        columns: [
-                          GridColumn(
-                            columnName: 'id',
-                            allowEditing: false,
-                            label: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                              alignment: Alignment.center,
-                              child: const Text(
-                                'ID',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            )
-                          ),
-                          GridColumn(
-                            columnName: 'name',
-                            minimumWidth: 130,
-                            allowEditing: false,
-                            label: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                              alignment: Alignment.center,
-                              child: const Text(
-                                'Name',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            )
-                          ),
-                          GridColumn(
-                            columnName: 'category',
-                            minimumWidth: 100,
-                            label: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                              alignment: Alignment.center,
-                              child: const Text(
-                                'Category',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            )
-                          ),
-                          GridColumn(
-                            columnName: 'amount',
-                            minimumWidth: 140,
-                            allowEditing: false,
-                            label: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                              alignment: Alignment.center,
-                              child: const Text(
-                                'Amount',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            )
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  ExtraBudgetDataGrid(id: widget.id,updatePageCallback: updatePage),
                   if(_chartMap != [])
                   Column(
                     children: [PieChartByExtraBudget(key: UniqueKey(),dataMap: _chartMap,)]
-                  ), 
+                  ),
                 ],
               )
             ]
@@ -2260,8 +2017,8 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
                         extraTransactionDatas.firstWhere((transaction) => transaction.id == id)
                       );
                     }
-                    logger.d(localselectedTransactionData.length);
-                    logger.d(selectedTransactionData.length);
+                    // logger.d(localselectedTransactionData.length);
+                    // logger.d(selectedTransactionData.length);
                     if (extraTransactionDatas.isEmpty) {
                       return const Center(child: Text('No data available', style: TextStyle(fontSize: 32),));
                     }
@@ -2285,7 +2042,7 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
                                           : Colors.grey,
                                     ),
                                     title: Text(extraTransactionDatas[index].goods),
-                                    subtitle: Text(extraTransactionDatas[index].id!.toString()),
+                                    subtitle: Text(extraTransactionDatas[index].transactionTime),
                                     onTap: () {
                                       setState(() {
                                         if (selectedTransactionData.contains(extraTransactionDatas[index].id)) {
@@ -2320,44 +2077,45 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
         );
       }
     ).then((selectedData) {
-      setState(() {
-        try {
-          if (_tableRawData.isEmpty) {
-            _tableRawData.addAll(
-              selectedData
-                .map<Map<String, dynamic>>((transaction) => {
-                  'id': transaction.id,
-                  'dataid': '${"${transaction.id}000${widget.id}".hashCode}',
-                  'date': transaction.transactionTime,
-                  'goods': transaction.goods,
-                  'category': transaction.category,
-                  'amount': transaction.amount.toInt(),
-                })
-            );
-          } else {
-            _tableRawData.addAll(
-              selectedData
-                .map<Map<String, dynamic>>((transaction) => {
-                  'id': transaction.id,
-                  'dataid': '${"${transaction.id}000${widget.id}".hashCode}',
-                  'date': transaction.transactionTime,
-                  'goods': transaction.goods,
-                  'category': transaction.category,
-                  'amount': transaction.amount.toInt(),
-                })
-                .where((transaction) =>
-                    !_tableRawData.any((row) => row['id'] == transaction['id'])),
-            );
+      if(selectedData != null) {
+        setState(() {
+          try {
+            if (_tableRawData.isEmpty) {
+              _tableRawData.addAll(
+                selectedData
+                  .map<Map<String, dynamic>>((transaction) => {
+                    'id': transaction.id,
+                    'dataid': '${"${transaction.id}000${widget.id}".hashCode}',
+                    'date': transaction.transactionTime,
+                    'goods': transaction.goods,
+                    'category': transaction.category,
+                    'amount': transaction.amount.toInt(),
+                  })
+              );
+            } else {
+              _tableRawData.addAll(
+                selectedData
+                  .map<Map<String, dynamic>>((transaction) => {
+                    'id': transaction.id,
+                    'dataid': '${"${transaction.id}000${widget.id}".hashCode}',
+                    'date': transaction.transactionTime,
+                    'goods': transaction.goods,
+                    'category': transaction.category,
+                    'amount': transaction.amount.toInt(),
+                  })
+                  .where((transaction) =>
+                      !_tableRawData.any((row) => row['id'] == transaction['id'])),
+              );
+            }
+            _tableRawData.removeWhere((row) => !selectedData.any((transaction) => transaction.id == row['id']));
+            updateDataToDatabase(_tableRawData);
+            fetchTableData();
+            fetchChartMap();
+          } catch (e) {
+            logger.e(e);
           }
-          _tableRawData.removeWhere((row) => !selectedData.any((transaction) => transaction.id == row['id']));
-          updateDataToDatabase(_tableRawData);
-          fetchTableData();
-          fetchTabelDataGrid();
-          fetchChartMap();
-        } catch (e) {
-          logger.e(e);
-        }
-      });
+        });
+      }
     });
   }
 
@@ -2367,11 +2125,11 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
       dataList: {
         'title':title,
         'backGroundColor': titleColor.value,
-        'selectedTransactionData': selectedTransactionData,
+        'selectedTransactionData': selectedTransactionData.toSet().toList(),
         'tableData': jsonfyTableData,
       }
     );
-    // 데이터베이스에 은행 계좌 정보 장장
+    logger.d(updatedGroup.dataList);
     DatabaseAdmin().updateExtraGroup(updatedGroup);
   }
 }

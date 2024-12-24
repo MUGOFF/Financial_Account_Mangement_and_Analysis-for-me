@@ -136,6 +136,7 @@ class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
   List<LineChartDataDatetime> chartData = [];
   double maxYvalue = 100;
   double interval = 100;
+  double dateinterval = 100;
 
   @override
   void initState() {
@@ -160,9 +161,10 @@ class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
         localmaxYvalue = data['totalAmount'];
       }
     }
-
+    double localdateinterval = (localChartData.length/12);
     if (mounted) {
       setState(() {
+        dateinterval = localdateinterval;
         chartData = localChartData;
         interval = localmaxYvalue == 0 ? 1 : max(pow(10, (log((localmaxYvalue/3).abs())/ln10).floor()).toDouble(),pow(10, (log((localmaxYvalue).abs())/ln10).floor()).toDouble()/2);
         maxYvalue = ((localmaxYvalue/interval).ceil()*interval).toDouble();
@@ -184,7 +186,8 @@ class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
         primaryXAxis: DateTimeAxis(
           dateFormat: DateFormat.yM(),
           intervalType: DateTimeIntervalType.months,
-          rangePadding: ChartRangePadding.round,
+          interval: dateinterval,
+          rangePadding: ChartRangePadding.normal,
         ),
         primaryYAxis: NumericAxis(
           minimum: 0,
@@ -195,6 +198,7 @@ class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
         series: <CartesianSeries>[
           SplineSeries<LineChartDataDatetime, DateTime>(
             name: widget.tagName,
+            splineType: SplineType.monotonic,
             dataSource: chartData,
             xValueMapper: (LineChartDataDatetime data, _) => data.x,
             yValueMapper: (LineChartDataDatetime data, _) => data.y,

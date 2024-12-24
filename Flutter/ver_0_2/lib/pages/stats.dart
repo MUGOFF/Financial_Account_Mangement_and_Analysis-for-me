@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:logger/logger.dart';
@@ -230,16 +231,16 @@ class _ExtraBudgetGridState extends State<ExtraBudgetGrid> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)) ,
                   backgroundColor: Color(primaryColors),
                 ),
-                child: Align(
-                  alignment: const Alignment(-1,-0.9),
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 20.0, 
-                      color: (Color(primaryColors).red +Color(primaryColors).green + Color(primaryColors).blue) /3 > 127
-                        ?Colors.black : Colors.white),
-                    textAlign: TextAlign.center
+                child: AutoSizeText(
+                  title,
+                  style: TextStyle(
+                    color: (Color(primaryColors).red +Color(primaryColors).green + Color(primaryColors).blue) /3 > 127
+                      ?Colors.black : Colors.white,
+                    fontWeight: FontWeight.w600
                   ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  minFontSize: 24,
                 ),
               ),
             ),

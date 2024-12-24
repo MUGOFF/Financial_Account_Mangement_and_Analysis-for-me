@@ -699,10 +699,15 @@ class DatabaseAdmin {
       final db = await database;
 
       // 태그가 포함된 거래들을 찾는 쿼리
+      // final List<Map<String, dynamic>> rawList = await db.query(
+      //   'money_transactions',
+      //   where: "description LIKE ?",
+      //   whereArgs: ['%$tagName%'],
+      // );
       final List<Map<String, dynamic>> rawList = await db.query(
         'money_transactions',
-        where: "description LIKE ?",
-        whereArgs: ['%$tagName%'],
+        where: "description REGEXP ?",
+        whereArgs: ['(^|\\s)#$tagName(\\s|\$)'],
       );
 
       // final List<MoneyTransaction> rawList =List.generate(transactionMaps.length, (i) {
@@ -1477,6 +1482,42 @@ class DatabaseAdmin {
     );
   }
 
+  Future<void> updateExtraJsonData(String jsonData, int dataID) async {
+    final db = await database;
+    // await db.execute(
+    //   """
+    //     UPDATE extra_budgets
+    //     SET dataList = json_patch(
+    //       dataList,
+    //       json_object(
+    //         'tableData', json_object(
+    //           $jsonData
+    //         )
+    //       )
+    //     )
+    //     WHERE id = $dataID;
+    //   """
+    // );
+    await db.rawUpdate(
+      """
+      UPDATE extra_budgets
+        SET dataList = json_patch(
+          dataList,
+          json(?)
+        )
+        WHERE id = ?;
+      """,
+      [jsonData, dataID],
+    );
+  }
+
+  Future<int> clearExtraGroup() async {
+    final db = await database;
+    return await db.delete(
+      'extra_budgets',
+    );
+  }
+
   Future<int> deleteExtraGroup(int id) async {
     final db = await database;
     return await db.delete(
@@ -1490,12 +1531,17 @@ class DatabaseAdmin {
   Future<List<ExtraBudgetGroup>> getAllExtraGroupDatas() async {
     final db = await database;
     final List<Map<String, dynamic>> groupDataMaps = await db.query('extra_budgets');
-    return List.generate(groupDataMaps.length, (i) {
-      return ExtraBudgetGroup(
-        id: groupDataMaps[i]['id'],
-        dataList: groupDataMaps[i]['dataList'] != null ? Map<String, dynamic>.from(json.decode(groupDataMaps[i]['dataList'])) : null,
-      );
-    });
+    try {
+      return List.generate(groupDataMaps.length, (i) {
+        return ExtraBudgetGroup(
+          id: groupDataMaps[i]['id'],
+          dataList: groupDataMaps[i]['dataList'] != null ? Map<String, dynamic>.from(json.decode(groupDataMaps[i]['dataList'])) : null,
+        );
+      });
+    } catch(e) {
+      logger.d(groupDataMaps);
+      return [];
+    }
   }
 
   ///특별 예산 그룹 아이디로 가져오기

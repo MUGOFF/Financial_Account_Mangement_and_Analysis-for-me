@@ -170,7 +170,13 @@ class _HomePageCotentState extends State<HomePageCotent> {
         child: PageView(
             controller: _pageController,
             children: const [
-              Text("미예정")
+              Text("미예정"),
+              // OutlinedButton(
+              //   onPressed: (){
+              //     DatabaseAdmin().clearExtraGroup();
+              //   }, 
+              //   child: Text('칟ㅁㄱ ㄷㅌㅅㄱㅁ')
+              // )
               // InvestHolingsPage(currentHoldings: currentHoldings, investCategories: investCategories),
             ],
           ),

@@ -1,11 +1,15 @@
 // import 'dart:math';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
+import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
+import 'package:ver_0_2/widgets/models/extra_budget_group.dart';
 
 class TransactionGridDataSource extends DataGridSource {
   TransactionGridDataSource({required List<MoneyTransaction> transanctions}) {
@@ -53,7 +57,6 @@ class TransactionGridDataSource extends DataGridSource {
     return DataGridRowAdapter(
         cells: row.getCells().map<Widget>((dataGridCell) {
       return Container(
-          // constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.5,),
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 10.0),
           child: AutoSizeText(
@@ -68,44 +71,10 @@ class TransactionGridDataSource extends DataGridSource {
             maxLines: 1,
             style:  const TextStyle(fontSize: 16),
             minFontSize: 12,
-          // child: (dataGridCell.columnName == 'Date')
-          //   ? AutoSizeText(formatterDate(dataGridCell.value), maxLines: 1)
-          //   : Text(
-          //   (dataGridCell.columnName == 'Amount')
-          //   ?formatterK(dataGridCell.value)
-          //   : dataGridCell.value.toString(),
-          //   overflow: (dataGridCell.columnName == 'Name')
-          //     ? TextOverflow.ellipsis
-          //     : TextOverflow.clip,
-          //   // style:  TextStyle(fontSize: (dataGridCell.columnName == 'Date')
-          //   //   ? 12
-          //   //   : 16
-          //   // ),
           )
         );
     }).toList());
   }
-
-  // @override
-  // Future<void> handleLoadMoreRows() async {
-  //   await Future.delayed(const Duration(seconds: 3));
-  //   // _addMoreRows(transanctions, 15);
-  //   notifyListeners();
-  // }
-
-  // void _addMoreRows(List<MoneyTransaction> transanctions, int count) {
-  //   final Random _random = Random();
-  //   final startIndex = transanctions.isNotEmpty ? transanctions.length : 0,
-  //       endIndex = startIndex + count;
-  //   for (int i = startIndex; i < endIndex; i++) {
-  //     transanctions.add(MoneyTransaction(
-  //       1000 + i,
-  //       _names[_random.nextInt(_names.length - 1)],
-  //       _designation[_random.nextInt(_designation.length - 1)],
-  //       10000 + _random.nextInt(10000),
-  //     ));
-  //   }
-  // }
 }
 
 class TagDataGrid extends StatefulWidget {
@@ -154,40 +123,7 @@ class _TagDataGridState extends State<TagDataGrid> {
             source: tagTransactionDataSource!,
             columnWidthMode: ColumnWidthMode.fill,
             allowSorting: true,
-            // allowMultiColumnSorting: true,
             allowTriStateSorting: true,
-            // allowFiltering: true,
-            // columnWidthCalculationRange: ColumnWidthCalculationRange.allRows,
-            // loadMoreViewBuilder: (BuildContext context, LoadMoreRows loadMoreRows) {
-            // Future<String> loadRows() async {
-            //   // Call the loadMoreRows function to call the
-            //   // DataGridSource.handleLoadMoreRows method. So, additional
-            //   // rows can be added from handleLoadMoreRows method.
-            //   await loadMoreRows();
-            //   return Future<String>.value('Completed');
-            // }
-
-            //   return FutureBuilder<String>(
-            //     initialData: 'loading',
-            //     future: loadRows(),
-            //     builder: (context, snapShot) {
-            //       if (snapShot.data == 'loading') {
-            //         return Container(
-            //           height: 60.0,
-            //           width: double.infinity,
-            //           decoration: const BoxDecoration(
-            //             color: Colors.white,
-            //             border: BorderDirectional(top: BorderSide(width: 1.0,color: Color.fromRGBO(0, 0, 0, 0.26)))
-            //           ),
-            //           alignment: Alignment.center,
-            //           child: const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.deepPurple))
-            //         );
-            //       } else {
-            //         return SizedBox.fromSize(size: Size.zero);
-            //       }
-            //     }
-            //   );
-            // },
             columns: [
               GridColumn(
                 // allowFiltering: false,
@@ -232,62 +168,350 @@ class _TagDataGridState extends State<TagDataGrid> {
       ]
     );
   }
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Column(
-  //     children: [
-  //       Expanded(
-  //         child: SfDataGrid(
-  //           source: tagTransactionDataSource!,
-  //           columnWidthMode: ColumnWidthMode.fill,
-  //           allowSorting: true,
-  //           // allowMultiColumnSorting: true,
-  //           allowTriStateSorting: true,
-  //           // allowFiltering: true,
-  //           // columnWidthCalculationRange: ColumnWidthCalculationRange.allRows,
-  //           columns: [
-  //             GridColumn(
-  //               // allowFiltering: false,
-  //               columnName: 'Date',
-  //               label: Container(
-  //                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-  //                 alignment: Alignment.center,
-  //                 child: const Text('Date')
-  //               )
-  //             ),
-  //             GridColumn(
-  //               // allowFiltering: false,
-  //               columnName: 'Name',
-  //               label: Container(
-  //                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-  //                 alignment: Alignment.center,
-  //                 child: const Text('Name')
-  //               )
-  //             ),
-  //             GridColumn(
-  //               // allowFiltering: false,
-  //               columnName: 'Amount',
-  //               label: Container(
-  //                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-  //                 alignment: Alignment.center,
-  //                 child: const Text('Amount')
-  //               )
-  //             ),
-  //             GridColumn(
-  //               allowSorting: false,
-  //               // filterPopupMenuOptions: const FilterPopupMenuOptions(canShowSortingOptions: false, filterMode:FilterMode.checkboxFilter,canShowClearFilterOption: false),
-  //               columnName: 'Category',
-  //               label: Container(
-  //                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-  //                 alignment: Alignment.center,
-  //                 child: const Text('Category')
-  //               )
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ]
-  //   );
+}
+
+///특별 예산 클래스
+class ExtraTransactionGrid {
+  ExtraTransactionGrid({required this.dataid, required this.name, required this.category, required this.amount, this.modifyCategory});
+  final String dataid;
+  final String name;
+  String category;
+  final int amount;
+  Function(String)? modifyCategory;
+}
+
+class ExtraTransactionSource extends DataGridSource {
+  Logger logger = Logger ();
+  final TextEditingController _textFieldController = TextEditingController();
+  final BuildContext context;
+  final List<ExtraTransactionGrid> extraTransaction;
+  
+  // final Function(String, String)? afterEdit;
+  ExtraTransactionSource({
+    required this. extraTransaction,
+    // this.afterEdit,
+    required this.context,
+  }) {
+    // if (extraTransaction.length < _rowsPerPage){
+    //   extraTransactionPage = extraTransaction;
+    // } else {
+    //   extraTransactionPage = extraTransaction.getRange(0, _rowsPerPage).toList();
+    // }
+    extraTransactionPage = extraTransaction.length < _rowsPerPage
+      ? extraTransaction
+      : extraTransaction.getRange(0, _rowsPerPage).toList();
+    buildPaginatedDataGridRows();
+    // dataGridRows = extraTransaction
+    //   .map<DataGridRow>((dataGridRow) => DataGridRow(cells: [
+    //     // DataGridCell<String>(columnName: 'id', value: dataGridRow.dataid),
+    //     DataGridCell<String>(columnName: 'name', value: dataGridRow.name),
+    //     DataGridCell<String>(
+    //         columnName: 'category', value: dataGridRow.category),
+    //     DataGridCell<int>(
+    //         columnName: 'amount', value: dataGridRow.amount),
+    //     DataGridCell<Function>(
+    //         columnName: 'modify', value: dataGridRow.modifyCategory),
+    //   ]))
+    //   .toList();
+    logger.d(dataGridRows);
+  }
+  List<ExtraTransactionGrid> extraTransactionPage=[];
+  final int _rowsPerPage = 5;
+
+  @override
+  List<DataGridRow> get rows => dataGridRows;
+  
+  List<DataGridRow> dataGridRows = [];
+
+  @override
+  DataGridRowAdapter? buildRow(DataGridRow row) {
+    return DataGridRowAdapter(
+      cells: row.getCells().map<Widget>((dataGridCell) {
+      return Container(
+          alignment: Alignment.center,
+          child: (dataGridCell.columnName == 'modify')
+          ? IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  // logger.d(row.getCells()[1].value);
+                  // logger.d(dataGridCell.value);
+                  _textFieldController.text = row.getCells()[1].value;
+                  return AlertDialog(
+                  title: const Text('카테고리 수정'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: _textFieldController,
+                          cursorColor: Colors.transparent,
+                          decoration: const InputDecoration(
+                            hintText: '카테고리를 입력하세요요', // 힌트 텍스트
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          dataGridCell.value(_textFieldController.text);
+                          notifyListeners();
+                          Navigator.pop(context);
+                        },
+                        child: const Text('수정'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          )
+          : Text(
+            (dataGridCell.columnName == 'amount')
+              ?  NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR", ).format(dataGridCell.value.abs()).toString()
+              : dataGridCell.value.toString(),    
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            overflow: TextOverflow.ellipsis,
+          ));
+    }).toList());
+  }
+
+  @override
+  Future<bool> handlePageChange(int oldPageIndex, int newPageIndex) async {
+    int startIndex = newPageIndex * _rowsPerPage;
+    int endIndex = startIndex + _rowsPerPage;
+    if (startIndex < extraTransaction.length && endIndex <= extraTransaction.length) {
+      extraTransactionPage =
+          extraTransaction.getRange(startIndex, endIndex).toList(growable: false);
+      buildPaginatedDataGridRows();
+    } else {
+      extraTransactionPage = [];
+    }
+
+    return true;
+  }
+
+  void buildPaginatedDataGridRows() {
+    dataGridRows = extraTransactionPage.map<DataGridRow>((dataGridRow) {
+      return DataGridRow(cells: [
+        // DataGridCell<String>(columnName: 'id', value: dataGridRow.dataid),
+        DataGridCell<String>(columnName: 'name', value: dataGridRow.name),
+        DataGridCell<String>(
+            columnName: 'category', value: dataGridRow.category),
+        DataGridCell<int>(
+            columnName: 'amount', value: dataGridRow.amount),
+        DataGridCell<Function>(
+            columnName: 'modify', value: dataGridRow.modifyCategory),
+      ]);
+      // DataGridRow(cells: [
+      //   DataGridCell(columnName: 'orderID', value: dataGridRow.orderID),
+      //   DataGridCell(columnName: 'customerID', value: dataGridRow.customerID),
+      //   DataGridCell(columnName: 'orderDate', value: dataGridRow.orderDate),
+      //   DataGridCell(columnName: 'freight', value: dataGridRow.freight),
+      // ]);
+    }).toList(growable: false);
+    logger.i(dataGridRows);
+  }
+  // void updateDataToDatabase(String jsonData, int dataID) {
+  //   DatabaseAdmin().updateExtraJsonData(jsonData, dataID);
   // }
 }
 
+///특별 예산 데이타표
+class ExtraBudgetDataGrid extends StatefulWidget {
+  final int id;
+  final Function updatePageCallback;
+  const ExtraBudgetDataGrid({required this.id,required this.updatePageCallback, super.key});
+
+  @override
+  State<ExtraBudgetDataGrid> createState() => _ExtraBudgetDataGridState();
+}
+
+class _ExtraBudgetDataGridState extends State<ExtraBudgetDataGrid> {
+  Logger logger = Logger();
+  Map<String, dynamic>? budgetData;
+  List<int> selectedTransactionData = [];
+  List<Map<String, dynamic>> _tableRawData = [];
+  List<ExtraTransactionGrid> tableData = <ExtraTransactionGrid>[];
+  List<ExtraTransactionGrid> tableDataPage = <ExtraTransactionGrid>[];
+  ExtraTransactionSource? _tableDataSource;
+  final int _rowsPerPage = 5;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchBaseDatas();
+  }
+
+  Future<void> fetchBaseDatas() async{
+    ExtraBudgetGroup? fetchGroupData;
+    fetchGroupData = await DatabaseAdmin().getExtraGroupDatasById(widget.id);
+    setState(() {
+      if(fetchGroupData != null) {
+        if (fetchGroupData.dataList!.containsKey('tableData')) {
+          budgetData = fetchGroupData.dataList!;
+          // logger.d(fetchGroupData.dataList!);
+          _tableRawData = List<Map<String, dynamic>>.from(fetchGroupData.dataList!['tableData']);
+          fetchTableData();
+        }
+      }
+    });
+  }
+  void fetchTableData() {
+    List<ExtraTransactionGrid> localtableData = [];
+    _tableRawData.asMap().forEach((index, rows) {
+      selectedTransactionData.add(rows['id']);
+      localtableData.add(ExtraTransactionGrid(
+        dataid: rows['dataid'],
+        name: rows['goods'],
+        category: rows['category'],
+        amount: rows['amount'],
+        modifyCategory: (String category) {
+          setState(() {
+            _tableRawData[index]['category'] = category;
+            updateCategoryDataToDatabase(_tableRawData,widget.id);
+            fetchBaseDatas();
+            widget.updatePageCallback();
+          });
+        },
+      ));
+    });
+    setState(() {
+      tableData = localtableData;
+      selectedTransactionData = selectedTransactionData.toSet().toList();
+      _tableDataSource = ExtraTransactionSource(
+        extraTransaction: tableData,
+        context: context
+      );
+    });
+  } 
+  // void fetchTableData() {
+  //   _tableRawData.asMap().forEach((index, rows) {
+  //     // logger.d(_tableRawData);
+  //     //_tableData에서 _tableRawData에 포함되지 않은 dataid를 가진 항목을 제거
+  //     tableData.removeWhere((row) => !_tableRawData.any((rawRow) => rawRow['dataid'] == row.dataid));
+  //     if (tableData.isEmpty || !(tableData.any((tableRow) => tableRow.dataid == rows['dataid']))) {
+  //       selectedTransactionData.add(rows['id']);
+  //       tableData.add(ExtraTransactionGrid(
+  //         dataid: rows['dataid'],
+  //         name: rows['goods'],
+  //         category: rows['category'],
+  //         amount: rows['amount'],
+  //         modifyCategory: (String category) {
+  //           setState(() {
+  //             _tableRawData[index]['category'] = category;
+  //             updateCategoryDataToDatabase(_tableRawData,widget.id);
+  //             fetchBaseDatas();
+  //             widget.updatePageCallback();
+  //           });
+  //           // logger.i(_tableRawData);
+  //         },
+  //       ));
+  //     }
+  //   });
+  //   setState(() {
+  //     _tableDataSource = ExtraTransactionSource(
+  //       extraTransaction: tableData,
+  //       context: context
+  //     );
+  //   });
+  // }
+  
+  @override
+  Widget build(BuildContext context) {
+    if (_tableDataSource == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          SfDataGridTheme(
+            data: SfDataGridThemeData(headerColor: Theme.of(context).colorScheme.inversePrimary),
+            child:SfDataGrid(
+              source: _tableDataSource!,
+              columnWidthMode: ColumnWidthMode.fill,
+              headerGridLinesVisibility : GridLinesVisibility.none,
+              gridLinesVisibility: GridLinesVisibility.vertical,
+              navigationMode: GridNavigationMode.cell,
+              selectionMode: SelectionMode.single,
+              columns: [
+                GridColumn(
+                  columnName: 'name',
+                  label: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'Name',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  )
+                ),
+                GridColumn(
+                  columnName: 'category',
+                  label: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'Category',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  )
+                ),
+                GridColumn(
+                  columnName: 'amount',
+                  label: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'Amount',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  )
+                ),
+                GridColumn(
+                  columnName: 'modify',
+                  maximumWidth: 40,
+                  minimumWidth: 40,
+                  label: Container(
+                    alignment: Alignment.center,
+                    child: const Text(
+                      '',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  )
+                ),
+              ],
+            ),
+          ),
+          SfDataPager(
+            delegate: _tableDataSource!,
+            pageCount: tableData.length / _rowsPerPage,
+            direction: Axis.horizontal,
+          )
+        ],
+      )
+    );
+  }
+
+  void updateCategoryDataToDatabase(List<Map<String, dynamic>> jsonfyTableData, int id) {
+    if (budgetData != null) {
+      budgetData!['tableData'] = jsonfyTableData;
+    }
+    String savedata = json.encode(budgetData);
+    DatabaseAdmin().updateExtraJsonData(savedata, id);
+  }
+
+}

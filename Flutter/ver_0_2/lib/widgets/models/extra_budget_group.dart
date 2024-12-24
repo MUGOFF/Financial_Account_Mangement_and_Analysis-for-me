@@ -12,7 +12,7 @@ class ExtraBudgetGroup {
   // Convert object to a Map object
   Map<String, dynamic> toMap() {
     return {
-      'dataList':json.encode(dataList)
+      'dataList': dataList != null ? json.encode(dataList): {}
     };
   }
 }

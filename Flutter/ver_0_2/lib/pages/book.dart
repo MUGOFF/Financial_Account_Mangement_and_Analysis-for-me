@@ -40,7 +40,6 @@ class _BookState extends State<Book> {
     super.initState();
     _fetchTransactions();
     _scrollController.addListener(_scrollListener);
-    // logger.d(transactions);
   }
 
   @override
@@ -216,13 +215,6 @@ class _BookState extends State<Book> {
             ),
           ),
           if (transactions.isNotEmpty) 
-          // Expanded(
-          //   child: ListView.builder(
-          //     shrinkWrap: true,
-          //     controller: _scrollController,
-          //     itemCount: transactions.length,
-          //     // itemExtent: itemSize,
-          //     itemBuilder: (context, index) {
           Expanded(
             child: 
             CustomScrollView(
@@ -304,50 +296,6 @@ class _BookState extends State<Book> {
           const Center(child: Text('금월 데이터가 없습니다')),
         ]
       ),
-                  // child: ListTile(
-                  //   title: Text(transaction.goods),
-                  //   subtitle: Text(transaction.category),
-                  //   trailing: Text(formatterK(transaction.categoryType == '소비' ? transaction.amount * -1 : transaction.amount), style: TextStyle(fontSize: 20, color: transaction.categoryType == '소비' && transaction.amount > 0 ? Colors.grey : Colors.black)),// 여기에 거래와 관련된 추가 정보 표시할 수 있음
-                  //   leading: isSelectionMode
-                  //   ? Icon(
-                  //     isSelected ? Icons.check : null,
-                  //     color: isSelected ? Colors.green : Colors.transparent,
-                  //   )
-                  //   : null,
-                  //   onTap: isSelectionMode
-                  //     ? () => toggleSelection(transaction.id!)
-                  //     : () {
-                  //       Navigator.push(
-                  //         context,
-                  //         PageRouteBuilder(
-                  //           pageBuilder: (context, animation, secondaryAnimation) => BookAdd(moneyTransaction: transactions[index]),
-                  //           transitionsBuilder:
-                  //             (context, animation, secondaryAnimation, child) {
-                  //             const begin = Offset(1.0, 0.0);
-                  //             const end = Offset.zero;
-                  //             const curve = Curves.ease;
-
-                  //             var tween = Tween(begin: begin, end: end)
-                  //                 .chain(CurveTween(curve: curve));
-
-                  //             return SlideTransition(
-                  //               position: animation.drive(tween),
-                  //               child: child,
-                  //             );
-                  //           },
-                  //         ),
-                  //       ).then((result) {
-                  //         setState(() {
-                  //           _fetchTransactions();
-                  //         });
-                  //       }
-                  //     );
-                  //   },
-                  //   onLongPress: () {
-                  //     enterSelectionMode();
-                  //     toggleSelection(transaction.id!);
-                  //   }
-                  // ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

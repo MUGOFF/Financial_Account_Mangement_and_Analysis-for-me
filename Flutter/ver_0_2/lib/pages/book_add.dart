@@ -187,13 +187,24 @@ class _BookAddState extends State<BookAdd> {
     final beforeCursor = text.substring(0, cursorPosition);
     final afterCursor = text.substring(cursorPosition);
 
+    final matches = RegExp(r'#', unicode: true).allMatches(beforeCursor);
+    final lastMatch = matches.isNotEmpty ? matches.last : null;
+    String updatedBeforeCursor;
+    if (lastMatch != null) {
+    // 마지막 태그를 새 태그로 교체
+      updatedBeforeCursor = beforeCursor.substring(0, lastMatch.start+1);
+    } else {
+      // 마지막 태그가 없는 경우, 새 태그를 추가
+      updatedBeforeCursor = beforeCursor;
+    }
+
     // 태그 삽입 및 커서 위치 조정
-    final newText = '$beforeCursor${tag.replaceAll(RegExp(r'#'), '')} $afterCursor';
+    final newText = '$updatedBeforeCursor${tag.replaceAll(RegExp(r'#'), '')} $afterCursor';
     _memoController.text = newText;
 
     // 커서를 태그 바로 뒤로 이동
     _memoController.selection = TextSelection.fromPosition(
-      TextPosition(offset: beforeCursor.length + tag.length),
+      TextPosition(offset: updatedBeforeCursor.length + tag.length),
     );
 
     // 추천 목록 닫기
@@ -225,22 +236,6 @@ class _BookAddState extends State<BookAdd> {
       _overlayEntry = null;
     }
   }
-  
-
-  // void _formatInput() {
-  //   String newText = _textFieldController.text.replaceAll(RegExp(r'[^0-9]'), '');
-  //   if (newText.isEmpty) return;
-
-  //   final int value = int.parse(newText);
-  //   final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
-
-  //   // 포맷된 텍스트를 다시 설정 (커서 위치를 조정하여 깜빡임 방지)
-  //   _textFieldController.value = TextEditingValue(
-  //     text: formattedText,
-  //     selection: TextSelection.collapsed(offset: formattedText.length),
-  //   );
-  //   _textFieldInputController.text = _textFieldController.text.replaceAll(RegExp(r'[^0-9]'), '');
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -370,57 +365,10 @@ class _BookAddState extends State<BookAdd> {
                           TextFormField(
                             controller: _memoController,
                             focusNode: _focusMemoNode,
-                            // autofocus: true,
-                            // onEditingComplete: () {
-                            //   _focusMemoNode.unfocus();
-                            // },
-                            // onTapOutside:(PointerDownEvent event) {
-                            //   _focusMemoNode.unfocus();
-                            // }
                             onChanged: _onTextChanged,
                           ),
-                          // if(suggestedTags.isNotEmpty)
-                          // Container(
-                          //   margin: const EdgeInsets.only(top: 8),
-                          //   decoration: BoxDecoration(
-                          //     color: Colors.grey[200],
-                          //     border: Border.all(color: Colors.grey),
-                          //     borderRadius: BorderRadius.circular(8),
-                          //   ),
-                          //   child: ListView.builder(
-                          //     shrinkWrap: true,
-                          //     itemCount: suggestedTags.length,
-                          //     itemBuilder: (context, index) {
-                          //       final tag = suggestedTags[index];
-                          //       return ListTile(
-                          //         title: Text(tag),
-                          //         // onTap: () => _onTagSelected(tag),
-                          //       );
-                          //     },
-                          //   ),
-                          // ),
                         ]
                       )
-                      // _isMemoEditing ?
-                      // : GestureDetector(
-                      //   onTap: () {
-                      //     setState(() {
-                      //       _isMemoEditing = true;
-                      //     });
-                      //     FocusScope.of(context).requestFocus(_focusMemoNode);
-                      //   },
-                      //   child: Container(
-                      //     // margin: const EdgeInsets.symmetric(vertical: 24),
-                      //     constraints: const BoxConstraints(
-                      //         // minWidth: 150,  // 최소 너비
-                      //         minHeight: 50, // 최소 높이
-                      //       ),
-                      //     decoration: const BoxDecoration(
-                      //       border: Border(bottom: BorderSide(color: Colors.grey))
-                      //     ),
-                      //     child: buildMemoText(_memoController),
-                      //   ),
-                      // ),
                     ),
                   ],
                 ),
@@ -681,85 +629,6 @@ class _BookAddState extends State<BookAdd> {
       ),
     );
   }
-
-  // Widget buildMemoText(TextEditingController controller) {
-  //   final RegExp tagPattern = RegExp(r'#[ㄱ-ㅎ가-힣0-9a-zA-Z_]+');
-  //   // final RegExp tagPattern = RegExp(r'^#\w+[#태그#]');
-  //   final String inputText = controller.text;
-  //   List<Text> spans = [];
-  //   List<TextButton> buttons = [];
-  //   int lastMatchEnd = 0;
-  //   // logger.d(tagPattern.allMatches(inputText).map((match) => match.group(0)).toList());
-  //   tagPattern.allMatches(inputText).forEach((match) {
-  //     if (match.start > lastMatchEnd) {
-  //       String substring = inputText.substring(lastMatchEnd, match.start);
-  //       if (substring.trim().isNotEmpty) {  // 공백만 있는지 확인
-  //         spans.add(Text(
-  //           substring,
-  //           style: normalStyle,
-  //         ));
-  //       }
-  //       // spans.add(Text(
-  //       //   inputText.substring(lastMatchEnd, match.start),
-  //       //   style: normalStyle,
-  //       // ));
-  //     }
-  //     buttons.add(TextButton.icon(
-  //       icon: const Icon(Icons.tag, size: 16,),
-  //       onPressed: (){},
-  //       label: Text(inputText.substring(match.start, match.end).replaceAll(RegExp(r'#'),''), style: const TextStyle(fontSize: 16),),    
-  //       // style: tagStyle, 
-  //     ));
-  //     lastMatchEnd = match.end;
-  //   });
-  //   if (lastMatchEnd < inputText.length) {
-  //     spans.add(Text(
-  //       inputText.substring(lastMatchEnd),
-  //       style: normalStyle,
-  //     ));
-  //   }
-
-  //   List<Widget> tagRows = [];
-  //   for (int i = 0; i < buttons.length; i += 5) {
-  //     tagRows.add(
-  //       Wrap(
-  //         spacing: 5.0,
-  //         runSpacing: 3.0,
-  //         children: buttons.sublist(i, i + 5 > buttons.length ? buttons.length : i + 5),
-  //       ),
-  //     );
-  //   }
-
-  //   List<Widget> memoRows = [];
-  //   for (int i = 0; i < spans.length; i += 5) {
-  //     tagRows.add(
-  //       Wrap(
-  //         spacing: 5.0,
-  //         runSpacing: 3.0,
-  //         children: spans.sublist(i, i + 5 > spans.length ? spans.length : i + 5),
-  //       ),
-  //     );
-  //   }
-    
-  //   return Column(
-  //     mainAxisSize: MainAxisSize.min,
-  //     // crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       ...tagRows, // 태그 버튼 묶음
-  //       // const SizedBox(height: 8),
-  //       ...memoRows, // 일반 텍스트 묶음
-  //     ],
-  //   );
-  //   // return Row(
-  //   //   onTap: () {
-  //   //     setState(() {
-  //   //       _isMemoEditing = true;
-  //   //     });
-  //   //   },
-  //   //   child: RichText(text: TextSpan(children: spans)),
-  //   // );
-  // }
-
   Widget buildTextRow(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),

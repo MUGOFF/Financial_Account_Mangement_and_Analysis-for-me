@@ -241,14 +241,7 @@ class _FirstPageState extends State<FirstPage> {
         try {
           logger.d('CP949 TRY');
           var input = await File(result.files.single.path!).readAsBytes();
-          // var input = File(result.files.single.path!).openRead();
-          // 타입 변환: Stream<List<int>> -> Stream<Uint8List>
-          // var uint8Stream = input.map((chunk) => Uint8List.fromList(chunk));
-          // var uint8Stream = input.map((chunk) => Uint8List.fromList(chunk));
-          // String decodedContent = const CP949Codec().decoder.convert(input);
-          // var fields = const CsvToListConverter().convert(decodedContent);
           var fields = const CsvToListConverter().convert(const CP949Codec().decoder.convert(input));
-          // var fields = await uint8Stream.transform(const CP949Codec().decoder).transform(const CsvToListConverter()).toList();
           if (fields.isNotEmpty) {
             widget.onFilePathSelected(result, 'CP949');
             logger.i('CP949 END');
@@ -504,12 +497,6 @@ class _SecondPageState extends State<SecondPage> {
               );
             }),
           ],
-          // items: columnNames.map((String value) {
-          //   return DropdownMenuItem<String>(
-          //     value: value,
-          //     child: Text(value),
-          //   );
-          // }).toList(),
           onChanged: onChanged,
         ),
       ],
@@ -739,7 +726,6 @@ class _LastPageState extends State<LastPage> {
         String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
         String formattedcategory = widget.modelColumnrelations[3] != null ? row[columnNames.indexOf(widget.modelColumnrelations[3])] : "";
         String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(row[columnNames.indexOf(widget.modelColumnrelations[4])]) ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "이체";
-        // int? formattedInstallment  = widget.modelColumnrelations[6] != null ? int.tryParse(row[columnNames.indexOf(widget.modelColumnrelations[6])].replaceAll(RegExp(r'[^0-9]'), '')) : 0;
         int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parseToInt(row[columnNames.indexOf(widget.modelColumnrelations[6])]) : 0;
         try { 
           if (formattedInstallment != null && formattedInstallment > 1) {
@@ -803,11 +789,6 @@ class _LastPageState extends State<LastPage> {
                 logger.e('error: $e, not enough row data: $row');
               }
             }
-            // try {
-            //   DatabaseAdmin().insertMoneyTransaction(transaction);
-            // } catch (e) {
-            //   logger.e('error: $e, not enough row data: $row');
-            // }
           }
         } catch(e) {
           logger.e('error: $e, formData row: $row');
