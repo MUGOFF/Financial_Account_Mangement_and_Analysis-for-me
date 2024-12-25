@@ -8,7 +8,8 @@ import 'package:ver_0_2/pages/book.dart';
 import 'package:ver_0_2/pages/stats.dart';
 import 'package:ver_0_2/widgets/tab_bar.dart';
 import 'package:ver_0_2/widgets/drawer_end.dart';
-// import 'package:ver_0_2/widgets/database_admin.dart';
+import 'package:ver_0_2/widgets/database_admin.dart';
+import 'package:ver_0_2/widgets/models/budget_setting.dart';
 // import 'package:ver_0_2/widgets/models/current_holdings.dart';
 
 void main() {
@@ -126,62 +127,260 @@ class HomePageCotent extends StatefulWidget {
 }
 
 class _HomePageCotentState extends State<HomePageCotent> {
-  late PageController _pageController;
-  // List<Holdings> currentHoldings = [];
-  // List<String> investCategories = [];
+  // late PageController _pageController;
+  final TextEditingController _textFieldSavingController = TextEditingController();
+  final TextEditingController _textFieldIncomeController = TextEditingController();
+  final TextEditingController _textFieldInputController = TextEditingController();
+  int? income;
+  int? incomeId;
+  bool isloading = true;
+  int yearnow = DateTime.now().year;
+  int monthnow = DateTime.now().month;
+  List<BudgetSetting> budgetSet = [];
+  List<Map<String, dynamic>>expenseData= [];
+  double totalExpenseAmount= 0;
+  bool isPercentageChannels = true;
 
   @override
   void initState() {
     super.initState();
-    // _fetchHoldings();
-    _pageController = PageController();
+    _fetchDatas();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (budgetSet.isEmpty) {
+        setInitialSaving();
+      }
+    });
+    // _fetchDatas().then((_) {
+    //   if (budgetSet.isEmpty) {
+    //     try {
+    //       // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //       //   setInitialSaving();
+    //       // });
+    //     } catch (e) {
+    //       logger.e(e);
+    //     }
+    //   }
+    // });
+    // _pageController = PageController();
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  // Future<void> _fetchHoldings() async {
-  //   List<Holdings> fetchedHoldings = await DatabaseAdmin().getCurrentHoldInvestments();
-  //   setState(() {
-  //     currentHoldings = fetchedHoldings;
-  //     investCategories = currentHoldings.map((holding) => holding.investcategory).toList();
-  //   });
+  // @override
+  // void dispose() {
+  //   // _pageController.dispose();
+  //   super.dispose();
   // }
+
+  Future<void> _fetchDatas() async {
+    isloading = true;
+    double localTotalExpenseAmount= 0;
+    List<BudgetSetting> fetchedBudgetSet = await DatabaseAdmin().getMonthBugetList(yearnow, monthnow);
+    List<Map<String, dynamic>> fetchedExpenseData =  await DatabaseAdmin().getTransactionsSUMByCategoryandDate(yearnow,monthnow);
+    List<Map<String, dynamic>> localexpenseData = [...fetchedExpenseData];
+    Map<String, dynamic> localIncomeData = await DatabaseAdmin().getIncome();
+
+    localexpenseData.sort((previous, next) => next['totalAmount'].compareTo(previous['totalAmount']));
+    for (var data in localexpenseData) {
+      localTotalExpenseAmount = localTotalExpenseAmount + data['totalAmount'];
+    }
+    if (mounted) {
+      setState(() {
+        expenseData = fetchedExpenseData;
+        budgetSet = fetchedBudgetSet;
+        totalExpenseAmount = localTotalExpenseAmount;
+        isloading = false;
+        if (localIncomeData.isNotEmpty) {
+          incomeId = localIncomeData['id'];
+          income = localIncomeData['income'];
+        }
+      });
+      // if (budgetSet.isEmpty) {
+      //   setInitialSaving();
+      // }
+      // logger.d(budgetCategoryData) ;   
+      // logger.d(budgetSet[0].budgetList) ;   
+    }
+  }
+
+  void setInitialSaving() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('목표 저축 금액을 입력해주세요'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _textFieldSavingController,
+                cursorColor: Colors.transparent,
+                keyboardType: TextInputType.number, // 숫자만 입력하도록 지정
+                decoration: const InputDecoration(
+                  hintText: '목표 저축액을 입력하세요', // 힌트 텍스트
+                ),
+              ),              
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(' 만원', textAlign: TextAlign.left, style: TextStyle(fontSize: 20),),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                if(income == null) {
+                  setInitialIncome();
+                } else {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      content: const Text('이전에 입력한 수입 금액 기준으로 예산을 설정합니까?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            setInitialIncome();
+                          },
+                          child: const Text('아니오'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              if (income != null) {
+                                int budget = income! - int.parse(_textFieldSavingController.text);
+                                insertNewBudgetToDatabase(budget);
+                                _fetchDatas();
+                              }
+                            });
+                          },
+                          child: const Text('예'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
+              child: const Text('입력'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void setInitialIncome() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('예상 수입 혹은 용돈 금액을 입력해주세요'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _textFieldIncomeController,
+                cursorColor: Colors.transparent,
+                keyboardType: TextInputType.number, // 숫자만 입력하도록 지정
+                decoration: const InputDecoration(
+                  hintText: '수입 금액을 입력하세요', // 힌트 텍스트
+                ),
+              ),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(' 만원', textAlign: TextAlign.left, style: TextStyle(fontSize: 20),),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  income = int.parse(_textFieldIncomeController.text);
+                  if (income != null) {
+                    int budget = income! - int.parse(_textFieldSavingController.text);
+                    insertNewBudgetToDatabase(budget);
+                    _fetchDatas();
+                  }
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('입력'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the HomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: const Text('Junior Demo App (Book Account)'),
-      ),
-      endDrawer: const AppDrawer(),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: PageView(
-            controller: _pageController,
-            children: const [
-              Text("미예정"),
-              // OutlinedButton(
-              //   onPressed: (){
-              //     DatabaseAdmin().clearExtraGroup();
-              //   }, 
-              //   child: Text('칟ㅁㄱ ㄷㅌㅅㄱㅁ')
-              // )
-              // InvestHolingsPage(currentHoldings: currentHoldings, investCategories: investCategories),
-            ],
-          ),
-      ),
+    if (isloading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator())
+      );
+    } else {
+      return Scaffold(
+        appBar: AppBar(
+          // TRY THIS: Try changing the color here to a specific color (to
+          // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
+          // change color while the other colors stay the same.
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          // Here we take the value from the HomePage object that was created by
+          // the App.build method, and use it to set our appbar title.
+          title: const Text('Junior Demo App (Book Account)'),
+        ),
+        endDrawer: const AppDrawer(),
+        body: const Center(
+          // Center is a layout widget. It takes a single child and positions it
+          // in the middle of the parent.
+          child: 
+            Column(
+              children: [Text("미예정"),],
+            )
+          // PageView(
+          //     controller: _pageController,
+          //     children: const [
+          //       Text("미예정"),
+          //       // OutlinedButton(
+          //       //   onPressed: (){
+          //       //     DatabaseAdmin().clearExtraGroup();
+          //       //   }, 
+          //       //   child: Text('칟ㅁㄱ ㄷㅌㅅㄱㅁ')
+          //       // )
+          //       // InvestHolingsPage(currentHoldings: currentHoldings, investCategories: investCategories),
+          //     ],
+          //   ),
+        ),
+      );
+    }
+  }
+
+  void insertNewBudgetToDatabase(int budget) {
+    _textFieldInputController.text = (budget * 10000).toString(); 
+    final BudgetSetting newBudget = BudgetSetting(
+      year : yearnow,
+      month : monthnow, 
+      budgetList: <String,double>{"총 예산": double.parse(_textFieldInputController.text)},
     );
+
+    DatabaseAdmin().insertBugetSettingTable(newBudget);
   }
 }
 

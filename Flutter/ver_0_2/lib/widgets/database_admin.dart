@@ -32,7 +32,7 @@ class DatabaseAdmin {
     String path = join(await getDatabasesPath(), 'debug_app.db');
     return openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -44,6 +44,7 @@ class DatabaseAdmin {
         // _addTriggerForParameterUpdate(db);
         _addTriggerForParameterUpdateRenewal(db);
         processExistingData(db);
+        _createIncomeTable(db);
         // _createBankAccountTable(db);
         // _createCardAccountTable(db);
         // _createExpirationInvestmentTable(db);
@@ -63,6 +64,9 @@ class DatabaseAdmin {
         }
         if (oldVersion < 7) {
           _addTriggerForParameterUpdateRenewal(db);
+        }
+        if (oldVersion < 8) {
+          _createIncomeTable(db);
         }
         // if (oldVersion < 4) {
         //   _createCurrentHoldingTable(db);
@@ -661,11 +665,12 @@ class DatabaseAdmin {
   Future<List<Map<String, dynamic>>> getTagSumByYear(String tagName) async {
     try {
       final db = await database;
+      String secureTagname = tagName.replaceAll(RegExp(r'([*?\[\]])'), '');
       final List<Map<String, dynamic>> transactionMaps = await db.query(
         'money_transactions',
         columns: ['substr(transactionTime,1,4) as year' , 'SUM(amount) * -1 as totalAmount'],
-        where: "categoryType = '소비' AND description LIKE ?",
-        whereArgs: ['%$tagName%'],
+        where: "categoryType = '소비' AND description LIKE ? OR description LIKE ?",
+        whereArgs: ['%$secureTagname %', '%$secureTagname'],
         groupBy: 'substr(transactionTime,1,4)'
       );
       
@@ -679,11 +684,12 @@ class DatabaseAdmin {
   Future<List<Map<String, dynamic>>> getTagSumByYearMonth(String tagName) async {
     try {
       final db = await database;
+      String secureTagname = tagName.replaceAll(RegExp(r'([*?\[\]])'), '');
       final List<Map<String, dynamic>> transactionMaps = await db.query(
         'money_transactions',
         columns: ['substr(transactionTime,1,9) as yearmonth' , 'SUM(amount) * -1 as totalAmount'],
-        where: "categoryType = '소비' AND description LIKE ?",
-        whereArgs: ['%$tagName%'],
+        where: "categoryType = '소비' AND description LIKE ? OR description LIKE ?",
+        whereArgs: ['%$secureTagname %', '%$secureTagname'],
         groupBy: 'substr(transactionTime,1,9)'
       );
       
@@ -697,18 +703,19 @@ class DatabaseAdmin {
   Future<List<MoneyTransaction>> getTransactionsByTag(String tagName) async {
     try {
       final db = await database;
-
+      String secureTagname = tagName.replaceAll(RegExp(r'([*?\[\]])'), '');
       // 태그가 포함된 거래들을 찾는 쿼리
-      // final List<Map<String, dynamic>> rawList = await db.query(
-      //   'money_transactions',
-      //   where: "description LIKE ?",
-      //   whereArgs: ['%$tagName%'],
-      // );
       final List<Map<String, dynamic>> rawList = await db.query(
         'money_transactions',
-        where: "description REGEXP ?",
-        whereArgs: ['(^|\\s)#$tagName(\\s|\$)'],
+        where: "description LIKE ? OR description LIKE ?",
+        whereArgs: ['%$secureTagname %', '%$secureTagname'],
       );
+      // final List<Map<String, dynamic>> rawList = await db.query(
+      //   'money_transactions',
+      //   where: "description GLOB ? OR description GLOB ?",
+      //   whereArgs: ['*$tagName *', '*$tagName'],
+      // );
+      // logger.d(rawList);
 
       // final List<MoneyTransaction> rawList =List.generate(transactionMaps.length, (i) {
       //   return MoneyTransaction(
@@ -1386,6 +1393,51 @@ class DatabaseAdmin {
 ///
 ///
 ///
+  /// 수입 설정정
+  void _createIncomeTable(Database db) {
+    db.execute(
+      """
+        CREATE TABLE income_settings(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          income INTEGER)
+      """,
+    );
+  }
+
+  Future<int> insertIncomeTable(int incomeNumber) async {
+    final db = await database;
+    return await db.insert(
+      'income_settings',
+      {'income' : incomeNumber}
+    );
+  }
+
+  Future<int> updateIncomeTable(int incomeNumber, int incomeID) async {
+    final db = await database;
+    return await db.update(
+      'income_settings',
+      {'income' : incomeNumber},
+      where: 'id = ?',
+      whereArgs: [incomeID],
+    );
+  }
+
+   Future<Map<String, dynamic>> getIncome() async {
+    final db = await database;
+    final List<Map<String, dynamic>> incomeMap = await db.query(
+      'income_settings',
+    );
+    try {
+      if (incomeMap.isEmpty) {
+        return {};
+      } else {
+        return incomeMap[0];
+      }
+    } catch(e) {
+      logger.e(e);
+      return {};
+    }
+  }
 ///
 ///
 /// 예산설정
