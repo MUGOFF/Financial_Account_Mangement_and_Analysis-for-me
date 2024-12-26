@@ -1406,6 +1406,7 @@ class DatabaseAdmin {
 
   Future<int> insertIncomeTable(int incomeNumber) async {
     final db = await database;
+    await db.delete('income_settings');
     return await db.insert(
       'income_settings',
       {'income' : incomeNumber}

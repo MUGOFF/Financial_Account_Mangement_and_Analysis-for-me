@@ -430,7 +430,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
         totalExpenseAmount = localTotalExpenseAmount;
         isloading = false;
       });
-      // logger.d(budgetCategoryData) ;   
+      logger.d(budgetSet) ;   
       // logger.d(budgetSet[0].budgetList) ;   
     }
   }

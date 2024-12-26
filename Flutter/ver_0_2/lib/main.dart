@@ -144,11 +144,13 @@ class _HomePageCotentState extends State<HomePageCotent> {
   @override
   void initState() {
     super.initState();
-    _fetchDatas();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (budgetSet.isEmpty) {
-        setInitialSaving();
-      }
+    _fetchDatas().then((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        logger.i('income$income incomeId$incomeId');
+        if (budgetSet.isEmpty) {
+          setInitialSaving();
+        }
+      });
     });
     // _fetchDatas().then((_) {
     //   if (budgetSet.isEmpty) {
@@ -193,6 +195,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
           income = localIncomeData['income'];
         }
       });
+      // logger.d(budgetSet);
       // if (budgetSet.isEmpty) {
       //   setInitialSaving();
       // }
@@ -315,6 +318,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
                   income = int.parse(_textFieldIncomeController.text);
                   if (income != null) {
                     int budget = income! - int.parse(_textFieldSavingController.text);
+                    insertincomeToDatabase(int.parse(_textFieldIncomeController.text));
                     insertNewBudgetToDatabase(budget);
                     _fetchDatas();
                   }
@@ -381,6 +385,15 @@ class _HomePageCotentState extends State<HomePageCotent> {
     );
 
     DatabaseAdmin().insertBugetSettingTable(newBudget);
+  }
+
+  void insertincomeToDatabase(int income) {
+    _textFieldInputController.text = (income * 10000).toString();
+    if (incomeId == null) {
+      DatabaseAdmin().insertIncomeTable(int.parse(_textFieldInputController.text));
+    } else {
+      DatabaseAdmin().updateIncomeTable(int.parse(_textFieldInputController.text), incomeId!);
+    }
   }
 }
 
