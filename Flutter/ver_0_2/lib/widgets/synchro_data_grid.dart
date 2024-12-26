@@ -12,16 +12,23 @@ import 'package:ver_0_2/widgets/models/money_transaction.dart';
 import 'package:ver_0_2/widgets/models/extra_budget_group.dart';
 
 class TransactionGridDataSource extends DataGridSource {
-  TransactionGridDataSource({required List<MoneyTransaction> transanctions}) {
-    dataGridRows = transanctions
-        .map<DataGridRow>((dataGridRow) => DataGridRow(cells: [
-              DataGridCell<String>(columnName: 'Date', value: dataGridRow.transactionTime),
-              DataGridCell<String>(columnName: 'Name', value: dataGridRow.goods),
-              DataGridCell<double>(columnName: 'Amount', value: dataGridRow.amount),
-              DataGridCell<String>(columnName: 'Category', value: dataGridRow.category),
-            ]))
-        .toList();
+  final List<MoneyTransaction> transanctions;
+  TransactionGridDataSource({required this.transanctions}) {
+    tagTransactionPage = transanctions.length < _rowsPerPage
+      ? transanctions
+      : transanctions.getRange(0, _rowsPerPage).toList();
+    buildPaginatedDataGridRows();
+    // dataGridRows = transanctions
+    //     .map<DataGridRow>((dataGridRow) => DataGridRow(cells: [
+    //           DataGridCell<String>(columnName: 'Date', value: dataGridRow.transactionTime),
+    //           DataGridCell<String>(columnName: 'Name', value: dataGridRow.goods),
+    //           DataGridCell<double>(columnName: 'Amount', value: dataGridRow.amount),
+    //           DataGridCell<String>(columnName: 'Category', value: dataGridRow.category),
+    //         ]))
+    //     .toList();
   }
+  List<MoneyTransaction> tagTransactionPage=[];
+  final int _rowsPerPage = 5;
 
   List<DataGridRow> dataGridRows = [];
 
@@ -49,13 +56,14 @@ class TransactionGridDataSource extends DataGridSource {
     return formattedDatetime;
   }
 
+
   @override
   List<DataGridRow> get rows => dataGridRows;
 
   @override
   DataGridRowAdapter? buildRow(DataGridRow row) {
     return DataGridRowAdapter(
-        cells: row.getCells().map<Widget>((dataGridCell) {
+      cells: row.getCells().map<Widget>((dataGridCell) {
       return Container(
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -75,6 +83,34 @@ class TransactionGridDataSource extends DataGridSource {
         );
     }).toList());
   }
+
+  @override
+  Future<bool> handlePageChange(int oldPageIndex, int newPageIndex) async {
+    int startIndex = newPageIndex * _rowsPerPage;
+    int endIndex = startIndex + _rowsPerPage;
+    if (startIndex < transanctions.length && endIndex <= transanctions.length) {
+      tagTransactionPage =
+          transanctions.getRange(startIndex, endIndex).toList(growable: false);
+      buildPaginatedDataGridRows();
+      notifyListeners();
+    } else {
+      tagTransactionPage = [];
+    }
+
+    return true;
+  }
+
+  void buildPaginatedDataGridRows() {
+    dataGridRows = tagTransactionPage.map<DataGridRow>((dataGridRow) {
+      return DataGridRow(cells: [
+        DataGridCell<String>(columnName: 'Date', value: dataGridRow.transactionTime),
+        DataGridCell<String>(columnName: 'Name', value: dataGridRow.goods),
+        DataGridCell<double>(columnName: 'Amount', value: dataGridRow.amount),
+        DataGridCell<String>(columnName: 'Category', value: dataGridRow.category),
+      ]);
+    }).toList(growable: false);
+    // logger.i(dataGridRows);
+  }
 }
 
 class TagDataGrid extends StatefulWidget {
@@ -89,6 +125,7 @@ class _TagDataGridState extends State<TagDataGrid> {
   Logger logger = Logger();
   List<MoneyTransaction> transactionData = <MoneyTransaction>[];
   TransactionGridDataSource? tagTransactionDataSource = TransactionGridDataSource(transanctions: []);
+  final int _rowsPerPage = 5;
 
   @override
   void initState() {
@@ -124,6 +161,8 @@ class _TagDataGridState extends State<TagDataGrid> {
             columnWidthMode: ColumnWidthMode.fill,
             allowSorting: true,
             allowTriStateSorting: true,
+            allowSwiping: true,
+            swipeMaxOffset: 0.0,
             columns: [
               GridColumn(
                 // allowFiltering: false,
@@ -165,6 +204,11 @@ class _TagDataGridState extends State<TagDataGrid> {
             ],
           ),
         ),
+        SfDataPager(
+          delegate: tagTransactionDataSource!,
+          pageCount: (transactionData.length / _rowsPerPage) > 0 ? (transactionData.length / _rowsPerPage) : 1,
+          direction: Axis.horizontal,
+        )
       ]
     );
   }
@@ -188,7 +232,7 @@ class ExtraTransactionSource extends DataGridSource {
   
   // final Function(String, String)? afterEdit;
   ExtraTransactionSource({
-    required this. extraTransaction,
+    required this.extraTransaction,
     // this.afterEdit,
     required this.context,
   }) {
@@ -213,7 +257,7 @@ class ExtraTransactionSource extends DataGridSource {
     //         columnName: 'modify', value: dataGridRow.modifyCategory),
     //   ]))
     //   .toList();
-    logger.d(dataGridRows);
+    // logger.d(dataGridRows);
   }
   List<ExtraTransactionGrid> extraTransactionPage=[];
   final int _rowsPerPage = 5;
@@ -292,6 +336,7 @@ class ExtraTransactionSource extends DataGridSource {
       extraTransactionPage =
           extraTransaction.getRange(startIndex, endIndex).toList(growable: false);
       buildPaginatedDataGridRows();
+      notifyListeners();
     } else {
       extraTransactionPage = [];
     }
@@ -318,7 +363,7 @@ class ExtraTransactionSource extends DataGridSource {
       //   DataGridCell(columnName: 'freight', value: dataGridRow.freight),
       // ]);
     }).toList(growable: false);
-    logger.i(dataGridRows);
+    // logger.i(dataGridRows);
   }
   // void updateDataToDatabase(String jsonData, int dataID) {
   //   DatabaseAdmin().updateExtraJsonData(jsonData, dataID);
@@ -498,7 +543,7 @@ class _ExtraBudgetDataGridState extends State<ExtraBudgetDataGrid> {
           ),
           SfDataPager(
             delegate: _tableDataSource!,
-            pageCount: tableData.length / _rowsPerPage,
+            pageCount: tableData.length / _rowsPerPage > 0 ? (tableData.length / _rowsPerPage) : 1,
             direction: Axis.horizontal,
           )
         ],

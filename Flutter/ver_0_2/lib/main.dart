@@ -145,24 +145,16 @@ class _HomePageCotentState extends State<HomePageCotent> {
   void initState() {
     super.initState();
     _fetchDatas().then((_) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        logger.i('income$income incomeId$incomeId');
-        if (budgetSet.isEmpty) {
-          setInitialSaving();
+      if (budgetSet.isEmpty) {
+        try {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setInitialSaving();
+          });
+        } catch (e) {
+          logger.e(e);
         }
-      });
+      }
     });
-    // _fetchDatas().then((_) {
-    //   if (budgetSet.isEmpty) {
-    //     try {
-    //       // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //       //   setInitialSaving();
-    //       // });
-    //     } catch (e) {
-    //       logger.e(e);
-    //     }
-    //   }
-    // });
     // _pageController = PageController();
   }
 
@@ -396,89 +388,6 @@ class _HomePageCotentState extends State<HomePageCotent> {
     }
   }
 }
-
-/// 금융결제원 API
-// class ApiCallbackFISapicenter extends StatefulWidget {
-//   const ApiCallbackFISapicenter({super.key});
-  
-//   @override
-//   State<ApiCallbackFISapicenter> createState() => _ApiCallbackFISapicenterState();
-// }
-
-// class _ApiCallbackFISapicenterState extends State<ApiCallbackFISapicenter> {
-//   final String clientID = "a3b5f451-f822-454b-8bae-3789e5c8eb68";
-//   final String clientSecret = "77ffb654-6ad5-42a6-8d84-d18e3cd48ba1";
-//   String callbackResult = "Callback 결과가 여기에 표시됩니다.";
-//   Logger logger = Logger();
-
-//   // API 호출
-//   Future<void> callApiWithCallback() async {
-//     final String apiUrlOauth = "https://openapi.openbanking.or.kr/v2.0/accountinfo/list";
-//     final String apiUrl = "https://openapi.openbanking.or.kr/v2.0/accountinfo/list";
-//     // final String apiUrl = "http://com.polycarpsmoonmug.demo_release_1/start";
-//     final String callbackUrl = "http://com.polycarpsmoonmug.demo_release_1/callback";
-
-//     try {
-//       // 1. Open API 요청 보내기
-//       final response = await http.post(
-//         Uri.parse(apiUrl),
-//         headers: {"Content-Type": "application/json"},
-//         body: jsonEncode({"callback_url": callbackUrl}),
-//       );
-
-//       if (response.statusCode == 200) {
-//         // 요청 성공 처리
-//         logger.d("API 요청 성공: ${response.body}");
-
-//         // 2. Callback URL 처리 (예제에서는 단순히 데이터 fetch)
-//         await handleCallback(callbackUrl);
-//       } else {
-//         logger.d("API 요청 실패: ${response.body}");
-//       }
-//     } catch (e) {
-//       logger.d("에러 발생: $e");
-//     }
-//   }
-
-//   // 콜백 데이터 처리
-//   Future<void> handleCallback(String callbackUrl) async {
-//     try {
-//       final callbackResponse = await http.get(Uri.parse(callbackUrl));
-//       if (callbackResponse.statusCode == 200) {
-//         // 콜백 결과를 UI에 표시
-//         setState(() {
-//           callbackResult = "콜백 처리 성공: ${callbackResponse.body}";
-//         });
-//       } else {
-//         logger.d("콜백 처리 실패: ${callbackResponse.body}");
-//       }
-//     } catch (e) {
-//       logger.d("콜백 에러: $e");
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text("API Callback Example"),
-//       ),
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             ElevatedButton(
-//               onPressed: callApiWithCallback,
-//               child: const Text("API 호출 시작"),
-//             ),
-//             const SizedBox(height: 20),
-//             Text(callbackResult),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 
 // class InvestHolingsPage extends StatelessWidget {
 //   final List<Holdings> currentHoldings;
