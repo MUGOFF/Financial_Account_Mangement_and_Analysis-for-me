@@ -107,6 +107,9 @@ class _BookAddState extends State<BookAdd> {
       _amountdisplayController.text = _thousandsFormmater(_amountController.text);
       _targetgoodsController.text = widget.moneyTransaction!.goods;
       _categoryController.text = widget.moneyTransaction!.category;
+      logger.d(widget.moneyTransaction!.categoryType);
+      currentCategory = widget.moneyTransaction!.categoryType;
+      _selectedButton = currentCategory == '소비' ? 1 : currentCategory == '수입' ? 2 : 3 ;
       _memoController.text = widget.moneyTransaction!.description ?? '';
     } else {
       _dateController = TextEditingController(text: DateFormat('yyyy년 MM월 dd일').format(DateTime.now()));
@@ -115,7 +118,7 @@ class _BookAddState extends State<BookAdd> {
       _amountdisplayController.text = _thousandsFormmater(_amountController.text);
     }
     allTags = await DatabaseAdmin().getTransactionsTags();
-    logger.d(allTags);
+    // logger.d(allTags);
   }
 
   String _thousandsFormmater(String numberText) {
@@ -128,6 +131,10 @@ class _BookAddState extends State<BookAdd> {
     // }
 
     final double value = double.parse(newText);
+    // if(value ==0) {
+    //   final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
+    //   return formattedText;
+    // }
     final formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
 
     return formattedText;
@@ -267,7 +274,7 @@ class _BookAddState extends State<BookAdd> {
                         setState(() {
                           _selectedButton = 1;
                           currentCategory = "소비";
-                          _amountController.text = "-0";
+                          // _amountController.text = "-0";
                           _amountdisplayController.text = _thousandsFormmater(_amountController.text);
                         });
                       }
@@ -278,7 +285,7 @@ class _BookAddState extends State<BookAdd> {
                         setState(() {
                           _selectedButton = 2;
                           currentCategory = "수입";
-                          _amountController.text = "0";
+                          // _amountController.text = "0";
                           _amountdisplayController.text = _thousandsFormmater(_amountController.text);
                         });
                       }
@@ -701,7 +708,7 @@ class _BookAddState extends State<BookAdd> {
               style: const TextStyle(
                 fontWeight: FontWeight.bold,// Increased font size
               ),
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsSeparatorInputFormatter()],
+              inputFormatters: [ThousandsSeparatorInputFormatter()],
             ),
           ),
           if(_pageType == "입력")
@@ -910,23 +917,87 @@ class _BookAddState extends State<BookAdd> {
 
 // 금액 형식으로 입력된 값을 변환하여 반환합니다.
 class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  Logger logger = Logger();
+
   @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+
+    String oldText = oldValue.text.replaceAll(RegExp(r'[^0-9.-]'), '');
+    String newText = newValue.text.replaceAll(RegExp(r'[^0-9.-]'), '');
+
+    if(oldText.contains('-'))
+    {
+      newText = '-${newText.replaceAll(RegExp(r'-'), '')}';
+    }
+    // logger.i('numberText${newValue.text}');
+    logger.i('newText$newText');
+    String formattedText = '';
+    final double? value = double.tryParse(newText);
+    if (value == null) {
+      return newValue.copyWith(
+        text: NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(0),
+        selection: TextSelection.collapsed(
+          offset: formattedText.length.clamp(0, formattedText.length),
+        ),
+      ); // 변환 실패 시 기존 값 유지
+    }
+    // final double value = double.parse(newText);
+    // formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
+    // if(oldText.contains('.') && value% 1 == 0) {
+    if(newText.contains('.')) {
+      formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
+    } else {
+      formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
+    }
+    // logger.i('value$value');
+    // logger.i('formattedText$formattedText');
+
     // 입력된 값을 금액 형식으로 변환합니다.
-    final String newValueMinus = newValue.text.contains('-') ? '-' : '';
-    final newText = newValue.text.replaceAll('-', '').replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match match) => '${match[1]},',
-    );
+    // final String newValueMinus = newValue.text.contains('-') ? '-' : '';
+    // final newText = newValue.text.replaceAll('-', '').replaceAllMapped(
+    //   RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+    //   (Match match) => '${match[1]},',
+    // );
 
-    final formattedText = '$newValueMinus  ₩  $newText';
-    final selectionIndex = formattedText.length;
+    // final formattedText = '$newValueMinus  ₩  $newText';
 
-    return newValue.copyWith(
-      text: formattedText,
-      selection: TextSelection.collapsed(offset: selectionIndex),
-    );
+      if (newValue.text.length > formattedText.length) {
+        return newValue.copyWith(
+          text: formattedText,
+          selection: TextSelection.collapsed(
+            offset: formattedText.length.clamp(0, formattedText.length),
+          ),
+        );
+      } else {
+        return newValue.copyWith(
+          text: formattedText,
+          // selection: TextSelection.collapsed(
+          //   offset: formattedText.length.clamp(0, formattedText.length),
+          // ),
+        );
+      }
   }
 }
 
+// String _thousandsFormmater(String numberText) {
+//     String newText = numberText.replaceAll(RegExp(r'[^0-9.-]'), '');
+//     if (newText.isEmpty) return "0";
+
+//     // if(newText.contains('-'))
+//     // {
+//     //   newText = '-${newText.replaceAll(RegExp(r'-'), '')}';
+//     // }
+//     logger.i('numberText$numberText');
+//     logger.i('newText$newText');
+//     String formattedText = '';
+//     final double value = double.parse(newText);
+//     if(value % 1 == 0) {
+//       formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
+//     } else {
+//       formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
+//     }
+//     logger.i('value$value');
+//     logger.i('formattedText$formattedText');
+
+//     return formattedText;
+//   }

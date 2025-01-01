@@ -23,7 +23,7 @@ class _BookState extends State<Book> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _sliverListKey = GlobalKey();
   PersistentBottomSheetController? bottomButtonController;
-  bool _isVisible = true; // 플로팅 버튼이 보이는지 여부를 나타내는 변수
+  // bool _isVisible = true; // 플로팅 버튼이 보이는지 여부를 나타내는 변수
   int initialFilterState = 0;
   double  itemSize = 110.0;
   int year = DateTime.now().year;
@@ -70,9 +70,9 @@ class _BookState extends State<Book> {
   String formatterK(num number) {
     String preproNumber;
     if(number % 1 == 0) {
-      preproNumber = (number * -1).toStringAsFixed(0);
+      preproNumber = number.toStringAsFixed(0);
     } else {
-      preproNumber =  (number * -1).toString();
+      preproNumber =  number.toString();
     }
 
     String newText = preproNumber.replaceAll(RegExp(r'[^0-9.-]'), '');
@@ -89,9 +89,9 @@ class _BookState extends State<Book> {
       DateTime datetiemInitValue = DateFormat('yyyy년 MM월 dd일THH:mm').parse(transactions[0].transactionTime);
       String initTopDatetime= DateFormat('yyyy년 MM월 dd일').format(datetiemInitValue);
       lastTopDatetime = initTopDatetime;
-      setState(() {
-        _isVisible = true;
-      });
+      // setState(() {
+      //   _isVisible = true;
+      // });
     } else if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
       if (_scrollController.hasClients) {        
         int currentTopIndex = 0;
@@ -130,9 +130,9 @@ class _BookState extends State<Book> {
           }
         }
       }
-      setState(() {
-        _isVisible = false;
-      });
+      // setState(() {
+      //   _isVisible = false;
+      // });
     }
   }
 
@@ -401,40 +401,41 @@ class _BookState extends State<Book> {
             child: transactionFilter == '기본' ? const Icon(Icons.filter_alt_outlined) : const Icon(Icons.filter_alt),
           ),
           const SizedBox(height: 8.0),
-          Visibility(
-            visible: _isVisible,
-            child:  FloatingActionButton(
-              heroTag: 'ADD-floating',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) => const BookAdd(),
-                    transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                      const begin = Offset(1.0, 0.0);
-                      const end = Offset.zero;
-                      const curve = Curves.ease;
+          // Visibility(
+          //   visible: true,
+          //   child:  
+          FloatingActionButton(
+            heroTag: 'ADD-floating',
+            onPressed: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => const BookAdd(),
+                  transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                    const begin = Offset(1.0, 0.0);
+                    const end = Offset.zero;
+                    const curve = Curves.ease;
 
-                      var tween = Tween(begin: begin, end: end)
-                          .chain(CurveTween(curve: curve));
+                    var tween = Tween(begin: begin, end: end)
+                        .chain(CurveTween(curve: curve));
 
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-                  ),
-                ).then((result) {
-                  setState(() {
-                    _fetchTransactions();
-                  });
+                    return SlideTransition(
+                      position: animation.drive(tween),
+                      child: child,
+                    );
+                  },
+                ),
+              ).then((result) {
+                setState(() {
+                  _fetchTransactions();
                 });
-              },
-              tooltip: '기록 데이터 추가',
-              child: const Icon(Icons.add),
-            ),
+              });
+            },
+            tooltip: '기록 데이터 추가',
+            child: const Icon(Icons.add),
           ),
+          // ),
         ],
       ),
     );
@@ -634,8 +635,10 @@ class _BookState extends State<Book> {
         style: normalStyle,
       ));
     }    
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      // mainAxisSize: MainAxisSize.min,
+      spacing: 4.0, // 위젯 간의 가로 간격
+      runSpacing: 4.0, // 줄 간의 간격
       children: [
         ...buttons, // 태그 버튼 묶음
         ...spans, // 일반 텍스트 묶음
