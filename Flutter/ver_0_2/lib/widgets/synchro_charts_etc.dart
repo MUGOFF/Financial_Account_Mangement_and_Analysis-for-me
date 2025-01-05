@@ -44,7 +44,7 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
   double interval = 100;
   double maxYvalueColumn = 100;
   // double dateinterval = 100;
-  DateTime? mininumDate;
+  DateTime mininumDate = DateTime.utc(DateTime.now().year, DateTime.now().month-6);
 
   @override
   void initState() {
@@ -66,10 +66,12 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
   Future<void> _fetchChartDatas() async {
     List<LineChartDataDatetime> localChartData = [];
     double localmaxYvalue = 0;
+    DateTime? localmininumDate;
+    // logger.d(mininumDate);
     List<Map<String, dynamic>> fetchedDatas = (await DatabaseAdmin().getIncomeSumMonthlyByMonth(widget.range)).toList();
     if(fetchedDatas.isNotEmpty) {
       fetchedDatas.sort((prev, next) => prev['yearmonth'].compareTo(next['yearmonth']));
-      mininumDate =DateTime.utc(int.parse(fetchedDatas.first['yearmonth'].substring(0,4)),int.parse(fetchedDatas.first['yearmonth'].substring(6,8)));
+      localmininumDate =DateTime.utc(int.parse(fetchedDatas.first['yearmonth'].substring(0,4)),int.parse(fetchedDatas.first['yearmonth'].substring(6,8)));
       for (var data in fetchedDatas) {
         localChartData.add(LineChartDataDatetime(DateTime.utc(int.parse(data['yearmonth'].substring(0,4)),int.parse(data['yearmonth'].substring(6,8))), data['totalAmount']));
         if (localmaxYvalue < (data['totalAmount']).abs()) {
@@ -78,6 +80,7 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
       }
       if (mounted) {
         setState(() {
+          mininumDate = localmininumDate!;
           chartData = localChartData;
           interval = localmaxYvalue == 0 ? 1 : max(pow(10, (log((localmaxYvalue/3).abs())/ln10).floor()).toDouble(),pow(10, (log((localmaxYvalue).abs())/ln10).floor()).toDouble()/2);
           maxYvalue = ((localmaxYvalue/interval).ceil()*interval).toDouble();
@@ -90,7 +93,7 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
     List<Map<String, dynamic>> fetchedColumnDatas = (await DatabaseAdmin().getNetIncomeSumMonthlyByMonth(widget.range)).toList();
     if(fetchedColumnDatas.isNotEmpty) {
       fetchedColumnDatas.sort((prev, next) => prev['yearmonth'].compareTo(next['yearmonth']));
-      mininumDate =DateTime.utc(int.parse(fetchedColumnDatas.first['yearmonth'].substring(0,4)),int.parse(fetchedColumnDatas.first['yearmonth'].substring(6,8)));
+      localmininumDate =DateTime.utc(int.parse(fetchedDatas.first['yearmonth'].substring(0,4)),int.parse(fetchedDatas.first['yearmonth'].substring(6,8)));
       for (var data in fetchedColumnDatas) {
         localColumnChartData.add(ColumnChartDataDatetime(DateTime.utc(int.parse(data['yearmonth'].substring(0,4)),int.parse(data['yearmonth'].substring(6,8))), data['totalAmount']));
         if (localColumnmaxYvalue < (data['totalAmount']).abs()) {
@@ -99,6 +102,9 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
       }
       if (mounted) {
         setState(() {
+          if(localmininumDate!.isBefore(mininumDate) ) {
+            mininumDate = localmininumDate;
+          }
           columChartData = localColumnChartData;
           maxYvalueColumn = ((localColumnmaxYvalue/interval).ceil()*interval).toDouble();
         });
@@ -122,11 +128,11 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
           labelRotation: 60,
           dateFormat: DateFormat.yM(),
           intervalType: DateTimeIntervalType.months,
-          // interval: dateinterval,
           rangePadding: ChartRangePadding.none,
           maximumLabels: 6,
           desiredIntervals: 6,
-          minimum: mininumDate,
+          initialVisibleMinimum: widget.range == null ? null : DateTime.utc(DateTime.now().year, DateTime.now().month-6),
+          initialVisibleMaximum: DateTime.utc(DateTime.now().year, DateTime.now().month, 0),
         ),
         primaryYAxis: NumericAxis(
           minimum: 0,
@@ -217,7 +223,7 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
   double maxYvalue = 100;
   double interval = 100;
   // double dateinterval = 100;
-  DateTime? mininumDate;
+  DateTime mininumDate = DateTime.utc(DateTime.now().year, DateTime.now().month-6);
 
   @override
   void initState() {
@@ -240,11 +246,12 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
   Future<void> _fetchChartDatas() async {
     List<StackChartDataDatetime> localChartData = [];
     double localmaxYvalue = 0;
+    DateTime? localmininumDate;
     
     List<Map<String, dynamic>> fetchedDatas = (await DatabaseAdmin().getIncomeSumMonthlyByCategory(widget.range)).toList();
     if(fetchedDatas.isNotEmpty) {
       fetchedDatas.sort((prev, next) => prev['yearmonth'].compareTo(next['yearmonth']));
-      mininumDate =DateTime.utc(int.parse(fetchedDatas.first['yearmonth'].substring(0,4)),int.parse(fetchedDatas.first['yearmonth'].substring(6,8)));
+      localmininumDate =DateTime.utc(int.parse(fetchedDatas.first['yearmonth'].substring(0,4)),int.parse(fetchedDatas.first['yearmonth'].substring(6,8)));
       
       Map<String, List<Map<String, dynamic>>> groupedData = groupBy(fetchedDatas, (Map<String, dynamic> item) => item['category']);
       Set<String> uniqueCategories = groupedData.keys.toSet();
@@ -270,8 +277,7 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
       }
       if (mounted) {
         setState(() {
-          // dateinterval = localdateinterval;
-          // logger.i(dateinterval);
+          mininumDate = localmininumDate!;
           categoryList = uniqueCategories.toList();
           chartData = localChartData;
           interval = localmaxYvalue == 0 ? 1 : max(pow(10, (log((localmaxYvalue/3).abs())/ln10).floor()).toDouble(),pow(10, (log((localmaxYvalue).abs())/ln10).floor()).toDouble()/2);
@@ -297,16 +303,17 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
           labelRotation: 60,
           dateFormat: DateFormat.yM(),
           intervalType: DateTimeIntervalType.months,
-          // interval: dateinterval,
           rangePadding: ChartRangePadding.none,
           maximumLabels: 6,
           desiredIntervals: 6,
-          minimum: mininumDate,
+          initialVisibleMinimum: widget.range == null ? null : DateTime.utc(DateTime.now().year, DateTime.now().month-6),
+          initialVisibleMaximum: DateTime.utc(DateTime.now().year, DateTime.now().month, 0),
         ),
         primaryYAxis: NumericAxis(
           minimum: 0,
           maximum: maxYvalue,
           interval: interval,
+          isVisible: widget.range == null,
           numberFormat: NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR"),   
         ),
         series:
@@ -321,7 +328,6 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
                 return data.ylist != null ? data.ylist![i] : 0;
               },
               onPointDoubleTap: widget.onPieDoubleSelected,
-              // markerSettings: const MarkerSettings(isVisible: true, height: 8.0, width: 8.0),
               dataLabelSettings: DataLabelSettings(
                 labelAlignment: ChartDataLabelAlignment.top,
                 useSeriesColor: true,
