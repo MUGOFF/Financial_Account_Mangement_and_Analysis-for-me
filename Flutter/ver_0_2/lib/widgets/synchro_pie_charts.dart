@@ -313,3 +313,104 @@ class _PieChartByExtraBudgetState extends State<PieChartByExtraBudget> {
       );
     }
 }
+
+
+/// 메인페이지 예산산그래프
+class BudgetMainPagePieChart extends StatefulWidget {
+
+  const BudgetMainPagePieChart({
+    super.key
+  });
+
+  @override
+  State<BudgetMainPagePieChart> createState() => _BudgetMainPagePieChartState();
+}
+
+class _BudgetMainPagePieChartState extends State<BudgetMainPagePieChart> {
+  Logger logger = Logger();
+  late TooltipBehavior _tooltip;
+  List<_PieChartData> chartData = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _tooltip = TooltipBehavior(
+      enable: true,
+      // shouldAlwaysShow: true,
+      header: "",
+      borderWidth: 5,
+      textStyle: const TextStyle(fontSize: 20, overflow: TextOverflow.ellipsis),
+      tooltipPosition: TooltipPosition.pointer,
+      // format: 'point.y',
+      builder: (dynamic data, dynamic point, dynamic series,
+      int pointIndex, int seriesIndex) {
+        return  Container(
+          padding: const EdgeInsets.all(7),
+          child: Text('${data.x}: ${NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(data.y*-1)}', style: const TextStyle(color: Colors.white, fontSize: 24)),
+        );
+      }
+    );
+    _fetchChartDatas();
+  }
+
+  Future<void> _fetchChartDatas() async {
+    List<_PieChartData> localChartData = [];
+    double totalValue = 0;
+    List<Map<String, dynamic>> fetchedExpenseData =  await DatabaseAdmin().getTransactionsSUMByCategoryandDate(DateTime.now().year,DateTime.now().month);
+    List<Map<String, dynamic>> fetchedIncomeData =  await DatabaseAdmin().getTransactionsIncomeSumByMonth(DateTime.now().year,DateTime.now().month);
+    List<Map<String, dynamic>> localexpenseData = [...fetchedExpenseData];
+    Map<String, dynamic> localIncomeData = await DatabaseAdmin().getIncome();
+    localexpenseData.sort((previous, next) => next['totalAmount'].compareTo(previous['totalAmount']));
+    double income = 0;
+    for (var data in localexpenseData) {
+      totalValue = totalValue + data['totalAmount'].abs();
+    }
+    if(fetchedIncomeData.isNotEmpty) {
+      income = fetchedIncomeData.first['totalAmount'];
+    } else {
+      income = localIncomeData['income'].toDouble();
+    }
+    // logger.d('income: $income totalValue: $totalValue');
+    if (income > totalValue) {
+      localChartData.add(_PieChartData('소비', totalValue, totalValue/income*100));
+      localChartData.add(_PieChartData('잔금', income-totalValue, (income-totalValue)/income*100));
+    } else {
+      localChartData.add(_PieChartData('소비', totalValue, 100));
+    }
+
+    if (mounted) {
+      setState(() {
+        chartData = localChartData;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+      return SfCircularChart(
+        // legend: const Legend(isVisible: true, iconWidth: 25, iconHeight: 25, overflowMode: LegendItemOverflowMode.wrap),
+        tooltipBehavior: _tooltip,
+        series: <CircularSeries>[
+          PieSeries<_PieChartData, String>(
+            dataSource: chartData,
+            pointColorMapper:(_PieChartData data, _) {
+              return data.yp < 50 
+                ? Colors.green 
+                : data.yp < 75
+                ? Colors.yellow 
+                : Colors.red;
+            },
+            xValueMapper: (_PieChartData data, _) => data.x,
+            yValueMapper: (_PieChartData data, _) => data.y,
+            dataLabelMapper: (_PieChartData data, _) => '${data.yp.toStringAsFixed(2)}%',
+            dataLabelSettings: const DataLabelSettings(
+              isVisible: true,
+              labelIntersectAction: LabelIntersectAction.shift,
+              labelPosition: ChartDataLabelPosition.inside,
+              textStyle: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)
+            ),
+          )
+        ]
+      );
+    }
+}

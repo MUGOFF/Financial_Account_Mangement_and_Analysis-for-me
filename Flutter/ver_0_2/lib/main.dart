@@ -1,5 +1,11 @@
 // import 'dart:convert';
+// import 'dart:async';
+// import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+// import 'package:syncfusion_flutter_charts/charts.dart';
 // import 'package:http/http.dart' as http;
 // import 'package:logger/logger.dart';
 // import 'package:syncfusion_flutter_core/core.dart';
@@ -9,6 +15,8 @@ import 'package:ver_0_2/pages/stats.dart';
 import 'package:ver_0_2/widgets/tab_bar.dart';
 import 'package:ver_0_2/widgets/drawer_end.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
+import 'package:ver_0_2/widgets/synchro_charts_etc.dart';
+import 'package:ver_0_2/widgets/synchro_pie_charts.dart';
 import 'package:ver_0_2/widgets/models/budget_setting.dart';
 // import 'package:ver_0_2/widgets/models/current_holdings.dart';
 
@@ -127,7 +135,6 @@ class HomePageCotent extends StatefulWidget {
 }
 
 class _HomePageCotentState extends State<HomePageCotent> {
-  // late PageController _pageController;
   final TextEditingController _textFieldSavingController = TextEditingController();
   final TextEditingController _textFieldIncomeController = TextEditingController();
   final TextEditingController _textFieldInputController = TextEditingController();
@@ -143,6 +150,10 @@ class _HomePageCotentState extends State<HomePageCotent> {
 
   @override
   void initState() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     super.initState();
     _fetchDatas().then((_) {
       if (budgetSet.isEmpty) {
@@ -155,15 +166,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
         }
       }
     });
-    // _pageController = PageController();
   }
-
-  // @override
-  // void dispose() {
-  //   // _pageController.dispose();
-  //   super.dispose();
-  // }
-
   Future<void> _fetchDatas() async {
     isloading = true;
     double localTotalExpenseAmount= 0;
@@ -195,6 +198,209 @@ class _HomePageCotentState extends State<HomePageCotent> {
       // logger.d(budgetSet[0].budgetList) ;   
     }
   }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isloading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator())
+      );
+    } else {
+      return Scaffold(
+        appBar: AppBar(
+          // TRY THIS: Try changing the color here to a specific color (to
+          // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
+          // change color while the other colors stay the same.
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          // Here we take the value from the HomePage object that was created by
+          // the App.build method, and use it to set our appbar title.
+          title: const Text('Junior Demo App (Book Account)'),
+        ),
+        endDrawer: const AppDrawer(),
+        body: SafeArea(
+          // Center is a layout widget. It takes a single child and positions it
+          // in the middle of the parent.
+          child:  
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // const Text("미예정"),
+                Expanded(
+                  child: CarouselSlider(
+                    options: CarouselOptions(
+                      height: MediaQuery.of(context).size.height*0.9,
+                      autoPlay: true,
+                      viewportFraction: 0.9,
+                      autoPlayInterval: const Duration(seconds: 3),
+                    ),
+                    items: [1,2,3].map((i) {
+                      return Builder(
+                        builder: (BuildContext context) {
+                          switch (i) {
+                            case 1:
+                              if (budgetSet.isEmpty || income == null) {
+                                return Stack(
+                                  children: [ 
+                                    const Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text("최근 3개월 소득",style: TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                      ),),
+                                          Expanded(
+                                            child: StackChartsMainpage(
+                                              range: 3,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: IconButton(
+                                        icon: const Icon(Icons.zoom_out_map),
+                                        color: Colors.grey,
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            PageRouteBuilder(
+                                              pageBuilder: (context, animation, secondaryAnimation) => const LandScapeStackChartMain(),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              } else{
+                                return const Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text("이번달 소득과 소비 현황",
+                                      style: TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: BudgetMainPagePieChart(),
+                                    )
+                                  ],
+                                );
+                              }
+                            case 2:
+                              return Stack(
+                                children: [ 
+                                const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: 
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text("최근 3개월 소득",style: TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                      ),),
+                                      Expanded(
+                                    child: StackChartsMainpage(
+                                        range: 3,
+                                      // onPieDoubleSelected: (ChartPointDetails pointInteractionDetails) {
+                                      //   Navigator.push(
+                                      //     context,
+                                      //     PageRouteBuilder(
+                                      //       pageBuilder: (context, animation, secondaryAnimation) => const LandScapeStackChartMain(),
+                                      //     ),
+                                      //   );
+                                      // },
+                                        ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.zoom_out_map),
+                                      color: Colors.grey,
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          PageRouteBuilder(
+                                            pageBuilder: (context, animation, secondaryAnimation) => const LandScapeStackChartMain(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              );
+                            case 3:
+                              return Stack(
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          "최근 3개월 순소득",
+                                          style: TextStyle(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: ComboChartsMainpage(range: 3),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.zoom_out_map),
+                                      color: Colors.grey,
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          PageRouteBuilder(
+                                            pageBuilder: (context, animation, secondaryAnimation) => const LandScapeComboChartMain(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              );
+                            default:
+                              return const SizedBox.shrink();
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                      // OutlinedButton(
+                      //   onPressed: (){
+                      //     DatabaseAdmin().clearExtraGroup();
+                      //   }, 
+                      //   child: Text('칟ㅁㄱ ㄷㅌㅅㄱㅁ')
+                      // )
+                      // InvestHolingsPage(currentHoldings: currentHoldings, investCategories: investCategories),
+                    // ],
+                )
+              ],
+            )
+        ),
+      );
+    }
+  }
+
 
   void setInitialSaving() {
     showDialog(
@@ -325,49 +531,6 @@ class _HomePageCotentState extends State<HomePageCotent> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (isloading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator())
-      );
-    } else {
-      return Scaffold(
-        appBar: AppBar(
-          // TRY THIS: Try changing the color here to a specific color (to
-          // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-          // change color while the other colors stay the same.
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          // Here we take the value from the HomePage object that was created by
-          // the App.build method, and use it to set our appbar title.
-          title: const Text('Junior Demo App (Book Account)'),
-        ),
-        endDrawer: const AppDrawer(),
-        body: const Center(
-          // Center is a layout widget. It takes a single child and positions it
-          // in the middle of the parent.
-          child: 
-            Column(
-              children: [Text("미예정"),],
-            )
-          // PageView(
-          //     controller: _pageController,
-          //     children: const [
-          //       Text("미예정"),
-          //       // OutlinedButton(
-          //       //   onPressed: (){
-          //       //     DatabaseAdmin().clearExtraGroup();
-          //       //   }, 
-          //       //   child: Text('칟ㅁㄱ ㄷㅌㅅㄱㅁ')
-          //       // )
-          //       // InvestHolingsPage(currentHoldings: currentHoldings, investCategories: investCategories),
-          //     ],
-          //   ),
-        ),
-      );
-    }
-  }
-
   void insertNewBudgetToDatabase(int budget) {
     _textFieldInputController.text = (budget * 10000).toString(); 
     final BudgetSetting newBudget = BudgetSetting(
@@ -386,6 +549,112 @@ class _HomePageCotentState extends State<HomePageCotent> {
     } else {
       DatabaseAdmin().updateIncomeTable(int.parse(_textFieldInputController.text), incomeId!);
     }
+  }
+}
+
+///메인스택차트 확장 페이지
+class LandScapeStackChartMain extends StatefulWidget {
+  const LandScapeStackChartMain({super.key});
+
+  @override
+  State<LandScapeStackChartMain> createState() => _LandScapeStackChartMainState();
+}
+
+class _LandScapeStackChartMainState extends State<LandScapeStackChartMain> {
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    isLoading = true;
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    
+    isLoading = false;
+  }
+
+  @override
+  void dispose() {
+    isLoading = true;
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    isLoading = false;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: isLoading 
+      ? const Center(child: CircularProgressIndicator())
+      : SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width*0.9,
+            height: MediaQuery.of(context).size.height*0.9,
+            child: const StackChartsMainpage(),
+          ),
+        ) 
+      ),
+    );
+  }
+}
+
+///메인콤보차트 확장 페이지
+class LandScapeComboChartMain extends StatefulWidget {
+  const LandScapeComboChartMain({super.key});
+
+  @override
+  State<LandScapeComboChartMain> createState() => _LandScapeComboChartMainState();
+}
+
+class _LandScapeComboChartMainState extends State<LandScapeComboChartMain> {
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    isLoading = true;
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    
+    isLoading = false;
+  }
+
+  @override
+  void dispose() {
+    isLoading = true;
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    isLoading = false;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: isLoading 
+      ? const Center(child: CircularProgressIndicator())
+      : SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width*0.9,
+            height: MediaQuery.of(context).size.height*0.9,
+            child: const ComboChartsMainpage(),
+          ),
+        ),
+      ),
+    );
   }
 }
 

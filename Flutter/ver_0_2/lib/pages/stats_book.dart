@@ -61,9 +61,10 @@ class _DateMonthBarState extends State<DateMonthBar> {
             icon: const Icon(Icons.arrow_back_ios_new),
             onPressed: widget.monthBack,
           ),
-          GestureDetector(
-            child: Text(' ${widget.year} 년 ${widget.month} 월'),
-          ),
+          // GestureDetector(
+          //   child: 
+          // ),
+          Text(widget.monthBack != null ? '${widget.year} 년 ${widget.month} 월' : '${widget.year} 년'),
           if(widget.monthForward != null)
           IconButton(
             icon: const Icon(Icons.arrow_forward_ios),
@@ -367,6 +368,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
   List<BudgetSetting> budgetSet = [];
   List<Map<String, dynamic>>expenseData= [];
   double totalExpenseAmount= 0;
+  double totalSubBudgetAmount= 0;
   bool isPercentageChannels = true;
   List<String> categoryData = [];
   List<String> budgetCategoryData = [];
@@ -404,14 +406,21 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
     List<String> localCategoryData = [];
     List<String> localBudgetCategoryData = [];
     double localTotalExpenseAmount= 0;
+    double localTotalSubBudgetAmount= 0;
     List<BudgetSetting> fetchedBudgetSet = await DatabaseAdmin().getMonthBugetList(widget.year, widget.month);
     List<Map<String, dynamic>> fetchedExpenseData =  await DatabaseAdmin().getTransactionsSUMByCategoryandDate(widget.year,widget.month);
     List<Map<String, dynamic>> localexpenseData = [...fetchedExpenseData];
     if (fetchedBudgetSet.isNotEmpty && fetchedBudgetSet[0].budgetList != null) {
+      // logger.i(fetchedBudgetSet[0].budgetList!);
       for (var key in fetchedBudgetSet[0].budgetList!.keys) {
         localCategoryData.add(key);
         localBudgetCategoryData.add(key);
+        if (key != '총 예산') {
+          localTotalSubBudgetAmount = localTotalSubBudgetAmount + fetchedBudgetSet[0].budgetList![key]!.toDouble();
+        }
       }
+      // for (var valueAmount in fetchedBudgetSet[0].budgetList!.values) {
+      // }
     }
     localexpenseData.sort((previous, next) => next['totalAmount'].compareTo(previous['totalAmount']));
     for (var data in localexpenseData) {
@@ -428,6 +437,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
         categoryData = localCategoryData;
         budgetCategoryData = localBudgetCategoryData;
         totalExpenseAmount = localTotalExpenseAmount;
+        totalSubBudgetAmount = localTotalSubBudgetAmount;
         isloading = false;
       });
       // logger.d(budgetSet);   
@@ -552,20 +562,26 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
                 child: PercentageGaugeBar(childNumber: totalExpenseAmount,motherNumber: budgetSet[0].budgetList!['총 예산']!, isPercentage: isPercentageChannels)
               ),
               const Divider(height: 50),
-              Align(
-                alignment: const Alignment(0.8,0.5),
-                child: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      if(_animationStatus == AnimationStatus.dismissed) {
-                        _animationController.forward();
-                      } else {
-                        _animationController.reverse();
-                      }
-                    });
-                  },
-                  icon: const Icon(Icons.autorenew),
-                )
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('세부 예산 여분:     ${NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(budgetSet[0].budgetList!['총 예산']! - totalSubBudgetAmount)}',
+                   style: TextStyle(fontSize: 20, fontStyle: FontStyle.italic, color: budgetSet[0].budgetList!['총 예산']! - totalSubBudgetAmount > 0 ?  Colors.lightGreen : Colors.deepOrange),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        if(_animationStatus == AnimationStatus.dismissed) {
+                          _animationController.forward();
+                        } else {
+                          _animationController.reverse();
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.autorenew),
+                  )
+                ],
               ),
               Expanded(
                 child: Transform(

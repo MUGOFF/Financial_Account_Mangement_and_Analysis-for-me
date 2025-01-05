@@ -41,8 +41,7 @@ class _NestedTabBarBookState extends State<NestedTabBarBook> with SingleTickerPr
   int year = DateTime.now().year;
   int month = DateTime.now().month;
   bool isNotCompareBar = false;
-  
-  
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -103,6 +102,7 @@ class _NestedTabBarBookState extends State<NestedTabBarBook> with SingleTickerPr
             ),
             Expanded(
               child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(),
                 children: <Widget>[
                   MonthlyConsumePage(
                     key: UniqueKey(), year: year, month: month,

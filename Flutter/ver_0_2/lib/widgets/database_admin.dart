@@ -591,6 +591,156 @@ class DatabaseAdmin {
     return transactionMaps;
   }
 
+  ///월간 수입 가져오기
+  Future<List<Map<String, dynamic>>> getIncomeSumMonthlyByMonth(int? range) async {
+    try {
+      final db = await database;
+      if (range != null) {
+        final today = DateTime.now();
+        final startMonths = List.generate(
+          range,
+          (i) {
+            final date = DateTime(today.year, today.month - i, 1);
+            return "${date.year}년 ${date.month.toString().padLeft(2, '0')}월";
+          },
+        );
+        final List<Map<String, dynamic>> transactionMaps = await db.query(
+          'money_transactions',
+          columns: ['substr(transactionTime,1,9) as yearmonth', 'SUM(amount) as totalAmount'],
+          where: "substr(transactionTime, 1, 9) IN (${List.filled(startMonths.length, '?').join(', ')}) AND categoryType = '수입'",
+          whereArgs: startMonths,
+          groupBy: 'yearmonth'
+        );
+        
+        return transactionMaps;
+      } else{
+        final List<Map<String, dynamic>> transactionMaps = await db.query(
+          'money_transactions',
+          columns: ['substr(transactionTime,1,9) as yearmonth', 'SUM(amount) as totalAmount'],
+          where: "categoryType = '수입'",
+          groupBy: 'yearmonth'
+        );
+        
+        return transactionMaps;   
+      }
+    } catch (e) {
+      logger.e('error: $e, fetching income failed');
+      return [];
+    }
+  }
+
+  ///월간 수입 카테고리로 구별하여 가져오기
+  Future<List<Map<String, dynamic>>> getIncomeSumMonthlyByCategory(int? range) async {
+    try {
+      final db = await database;
+      if (range != null) {
+        final today = DateTime.now();
+        final startMonths = List.generate(
+          range,
+          (i) {
+            final date = DateTime(today.year, today.month - i, 1);
+            return "${date.year}년 ${date.month.toString().padLeft(2, '0')}월";
+          },
+        );
+        // 동적 바인딩을 위한 쿼리 생성
+        final placeholders = List.filled(startMonths.length, '?').join(', ');
+
+        // 쿼리 실행
+        final List<Map<String, dynamic>> transactionMaps = await db.rawQuery(
+          '''
+          SELECT 
+            substr(transactionTime, 1, 9) AS yearmonth,
+            category,
+            SUM(amount) AS totalAmount
+          FROM money_transactions
+          WHERE substr(transactionTime, 1, 9) IN ($placeholders)
+            AND categoryType = '수입'
+          GROUP BY yearmonth, category;
+          ''',
+          startMonths,
+        );
+        return transactionMaps;
+      } else {
+        final List<Map<String, dynamic>> transactionMaps = await db.rawQuery(
+          '''
+          SELECT 
+            substr(transactionTime, 1, 9) AS yearmonth,
+            category,
+            SUM(amount) AS totalAmount
+          FROM money_transactions
+          WHERE categoryType = '수입'
+          GROUP BY yearmonth, category;
+          ''',
+        );
+        return transactionMaps;
+      }
+    } catch (e) {
+      logger.e('error: $e, fetching income failed');
+      return [];
+    }
+  }
+
+
+  ///월간 순수입 가져오기
+  Future<List<Map<String, dynamic>>> getNetIncomeSumMonthlyByMonth(int? range) async {
+    try {
+      final db = await database;
+      if (range != null) {
+        final today = DateTime.now();
+        final startMonths = List.generate(
+          range,
+          (i) {
+            final date = DateTime(today.year, today.month - i, 1);
+            return "${date.year}년 ${date.month.toString().padLeft(2, '0')}월";
+          },
+        );
+        // 동적 바인딩을 위한 쿼리 생성
+        final placeholders = List.filled(startMonths.length, '?').join(', ');
+
+        // 쿼리 실행
+        final List<Map<String, dynamic>> transactionMaps = await db.rawQuery(
+          '''
+          SELECT 
+            substr(transactionTime, 1, 9) AS yearmonth,
+            SUM(amount) AS totalAmount
+          FROM money_transactions
+          WHERE substr(transactionTime, 1, 9) IN ($placeholders)
+          GROUP BY yearmonth;
+          ''',
+          startMonths,
+        );
+        return transactionMaps;
+      } else {
+        final List<Map<String, dynamic>> transactionMaps = await db.rawQuery(
+          '''
+          SELECT 
+            substr(transactionTime, 1, 9) AS yearmonth,
+            SUM(amount) AS totalAmount
+          FROM money_transactions
+          GROUP BY yearmonth;
+          ''',
+        );
+        return transactionMaps;
+      }
+    } catch (e) {
+      logger.e('error: $e, fetching income failed');
+      return [];
+    }
+  }
+
+  ///카테고리별 월간 수입 총합 가져오기
+  Future<List<Map<String, dynamic>>> getTransactionsIncomeSumByMonth(int year, int month) async {
+    final db = await database;
+    final List<Map<String, dynamic>> transactionMaps = await db.query(
+      'money_transactions',
+      columns: ['substr(transactionTime, 1, 9) AS yearmonth','SUM(amount) as totalAmount'],
+      where: "substr(transactionTime,1,9) = ? AND categoryType = '수입' AND extraBudget == 0",
+      whereArgs: ['$year년 ${month.toString().padLeft(2, '0')}월'],
+    );
+    
+    return transactionMaps;
+  }
+
   ///카테고리별 월간 소비 총합 가져오기
   Future<List<Map<String, dynamic>>> getTransactionsSUMByCategoryandDate(int year, int month) async {
     final db = await database;
