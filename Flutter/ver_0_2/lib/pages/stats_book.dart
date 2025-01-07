@@ -462,7 +462,7 @@ class _BudgetSettingPageState extends State<BudgetSettingPage> with TickerProvid
     _textFieldController.value = TextEditingValue(
       text: formattedText,
       selection: TextSelection.collapsed(
-        offset: formattedText.length < cursorPosition ? formattedText.length : cursorPosition,
+        offset: formattedText.length < cursorPosition? formattedText.length : cursorPosition,
       ),
     );
     _textFieldInputController.text = _textFieldController.text.replaceAll(RegExp(r'[^0-9.]'), '');

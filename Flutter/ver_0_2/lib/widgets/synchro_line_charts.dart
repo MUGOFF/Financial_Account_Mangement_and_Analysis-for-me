@@ -60,7 +60,7 @@ class _LineChartsByYearCategoryState extends State<LineChartsByYearCategory> {
     
     List<Map<String, dynamic>> fetchedDatas = await DatabaseAdmin().getCategorySumByYear(widget.category);
     for (var data in fetchedDatas) {
-      localChartData.add(LineChartDataDatetime(DateTime.utc(int.parse(data['year'])), data['totalAmount']));
+      localChartData.add(LineChartDataDatetime(DateTime(int.parse(data['year'])), data['totalAmount']));
       if (localmaxYvalue < data['totalAmount']) {
         localmaxYvalue = data['totalAmount'];
       }
@@ -160,9 +160,9 @@ class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
     fetchedDatas.sort((prev, next) => prev['yearmonth'].compareTo(next['yearmonth']));
     // fetchedDatas.sort((prev, next) => next['yearmonth'].compareTo(prev['yearmonth']));
     // logger.i(fetchedDatas);
-    mininumDate =DateTime.utc(int.parse(fetchedDatas.first['yearmonth'].substring(0,4)),int.parse(fetchedDatas.first['yearmonth'].substring(6,8)));
+    mininumDate =DateTime(int.parse(fetchedDatas.first['yearmonth'].substring(0,4)),int.parse(fetchedDatas.first['yearmonth'].substring(6,8)));
     for (var data in fetchedDatas) {
-      localChartData.add(LineChartDataDatetime(DateTime.utc(int.parse(data['yearmonth'].substring(0,4)),int.parse(data['yearmonth'].substring(6,8))), data['totalAmount']));
+      localChartData.add(LineChartDataDatetime(DateTime(int.parse(data['yearmonth'].substring(0,4)),int.parse(data['yearmonth'].substring(6,8))), data['totalAmount']));
       if (localmaxYvalue < data['totalAmount']) {
         localmaxYvalue = data['totalAmount'];
       }
