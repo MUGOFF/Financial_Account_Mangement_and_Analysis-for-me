@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ver_0_2/colorsholo.dart';
 
 class AppBottomNavBar extends StatefulWidget {
 
@@ -35,7 +36,7 @@ class _AppBottomNavBarState extends State<AppBottomNavBar> {
         ),
       ],
       currentIndex: widget.currentIndex,
-      selectedItemColor: Colors.blue,
+      selectedItemColor: HoloColors.ookamiMio,
       unselectedItemColor: Colors.grey,
       onTap: widget.onItemSelected,
     );

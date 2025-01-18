@@ -18,6 +18,7 @@ import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/synchro_charts_etc.dart';
 import 'package:ver_0_2/widgets/synchro_pie_charts.dart';
 import 'package:ver_0_2/widgets/models/budget_setting.dart';
+import 'package:ver_0_2/colorsholo.dart';
 // import 'package:ver_0_2/widgets/models/current_holdings.dart';
 
 void main() {
@@ -49,7 +50,7 @@ class DemoApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 0, 255, 190)),
+        colorScheme: ColorScheme.fromSeed(seedColor: HoloColors.ceresFauna),
         useMaterial3: true,
       ),
       home: const MainPage(),

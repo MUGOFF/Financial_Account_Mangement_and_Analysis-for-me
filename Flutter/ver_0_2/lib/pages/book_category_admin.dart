@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:dotted_border/dotted_border.dart';
+import 'package:ver_0_2/colorsholo.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/models/transaction_category.dart';
 
@@ -39,9 +40,9 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildRadioButton('소비', '소비', Colors.red),
-              buildRadioButton('수입', '수입', Colors.blue),
-              buildRadioButton('이체', '이체', Colors.grey),
+              buildRadioButton('소비', '소비', HoloColors.ookamiMio),
+              buildRadioButton('수입', '수입', HoloColors.ceresFauna),
+              buildRadioButton('이체', '이체', HoloColors.shiroganeNoel),
             ],
           ),
           const Divider(

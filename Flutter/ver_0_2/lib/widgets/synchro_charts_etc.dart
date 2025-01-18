@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:logger/logger.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
+import 'package:ver_0_2/colorsholo.dart';
 
 class LineChartDataDatetime {
   LineChartDataDatetime(this.x, this.y);
@@ -130,9 +131,15 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
       return const Center(child: CircularProgressIndicator());
     } else {
       double zoomfactorCal = 6/chartData.length > 1 ? 1 : 6/chartData.length;
+      List<LineChartDataDatetime> pastTiemData =
+        chartData.where((dataPoint) => dataPoint.x.isBefore(DateTime.now())).toList();
+
+      // 마지막 구간 데이터 필터링
+      List<LineChartDataDatetime> futureTiemData =
+          chartData.where((dataPoint) => dataPoint.x.isAfter(DateTime(DateTime.now().year,DateTime.now().month-1))).toList();
       return SfCartesianChart(
         title: ChartTitle(
-          text: widget.range != null ?'' : '월간 순수입과 누적 그래프프',
+          text: widget.range != null ?'' : '월간 순수입과 누적 그래프',
           alignment: ChartAlignment.center,
           // borderColor: Colors.transparent,
           // borderWidth: 10
@@ -174,9 +181,17 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
           ColumnSeries<ColumnChartDataDatetime, DateTime>(
             pointColorMapper:(ColumnChartDataDatetime data, _){
             if(data.y > 0) {
-              return Colors.grey.shade600;
+              if(data.x.isAfter(DateTime(DateTime.now().year,DateTime.now().month-1))) {
+                return Colors.black.withOpacity(0.5);
+              } else{
+                return Colors.black;
+              }
             } else {
-              return Colors.red.shade600;
+              if(data.x.isAfter(DateTime(DateTime.now().year,DateTime.now().month-1))) {
+                return Colors.red.withOpacity(0.5);
+              } else{
+                return Colors.red;
+              }
             }
           },
             dataSource: columChartData,
@@ -190,7 +205,17 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
             yAxisName: 'yAxisSecondary'
           ),
           LineSeries<LineChartDataDatetime, DateTime>(
-            dataSource: chartData,
+            dataSource: pastTiemData,
+            color: HoloColors.ceresFauna,
+            xValueMapper: (LineChartDataDatetime data, _) => data.x,
+            yValueMapper: (LineChartDataDatetime data, _) => data.y,
+            markerSettings: const MarkerSettings(isVisible: true, height : 10.0, width : 10.0),
+            dataLabelSettings: const DataLabelSettings(isVisible: false),
+          ),
+          LineSeries<LineChartDataDatetime, DateTime>(
+            dataSource: futureTiemData,
+            color: HoloColors.ceresFauna,
+            dashArray: const <double>[10, 5],
             xValueMapper: (LineChartDataDatetime data, _) => data.x,
             yValueMapper: (LineChartDataDatetime data, _) => data.y,
             markerSettings: const MarkerSettings(isVisible: true, height : 10.0, width : 10.0),

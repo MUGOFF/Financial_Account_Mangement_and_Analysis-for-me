@@ -1236,11 +1236,16 @@ class _BudgetSettingYearlyPageState extends State<BudgetSettingYearlyPage> with 
     final double value = double.parse(newText);
     final formattedText = NumberFormat.simpleCurrency(decimalDigits: value%1==0? 0: 2, locale: "ko-KR").format(value);
 
+    final oldTextLength = _textFieldController.text.length;
     final cursorPosition = _textFieldController.selection.base.offset;
+    
+    final int offsetAdjustment = oldTextLength - cursorPosition;
+    final int newCursorPosition = formattedText.length - offsetAdjustment;
+    
     _textFieldController.value = TextEditingValue(
       text: formattedText,
       selection: TextSelection.collapsed(
-        offset: formattedText.length < cursorPosition ? formattedText.length : cursorPosition,
+        offset: formattedText.length < newCursorPosition ? formattedText.length : newCursorPosition,
       ),
     );
     // _textFieldController.text = formattedText;

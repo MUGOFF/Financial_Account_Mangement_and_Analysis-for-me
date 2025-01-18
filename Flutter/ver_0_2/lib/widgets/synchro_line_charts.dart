@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:ver_0_2/colorsholo.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 
 
@@ -132,7 +133,7 @@ class LineChartsByYearMonthTag extends StatefulWidget {
 
 class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
   Logger logger = Logger();
-  late TooltipBehavior _tooltip;
+  TrackballBehavior _trackballBehavior = TrackballBehavior(enable: true,);
   List<LineChartDataDatetime> chartData = [];
   double maxYvalue = 100;
   double interval = 100;
@@ -141,11 +142,16 @@ class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
 
   @override
   void initState() {
-    _tooltip = TooltipBehavior(
+    _trackballBehavior = TrackballBehavior(
+      // Enables the trackball
       enable: true,
-      canShowMarker: false,
-      textStyle: const TextStyle(fontSize: 20),
-      header: '',
+      activationMode: ActivationMode.singleTap,
+      tooltipSettings: const InteractiveTooltip(
+        enable: true,
+        format: 'point.x : \n point.y',
+        color: HoloColors.takanashiKiara,
+        textStyle: TextStyle(color: Colors.white, fontSize: 16,fontWeight: FontWeight.bold),
+      )
     );
     super.initState();
     _fetchChartDatas();
@@ -189,7 +195,7 @@ class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
           borderColor: Colors.transparent,
           borderWidth: 10
         ),
-        tooltipBehavior: _tooltip,
+        trackballBehavior: _trackballBehavior,
         primaryXAxis: DateTimeAxis(
           labelRotation: 60,
           dateFormat: DateFormat.yM(),
@@ -204,16 +210,17 @@ class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
           minimum: 0,
           maximum: maxYvalue,
           interval: interval,
-          numberFormat: NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR"),   
+          numberFormat: NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR"),
         ),
         series: <CartesianSeries>[
           SplineSeries<LineChartDataDatetime, DateTime>(
             name: widget.tagName,
+            color: HoloColors.takanashiKiara,
             splineType: SplineType.monotonic,
             dataSource: chartData,
             xValueMapper: (LineChartDataDatetime data, _) => data.x,
             yValueMapper: (LineChartDataDatetime data, _) => data.y,
-            markerSettings: const MarkerSettings(isVisible: true, height : 8.0, width : 8.0),
+            // markerSettings: const MarkerSettings(isVisible: true, height : 8.0, width : 8.0),
             dataLabelSettings: const DataLabelSettings(isVisible: false),
           )
         ]

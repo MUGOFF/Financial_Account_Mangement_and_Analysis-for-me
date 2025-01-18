@@ -5,6 +5,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 // import 'package:logger/logger.dart';
 import 'package:ver_0_2/pages/book_category_admin.dart';
 import 'package:ver_0_2/pages/external_data_inout.dart';
+import 'package:ver_0_2/colorsholo.dart';
 
 // final Logger logger = Logger();
 class AppDrawer extends StatelessWidget {
@@ -47,7 +48,7 @@ class AppDrawer extends StatelessWidget {
               final appVersion = snapshot.data ?? 'Loading...';
               return DrawerHeader(
                 decoration: const BoxDecoration(
-                  color: Colors.blue,
+                  color: HoloColors.hoshimachiSuisei,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

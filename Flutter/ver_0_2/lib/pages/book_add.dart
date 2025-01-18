@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:intl/intl.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:ver_0_2/colorsholo.dart';
 import 'package:ver_0_2/widgets/date_picker.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
@@ -67,13 +68,12 @@ class _BookAddState extends State<BookAdd> {
         _bottomSheetController?.close();
       }
     });
-    // _focusMemoNode.addListener(() {
-    //   if (_focusMemoNode.hasFocus) {
-    //     _isMemoEditing = true;
-    //   } else {
-    //     _isMemoEditing = false;
-    //   }
-    // });
+    _focusMemoNode.addListener(() {
+      if (!_focusMemoNode.hasFocus) {
+        _overlayEntry!.remove();
+        _overlayEntry = null;
+      } 
+    });
     _initializeControllers();
     //  _memoController.addListener(() {
     //   final input = _memoController.text;
@@ -129,13 +129,12 @@ class _BookAddState extends State<BookAdd> {
     // {
     //   newText = '-${newText.replaceAll(RegExp(r'-'), '')}';
     // }
-
     final double value = double.parse(newText);
     // if(value ==0) {
     //   final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
     //   return formattedText;
     // }
-    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
+    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
 
     return formattedText;
   }
@@ -165,17 +164,22 @@ class _BookAddState extends State<BookAdd> {
           // top: MediaQuery.of(context).size.height / 2 - 100,
           child: Material(
             elevation: 4.0,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: suggestedTags.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(suggestedTags[index]),
-                  onTap: () {
-                    _insertTagIntoText(suggestedTags[index]);
-                  },
-                );
-              },
+            child: Container(
+              constraints: const BoxConstraints(
+                maxHeight: 200.0, // Set the maximum height for the list
+              ),
+              child:ListView.builder(
+                shrinkWrap: true,
+                itemCount: suggestedTags.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(suggestedTags[index]),
+                    onTap: () {
+                      _insertTagIntoText(suggestedTags[index]);
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -269,7 +273,7 @@ class _BookAddState extends State<BookAdd> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     categoryRadioButton(
-                      1, '소비', Colors.red,
+                      1, '소비', HoloColors.ookamiMio,
                       () {
                         setState(() {
                           _selectedButton = 1;
@@ -280,7 +284,7 @@ class _BookAddState extends State<BookAdd> {
                       }
                     ),
                     categoryRadioButton(
-                      2, '수입', Colors.blue,
+                      2, '수입', HoloColors.ceresFauna,
                       () {
                         setState(() {
                           _selectedButton = 2;
@@ -291,7 +295,7 @@ class _BookAddState extends State<BookAdd> {
                       }
                     ),
                     categoryRadioButton(
-                      3, '이체', Colors.grey,
+                      3, '이체', HoloColors.shiroganeNoel,
                       () {
                         setState(() {
                           _selectedButton = 3;
@@ -935,7 +939,7 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
     final double? value = double.tryParse(newText);
     if (value == null) {
       return newValue.copyWith(
-        text: NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(0),
+        text: NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(0),
         selection: TextSelection.collapsed(
           offset: formattedText.length.clamp(0, formattedText.length),
         ),
@@ -960,22 +964,43 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
     // );
 
     // final formattedText = '$newValueMinus  ₩  $newText';
+    // 기존 텍스트 길이 및 커서 위치
+    final int oldTextLength = oldValue.text.length;
+    final int cursorPosition = oldValue.selection.base.offset;
 
-      if (newValue.text.length > formattedText.length) {
-        return newValue.copyWith(
-          text: formattedText,
-          selection: TextSelection.collapsed(
-            offset: formattedText.length.clamp(0, formattedText.length),
-          ),
-        );
-      } else {
-        return newValue.copyWith(
-          text: formattedText,
-          // selection: TextSelection.collapsed(
-          //   offset: formattedText.length.clamp(0, formattedText.length),
-          // ),
-        );
-      }
+    // 길이 차이에 따른 커서 위치 보정
+    final int offsetAdjustment = oldTextLength - cursorPosition;
+    final int newCursorPosition = formattedText.length - offsetAdjustment;
+
+    // 커서 위치를 범위 내로 제한
+    final int clampedCursorPosition = newCursorPosition.clamp(0, formattedText.length);
+    if (newText.contains('.') && !oldValue.text.contains('.')){
+      logger.d('dot put');
+      return newValue.copyWith(
+        text: formattedText,
+        selection: TextSelection.collapsed(offset: formattedText.length-1),
+      );
+    } else {
+      return newValue.copyWith(
+        text: formattedText,
+        selection: TextSelection.collapsed(offset: clampedCursorPosition),
+      );
+    }
+    // if (newValue.text.length > formattedText.length) {
+    //   return newValue.copyWith(
+    //     text: formattedText,
+    //     selection: TextSelection.collapsed(
+    //       offset: formattedText.length.clamp(0, formattedText.length),
+    //     ),
+    //   );
+    // } else {
+    //   return newValue.copyWith(
+    //     text: formattedText,
+    //     // selection: TextSelection.collapsed(
+    //     //   offset: formattedText.length.clamp(0, formattedText.length),
+    //     // ),
+    //   );
+    // }
   }
 }
 

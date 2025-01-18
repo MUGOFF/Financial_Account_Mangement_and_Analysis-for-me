@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:ver_0_2/colorsholo.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 
 
@@ -26,7 +27,7 @@ class ColumnChartsByCategoryMonth extends StatefulWidget {
   final int pastmonth;
   final Function(ChartPointDetails) onBarSelected;
 
-  ColumnChartsByCategoryMonth({
+  const ColumnChartsByCategoryMonth({
     required this.year,
     required this.month,
     required this.pastyear,
@@ -35,9 +36,8 @@ class ColumnChartsByCategoryMonth extends StatefulWidget {
     super.key
   });
 
-  final Color presentBarColor = Colors.teal.shade400;
-  final Color pastBarColor = Colors.grey.shade400;
-  final Color overflowColor = Colors.red.shade600;
+  final Color presentBarColor = HoloColors.tokinoSora;
+  final Color pastBarColor = HoloColors.shioriNovella;
 
   @override
   State<ColumnChartsByCategoryMonth> createState() => _ColumnChartsByCategoryMonthState();
@@ -53,7 +53,11 @@ class _ColumnChartsByCategoryMonthState extends State<ColumnChartsByCategoryMont
 
   @override
   void initState() {
-    _tooltip = TooltipBehavior(enable: true);
+    _tooltip = TooltipBehavior(
+      enable: true,
+      header: '',
+      format: '${widget.pastyear}. ${widget.pastmonth}.',
+    );
     super.initState();
     _fetchChartDatas();
   }
@@ -97,7 +101,7 @@ class _ColumnChartsByCategoryMonthState extends State<ColumnChartsByCategoryMont
         chartData = localChartData;
         charPastData = localPastChartData;
         interval = localmaxYvalue == 0 ? 1 : max(pow(10, (log((localmaxYvalue/3).abs())/ln10).floor()).toDouble(),pow(10, (log((localmaxYvalue).abs())/ln10).floor()).toDouble()/2);
-        maxYvalue = ((localmaxYvalue/interval).ceil()*interval).toDouble();
+        maxYvalue = ((localmaxYvalue/interval).ceil()*interval).toDouble()+interval;
       });
     }
   }

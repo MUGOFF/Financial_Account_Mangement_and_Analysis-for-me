@@ -373,7 +373,7 @@ class _BudgetMainPagePieChartState extends State<BudgetMainPagePieChart> {
     // logger.d('income: $income totalValue: $totalValue');
     if (income > totalValue) {
       localChartData.add(_PieChartData('소비', totalValue, totalValue/income*100));
-      localChartData.add(_PieChartData('잔금', income-totalValue, (income-totalValue)/income*100));
+      localChartData.add(_PieChartData('잔금', (income-totalValue)*-1, (income-totalValue)/income*100));
     } else {
       localChartData.add(_PieChartData('소비', totalValue, 100));
     }

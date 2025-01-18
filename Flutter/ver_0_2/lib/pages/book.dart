@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:intl/intl.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:ver_0_2/colorsholo.dart';
 import 'package:ver_0_2/pages/book_add.dart';
 import 'package:ver_0_2/widgets/drawer_end.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
@@ -619,11 +620,12 @@ class _BookState extends State<Book> {
         },
         label: Text(inputText.substring(match.start, match.end).replaceAll(RegExp(r'#'),''), style: const TextStyle(fontSize: 14),),    
         style: TextButton.styleFrom(
-          backgroundColor: Colors.green.shade200, // 배경색
-          foregroundColor: Colors.blue, // 텍스트 색상
+          backgroundColor: HoloColors.otonoseKanade.withOpacity(0.5), // 배경색
+          foregroundColor: HoloColors.nekomataOkayu, // 텍스트 색상
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(100), // 둥근 모서리
           ),
+          textStyle: const TextStyle(fontWeight: FontWeight.bold), // 텍스트 스타일
           // padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 0.0), // 버튼 내부 여백
         ), 
       ));
