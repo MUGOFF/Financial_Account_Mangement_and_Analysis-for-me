@@ -833,6 +833,7 @@ class DatabaseAdmin {
   ///월간별 태그 소비 총합 가져오기
   Future<List<Map<String, dynamic>>> getTagSumByYearMonth(String tagName) async {
     try {
+      // logger.d('tagName $tagName');
       final db = await database;
       String secureTagname = tagName.replaceAll(RegExp(r'([*?\[\]])'), '');
       final List<Map<String, dynamic>> transactionMaps = await db.query(
@@ -842,9 +843,11 @@ class DatabaseAdmin {
         whereArgs: ['%$secureTagname %', '%$secureTagname'],
         groupBy: 'substr(transactionTime,1,9)'
       );
+      // logger.d('transactionMaps $transactionMaps');
       
       return transactionMaps;
     } catch(e) {
+      logger.e(e);
       return [];
     }
   }
@@ -949,7 +952,7 @@ class DatabaseAdmin {
       //   );
       // });
       
-      // logger.i(combinedTransactions);
+      logger.i(combinedTransactions.length);
       return combinedTransactions;
 
     } catch (e) {

@@ -162,26 +162,27 @@ class _LineChartsByYearMonthTagState extends State<LineChartsByYearMonthTag> {
     double localmaxYvalue = 0;
     
     List<Map<String, dynamic>> fetchedDatas = (await DatabaseAdmin().getTagSumByYearMonth(widget.tagName)).toList();
-
-    fetchedDatas.sort((prev, next) => prev['yearmonth'].compareTo(next['yearmonth']));
-    // fetchedDatas.sort((prev, next) => next['yearmonth'].compareTo(prev['yearmonth']));
-    // logger.i(fetchedDatas);
-    mininumDate =DateTime(int.parse(fetchedDatas.first['yearmonth'].substring(0,4)),int.parse(fetchedDatas.first['yearmonth'].substring(6,8)));
-    for (var data in fetchedDatas) {
-      localChartData.add(LineChartDataDatetime(DateTime(int.parse(data['yearmonth'].substring(0,4)),int.parse(data['yearmonth'].substring(6,8))), data['totalAmount']));
-      if (localmaxYvalue < data['totalAmount']) {
-        localmaxYvalue = data['totalAmount'];
+    if (fetchedDatas.isNotEmpty) {
+      fetchedDatas.sort((prev, next) => prev['yearmonth'].compareTo(next['yearmonth']));
+      // fetchedDatas.sort((prev, next) => next['yearmonth'].compareTo(prev['yearmonth']));
+      // logger.i(fetchedDatas);
+      mininumDate =DateTime(int.parse(fetchedDatas.first['yearmonth'].substring(0,4)),int.parse(fetchedDatas.first['yearmonth'].substring(6,8)));
+      for (var data in fetchedDatas) {
+        localChartData.add(LineChartDataDatetime(DateTime(int.parse(data['yearmonth'].substring(0,4)),int.parse(data['yearmonth'].substring(6,8))), data['totalAmount']));
+        if (localmaxYvalue < data['totalAmount']) {
+          localmaxYvalue = data['totalAmount'];
+        }
       }
-    }
-    // double localdateinterval = (localChartData.length/5);
-    if (mounted) {
-      setState(() {
-        // dateinterval = localdateinterval;
-        // logger.i(dateinterval);
-        chartData = localChartData;
-        interval = localmaxYvalue == 0 ? 1 : max(pow(10, (log((localmaxYvalue/3).abs())/ln10).floor()).toDouble(),pow(10, (log((localmaxYvalue).abs())/ln10).floor()).toDouble()/2);
-        maxYvalue = ((localmaxYvalue/interval).ceil()*interval).toDouble();
-      });
+      // double localdateinterval = (localChartData.length/5);
+      if (mounted) {
+        setState(() {
+          // dateinterval = localdateinterval;
+          // logger.i(dateinterval);
+          chartData = localChartData;
+          interval = localmaxYvalue == 0 ? 1 : max(pow(10, (log((localmaxYvalue/3).abs())/ln10).floor()).toDouble(),pow(10, (log((localmaxYvalue).abs())/ln10).floor()).toDouble()/2);
+          maxYvalue = ((localmaxYvalue/interval).ceil()*interval).toDouble();
+        });
+      }
     }
   }
 

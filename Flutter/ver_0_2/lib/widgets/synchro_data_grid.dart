@@ -14,9 +14,9 @@ import 'package:ver_0_2/widgets/models/extra_budget_group.dart';
 class TransactionGridDataSource extends DataGridSource {
   final List<MoneyTransaction> transanctions;
   TransactionGridDataSource({required this.transanctions}) {
-    tagTransactionPage = transanctions.length < _rowsPerPage
-      ? transanctions
-      : transanctions.getRange(0, _rowsPerPage).toList();
+    // tagTransactionPage = transanctions.length < _rowsPerPage
+    //   ? transanctions
+    //   : transanctions.getRange(0, _rowsPerPage).toList();
     buildPaginatedDataGridRows();
     // dataGridRows = transanctions
     //     .map<DataGridRow>((dataGridRow) => DataGridRow(cells: [
@@ -27,10 +27,10 @@ class TransactionGridDataSource extends DataGridSource {
     //         ]))
     //     .toList();
   }
-  List<MoneyTransaction> tagTransactionPage=[];
-  final int _rowsPerPage = 5;
+  // List<MoneyTransaction> tagTransactionPage=[];
+  // final int _rowsPerPage = 5;
 
-  List<DataGridRow> dataGridRows = [];
+  Logger logger = Logger();
 
   String formatterK(num number) {
     String preproNumber;
@@ -56,6 +56,7 @@ class TransactionGridDataSource extends DataGridSource {
     return formattedDatetime;
   }
 
+  List<DataGridRow> dataGridRows = [];
 
   @override
   List<DataGridRow> get rows => dataGridRows;
@@ -84,24 +85,24 @@ class TransactionGridDataSource extends DataGridSource {
     }).toList());
   }
 
-  @override
-  Future<bool> handlePageChange(int oldPageIndex, int newPageIndex) async {
-    int startIndex = newPageIndex * _rowsPerPage;
-    int endIndex = startIndex + _rowsPerPage;
-    if (startIndex < transanctions.length && endIndex <= transanctions.length) {
-      tagTransactionPage =
-          transanctions.getRange(startIndex, endIndex).toList(growable: false);
-      buildPaginatedDataGridRows();
-      notifyListeners();
-    } else {
-      tagTransactionPage = [];
-    }
-
-    return true;
-  }
+  // @override
+  // Future<bool> handlePageChange(int oldPageIndex, int newPageIndex) async {
+  //   int startIndex = newPageIndex * _rowsPerPage;
+  //   int endIndex = startIndex + _rowsPerPage;
+  //   if (startIndex < transanctions.length && endIndex <= transanctions.length) {
+  //     tagTransactionPage =
+  //         transanctions.getRange(startIndex, endIndex).toList(growable: false);
+  //     buildPaginatedDataGridRows();
+  //     notifyListeners();
+  //   } else {
+  //     tagTransactionPage = [];
+  //   }
+  //   logger.d('index move $tagTransactionPage');
+  //   return true;
+  // }
 
   void buildPaginatedDataGridRows() {
-    dataGridRows = tagTransactionPage.map<DataGridRow>((dataGridRow) {
+    dataGridRows = transanctions.map<DataGridRow>((dataGridRow) {
       return DataGridRow(cells: [
         DataGridCell<String>(columnName: 'Date', value: dataGridRow.transactionTime),
         DataGridCell<String>(columnName: 'Name', value: dataGridRow.goods),
@@ -153,6 +154,7 @@ class _TagDataGridState extends State<TagDataGrid> {
   
   @override
   Widget build(BuildContext context) {
+    // logger.i((transactionData.length / _rowsPerPage).ceilToDouble());
     return Column(
       children: [
         Expanded(
@@ -161,8 +163,8 @@ class _TagDataGridState extends State<TagDataGrid> {
             columnWidthMode: ColumnWidthMode.fill,
             allowSorting: true,
             allowTriStateSorting: true,
-            allowSwiping: true,
-            swipeMaxOffset: 0.0,
+            // allowSwiping: true,
+            // swipeMaxOffset: 0.0,
             columns: [
               GridColumn(
                 // allowFiltering: false,
@@ -206,7 +208,7 @@ class _TagDataGridState extends State<TagDataGrid> {
         ),
         SfDataPager(
           delegate: tagTransactionDataSource!,
-          pageCount: (transactionData.length / _rowsPerPage) > 0 ? (transactionData.length / _rowsPerPage) : 1,
+          pageCount: (transactionData.length / _rowsPerPage) > 0 ? (transactionData.length / _rowsPerPage).ceilToDouble() : 1,
           direction: Axis.horizontal,
         )
       ]

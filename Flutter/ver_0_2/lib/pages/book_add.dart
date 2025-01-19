@@ -70,8 +70,10 @@ class _BookAddState extends State<BookAdd> {
     });
     _focusMemoNode.addListener(() {
       if (!_focusMemoNode.hasFocus) {
-        _overlayEntry!.remove();
-        _overlayEntry = null;
+        if(_overlayEntry != null) {
+          _overlayEntry!.remove();
+          _overlayEntry = null;
+        }
       } 
     });
     _initializeControllers();
@@ -857,8 +859,8 @@ class _BookAddState extends State<BookAdd> {
           category: _categoryController.text,
           categoryType: currentCategory,
           description: _categoryController.text == "특별 예산" && !_memoController.text.contains("#특별예산")
-              ? '#특별예산 #${i+1}개월차 ${_memoController.text}'
-              : '#${i+1}개월차 ${_memoController.text}',
+              ? '#특별예산 ${_memoController.text}'
+              : _memoController.text,
           extraBudget: _categoryController.text == "특별 예산" ? true : false,
         );
 

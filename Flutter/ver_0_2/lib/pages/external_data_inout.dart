@@ -737,7 +737,7 @@ class _LastPageState extends State<LastPage> {
               MoneyTransaction transaction = MoneyTransaction(
                 transactionTime: installTransactionTime,
                 amount: double.parse((double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()) / formattedInstallment).toStringAsFixed(2)),
-                goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
+                goods: '${row[columnNames.indexOf(widget.modelColumnrelations[2])].toString()}_${i+1}차분',
                 category: formattedcategory,
                 categoryType: formattedcategoryType,
                 description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
