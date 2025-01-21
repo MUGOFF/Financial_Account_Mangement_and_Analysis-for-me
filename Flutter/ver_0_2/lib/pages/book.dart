@@ -24,17 +24,21 @@ class _BookState extends State<Book> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _sliverListKey = GlobalKey();
   PersistentBottomSheetController? bottomButtonController;
+  PersistentBottomSheetController? bottomSearchButtonController;
   // bool _isVisible = true; // 플로팅 버튼이 보이는지 여부를 나타내는 변수
   int initialFilterState = 0;
   double  itemSize = 110.0;
   int year = DateTime.now().year;
   int month = DateTime.now().month;
   List<MoneyTransaction> transactions = [];
+  List<MoneyTransaction> tempTransactions = [];
   Set<int> selectedIds = {};
   bool isSelectionMode = false;
   List<String> filterValue = ['소비', '수입'];
   String? transactionFilter = '기본';
   String? lastTopDatetime;
+  String searchTransacion= '';
+  MoneyTransaction? searchFocusTransacion;
 
   @override
   void initState() {
@@ -47,6 +51,11 @@ class _BookState extends State<Book> {
   void dispose() {
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      bottomButtonController?.close();
+      bottomSearchButtonController?.close();
+    });
+    // bottomSearchButtonController?.close();
     super.dispose();
   }
   
@@ -149,9 +158,16 @@ class _BookState extends State<Book> {
     );
   }
 
+  void _setstating() {
+    setState(() {
+      // _isVisible = !_isVisible;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text('가계부'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -172,6 +188,11 @@ class _BookState extends State<Book> {
                       year = year - 1;
                       _fetchTransactions();
                     });
+                    bottomSearchButtonController?.close();
+                    setState(() {
+                      tempTransactions = [];
+                      searchTransacion = '';
+                    });
                   },
                 ),
                 IconButton(
@@ -184,6 +205,11 @@ class _BookState extends State<Book> {
                         year = year - 1;
                       }
                       _fetchTransactions();
+                    });
+                    bottomSearchButtonController?.close();
+                    setState(() {
+                      tempTransactions = [];
+                      searchTransacion = '';
                     });
                   },
                 ),
@@ -201,6 +227,11 @@ class _BookState extends State<Book> {
                       }
                       _fetchTransactions();
                     });
+                    bottomSearchButtonController?.close();
+                    setState(() {
+                      tempTransactions = [];
+                      searchTransacion = '';
+                    });
                   },
                 ),
                 IconButton(
@@ -209,6 +240,11 @@ class _BookState extends State<Book> {
                     setState(() {
                       year = year + 1;
                       _fetchTransactions();
+                    });
+                    bottomSearchButtonController?.close();
+                    setState(() {
+                      tempTransactions = [];
+                      searchTransacion = '';
                     });
                   },
                 ),
@@ -303,100 +339,7 @@ class _BookState extends State<Book> {
           FloatingActionButton(
             heroTag: 'filter-floating',
             onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('내역 필터'),
-                    content: StatefulBuilder(
-                      builder: (BuildContext context, StateSetter setState) {
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            RadioListTile<String>(
-                              value: '기본',
-                              groupValue: transactionFilter,
-                              onChanged: (String? value) {
-                                setState(() {
-                                  transactionFilter = value;
-                                });
-                              },
-                              title: const Text('기본'),
-                              subtitle: const Text('소비 + 수입'),
-                            ),
-                            RadioListTile<String>(
-                              value: '소비',
-                              groupValue: transactionFilter,
-                              onChanged: (String? value) {
-                                setState(() {
-                                  transactionFilter = value;
-                                });
-                              },
-                              title: const Text('소비'),
-                              subtitle: const Text(
-                                  '소비 내역만'),
-                            ),
-                            RadioListTile<String>(
-                              value: '수입',
-                              groupValue: transactionFilter,
-                              onChanged: (String? value) {
-                                setState(() {
-                                  transactionFilter = value;
-                                });
-                              },
-                              title: const Text('수입'),
-                              subtitle: const Text(
-                                  '수입 내역만'),
-                            ),
-                            RadioListTile<String>(
-                              value: '전체',
-                              groupValue: transactionFilter,
-                              onChanged: (String? value) {
-                                setState(() {
-                                  transactionFilter = value;
-                                });
-                              },
-                              title: const Text('전체'),
-                              subtitle: const Text(
-                                  '소비 + 수입 + 이체'),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                    actions: <Widget>[
-                      TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('취소'),
-                        ),
-                      TextButton(
-                          onPressed: () {
-                            setState(() {
-                              switch (transactionFilter) {
-                                case '기본' :
-                                  filterValue = ['소비', '수입'];
-                                  break;
-                                case '소비' :
-                                  filterValue = ['소비'];
-                                  break;
-                                case '수입' :
-                                  filterValue = ['수입'];
-                                  break;
-                                case '전체' :
-                                  filterValue = ['소비', '수입', '이체'];
-                                  break;
-                              }
-                            });
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('확인'),
-                        ),
-                    ],
-                  );
-                },
-              );
+              showFilterDialog(context);
             },
             tooltip: '표시 내역 필터',
             child: transactionFilter == '기본' ? const Icon(Icons.filter_alt_outlined) : const Icon(Icons.filter_alt),
@@ -439,6 +382,150 @@ class _BookState extends State<Book> {
           // ),
         ],
       ),
+    );
+  }
+
+  void showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      useSafeArea: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('내역 필터'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom, // 키보드 높이만큼 패딩 제거
+                ),
+                child:SingleChildScrollView(
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        TextField(
+                          decoration: const InputDecoration(
+                            labelText: '검색',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (value) {
+                            searchTransacion = value;
+                          },
+                          onSubmitted: (value) {
+                            searchTransacion = value;
+                          },
+                          // onEditingComplete: () {
+                          //   tempTransactions = transactions;
+                          //   setState(() {
+                          //     transactions = transactions.where((element) => element.goods.contains(searchTransacion)).toList();
+                          //   });
+                          // },
+                        ),
+                        GridView.count(
+                          crossAxisCount: 2, // 2열로 구성
+                          shrinkWrap: true, // 크기를 콘텐츠에 맞춤
+                          mainAxisSpacing: 0.0,
+                          crossAxisSpacing: 0.0,
+                          childAspectRatio: 2.5,
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: [
+                            RadioListTile<String>(
+                              value: '기본',
+                              groupValue: transactionFilter,
+                              onChanged: (String? value) {
+                                setState(() {
+                                  transactionFilter = value;
+                                });
+                              },
+                              title: const Text('기본'),
+                              subtitle: const Text('소비 + 수입'),
+                            ),
+                            RadioListTile<String>(
+                              value: '소비',
+                              groupValue: transactionFilter,
+                              onChanged: (String? value) {
+                                setState(() {
+                                  transactionFilter = value;
+                                });
+                              },
+                              title: const Text('소비'),
+                              subtitle: const Text('소비 내역만'),
+                            ),
+                            RadioListTile<String>(
+                              value: '수입',
+                              groupValue: transactionFilter,
+                              onChanged: (String? value) {
+                                setState(() {
+                                  transactionFilter = value;
+                                });
+                              },
+                              title: const Text('수입'),
+                              subtitle: const Text('수입 내역만'),
+                            ),
+                            RadioListTile<String>(
+                              value: '전체',
+                              groupValue: transactionFilter,
+                              onChanged: (String? value) {
+                                setState(() {
+                                  transactionFilter = value;
+                                });
+                              },
+                              title: const Text('전체'),
+                              subtitle: const Text('소비 + 수입 + 이체'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('취소'),
+              ),
+            TextButton(
+                onPressed: () {
+                  if (tempTransactions.isNotEmpty) {
+                    transactions = tempTransactions;
+                  }
+                  tempTransactions = transactions;
+                  setState(() {
+                    transactions = transactions.where((element) => element.goods.contains(searchTransacion)).toList();
+                  });
+                  showSearchButton();
+                  setState(() {
+                    switch (transactionFilter) {
+                      case '기본' :
+                        filterValue = ['소비', '수입'];
+                        break;
+                      case '소비' :
+                        filterValue = ['소비'];
+                        break;
+                      case '수입' :
+                        filterValue = ['수입'];
+                        break;
+                      case '전체' :
+                        filterValue = ['소비', '수입', '이체'];
+                        break;
+                    }
+                  });
+                  // _setstating();
+                  Navigator.of(context).pop();
+                },
+                child: const Text('확인'),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -511,6 +598,94 @@ class _BookState extends State<Book> {
     );
   }
 
+  void showSearchButton() {
+    bottomSearchButtonController = showBottomSheet(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+               SizedBox (
+                width: MediaQuery.of(context).size.width * 0.3,
+                child: ElevatedButton(
+                  onPressed: () {
+                    _searchAndFetchTransactions();
+                    // month = month - 1;
+                    // if(month == 0) {
+                    //   month = 12;
+                    //   year = year - 1;
+                    // }
+                    // _fetchTransactions().then((_) { 
+                    //   tempTransactions = transactions;
+                    //   setState(() {
+                    //     transactions = transactions.where((element) => element.goods.contains(searchTransacion)).toList();
+                    //   });
+                    //   _setstating();
+                    // });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Icon(Icons.navigate_before),
+                ),
+              ),
+               SizedBox (
+                width: MediaQuery.of(context).size.width * 0.3,
+                child: ElevatedButton(
+                  onPressed: () {
+                    bottomSearchButtonController?.close();
+                    setState(() {
+                      transactions = tempTransactions;
+                      tempTransactions = [];
+                      // searchTransacion = '';
+                    });
+                    _setstating();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Icon(Icons.close),
+                ),
+              ),
+              SizedBox (
+                width: MediaQuery.of(context).size.width * 0.3,
+                child:ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _searchAndFetchTransactions(isAscending: true);
+                      // month = month + 1;
+                      // if(month == 13) {
+                      //   month = 1;
+                      //   year = year + 1;
+                      // }
+                      // _fetchTransactions().then((_) { 
+                      //   tempTransactions = transactions;
+                      //   setState(() {
+                      //     transactions = transactions.where((element) => element.goods.contains(searchTransacion)).toList();
+                      //   });
+                      //   _setstating();
+                      // });
+                    });
+                  },
+                  child: const Icon(Icons.navigate_next),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      enableDrag: false,
+    );
+  }
+
   void deleteDatasFromDatabase() {
     for (var id in selectedIds) {
       DatabaseAdmin().deleteMoneyTransaction(id);
@@ -525,6 +700,71 @@ class _BookState extends State<Book> {
     bottomButtonController?.close();
   }
 
+  void _searchAndFetchTransactions({bool isAscending = false}) async {
+    // 반복을 위한 상태 변수
+    bool isSearching = true;
+    int tempmonth = month;
+    int tempyear = year;
+
+    while (isSearching) {
+      try {
+        if(isAscending) {
+          month = month + 1;
+          if(month == 13) {
+            month = 1;
+            year = year + 1;
+          }
+        } else {
+          month = month - 1;
+          if(month == 0) {
+            month = 12;
+            year = year - 1;
+          }
+        }
+        // 데이터베이스에서 transactions를 업데이트
+        await _fetchTransactions();
+
+        // transactions에서 searchTransaction 조건에 맞는 항목 필터링
+        tempTransactions = transactions;
+        List<MoneyTransaction> filteredTransactions = transactions
+            .where((element) => element.goods.contains(searchTransacion))
+            .toList();
+
+        // 조건에 맞는 항목이 있는지 확인
+        if (filteredTransactions.isNotEmpty) {
+          setState(() {
+            transactions = filteredTransactions;
+          });
+          isSearching = false; // 조건에 맞는 항목을 찾았으므로 반복 종료
+          _setstating();
+        } else if (transactions.isEmpty) {
+          // _fetchTransactions 결과가 빈 리스트라면 반복 종료
+          isSearching = false;
+          month = tempmonth;
+          year = tempyear;
+          await _fetchTransactions();
+          tempTransactions = transactions;
+          transactions = transactions
+            .where((element) => element.goods.contains(searchTransacion))
+            .toList();
+          Fluttertoast.showToast(
+            msg: '검색 결과가 없습니다.',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 3,
+            backgroundColor: HoloColors.tokinoSora.withOpacity(0.5),
+            textColor: HoloColors.azkI,
+            fontSize: 20
+          );
+          _setstating();
+        }
+
+      } catch (e) {
+        logger.e(e);
+        isSearching = false;
+      }
+    }
+  }
   
   void toggleSelection(int id) {
     setState(() {

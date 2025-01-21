@@ -215,7 +215,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           // Here we take the value from the HomePage object that was created by
           // the App.build method, and use it to set our appbar title.
-          title: const Text('Junior Demo App (Book Account)'),
+          // title: const Text('Home'),
         ),
         endDrawer: const AppDrawer(),
         body: SafeArea(
