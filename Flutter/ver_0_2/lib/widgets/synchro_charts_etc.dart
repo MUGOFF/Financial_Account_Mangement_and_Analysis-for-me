@@ -132,11 +132,11 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
     } else {
       double zoomfactorCal = 6/chartData.length > 1 ? 1 : 6/chartData.length;
       List<LineChartDataDatetime> pastTiemData =
-        chartData.where((dataPoint) => dataPoint.x.isBefore(DateTime.now())).toList();
+        chartData.where((dataPoint) => dataPoint.x.isBefore(DateTime(DateTime.now().year,DateTime.now().month))).toList();
 
       // 마지막 구간 데이터 필터링
       List<LineChartDataDatetime> futureTiemData =
-          chartData.where((dataPoint) => dataPoint.x.isAfter(DateTime(DateTime.now().year,DateTime.now().month-1))).toList();
+          chartData.where((dataPoint) => dataPoint.x.isAfter(DateTime(DateTime.now().year,DateTime.now().month-2))).toList();
       return SfCartesianChart(
         title: ChartTitle(
           text: widget.range != null ?'' : '월간 순수입과 누적 그래프',
@@ -215,7 +215,7 @@ class _ComboChartsMainpageState extends State<ComboChartsMainpage> {
           LineSeries<LineChartDataDatetime, DateTime>(
             dataSource: futureTiemData,
             color: HoloColors.ceresFauna,
-            dashArray: const <double>[10, 5],
+            dashArray: const <double>[5, 5],
             xValueMapper: (LineChartDataDatetime data, _) => data.x,
             yValueMapper: (LineChartDataDatetime data, _) => data.y,
             markerSettings: const MarkerSettings(isVisible: true, height : 10.0, width : 10.0),
@@ -398,6 +398,119 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
             );
           },
         )
+      );
+    }
+  }
+}
+
+class BubbleChartData {
+  BubbleChartData(this.name, this.x, this.y, this.size);
+
+  final String name;
+  final double x;
+  final double y;
+  final double size;
+}
+
+///메인 페이지 버블블
+class BubbleMainpage extends StatefulWidget {
+  final List<String> nameList;
+  final List<double>? valueList;
+
+  const BubbleMainpage({
+    required this.nameList,
+    this.valueList,
+    super.key
+  });
+
+  @override
+  State<BubbleMainpage> createState() => _BubbleMainpageState();
+}
+
+class _BubbleMainpageState extends State<BubbleMainpage> {
+  Logger logger = Logger();
+  bool isloading = false;
+  List<BubbleChartData> chartData = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchChartDatas();
+  }
+
+  void _fetchChartDatas() {
+    if (widget.valueList == null) {
+      if (widget.nameList.isEmpty) {
+        return;
+      } else if (widget.nameList.length == 1) {
+        chartData.add(BubbleChartData(widget.nameList[0], 5, 5, 100));
+      } else if (widget.nameList.length == 2) {
+        chartData.add(BubbleChartData(widget.nameList[0], 10, 10, 100));
+        chartData.add(BubbleChartData(widget.nameList[1], 1, 1, 50));
+      } else if (widget.nameList.length == 3) {
+        chartData.add(BubbleChartData(widget.nameList[0], 7, 7, 100));
+        chartData.add(BubbleChartData(widget.nameList[1], 2, 4, 50));
+        chartData.add(BubbleChartData(widget.nameList[2], 6, 2, 25));
+      }
+    } else {
+      if (widget.nameList.isEmpty) {
+        return;
+      } else if (widget.nameList.length == 1) {
+        chartData.add(BubbleChartData(widget.nameList[0], 5, 5, widget.valueList![0]));
+      } else if (widget.nameList.length == 2) {
+        chartData.add(BubbleChartData(widget.nameList[0], 10, 10, widget.valueList![0]));
+        chartData.add(BubbleChartData(widget.nameList[1], 1, 1, widget.valueList![1]));
+      } else if (widget.nameList.length == 3) {
+        chartData.add(BubbleChartData(widget.nameList[0], 7, 7, widget.valueList![0]));
+        chartData.add(BubbleChartData(widget.nameList[1], 2, 4, widget.valueList![1]));
+        chartData.add(BubbleChartData(widget.nameList[2], 6, 2, widget.valueList![2]));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isloading) {
+      return const Center(child: CircularProgressIndicator());
+    } else if(widget.nameList.isEmpty) {
+      return const Center(child: Text('데이터가 없습니다.', style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),));
+    } else {
+      return SfCartesianChart(
+        plotAreaBorderWidth : 0,
+        title: const ChartTitle(
+          alignment: ChartAlignment.center,
+          backgroundColor: Colors.white,
+          borderColor: Colors.transparent,
+          borderWidth: 10
+        ),
+        primaryXAxis: const NumericAxis(
+          minimum: 0,
+          maximum: 10,
+          isVisible: false  
+        ),
+        primaryYAxis: const NumericAxis(
+          minimum: 0,
+          maximum: 10,
+          isVisible: false  
+        ),
+        series:<CartesianSeries>[
+            // Renders bubble chart
+            BubbleSeries<BubbleChartData, num>(
+                dataSource: chartData,
+                minimumRadius: 10,
+                maximumRadius: 50,
+                sizeValueMapper: (BubbleChartData data, _) => data.size,
+                xValueMapper: (BubbleChartData data, _) => data.x,
+                yValueMapper: (BubbleChartData data, _) => data.y,
+                pointColorMapper: (datum, index) => [HoloColors.ookamiMio, HoloColors.ceresFauna, HoloColors.hoshimachiSuisei][index], 
+                dataLabelMapper: (BubbleChartData data, _) => '${data.name}\n${data.size.toStringAsFixed(2)}',
+                dataLabelSettings : const DataLabelSettings(
+                  isVisible: true,
+                  textStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  labelAlignment: ChartDataLabelAlignment.middle
+                )
+            )
+        ]
       );
     }
   }

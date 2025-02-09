@@ -427,9 +427,9 @@ class _BookState extends State<Book> {
                         GridView.count(
                           crossAxisCount: 2, // 2열로 구성
                           shrinkWrap: true, // 크기를 콘텐츠에 맞춤
-                          mainAxisSpacing: 0.0,
-                          crossAxisSpacing: 0.0,
-                          childAspectRatio: 2.5,
+                          mainAxisSpacing: 1.0,
+                          crossAxisSpacing: 1.0,
+                          // childAspectRatio: 2.5,
                           physics: const NeverScrollableScrollPhysics(),
                           children: [
                             RadioListTile<String>(
@@ -440,8 +440,8 @@ class _BookState extends State<Book> {
                                   transactionFilter = value;
                                 });
                               },
-                              title: const Text('기본'),
-                              subtitle: const Text('소비 + 수입'),
+                              title: const AutoSizeText('기본', maxLines: 1),
+                              // subtitle: const Text('소비 + 수입'),
                             ),
                             RadioListTile<String>(
                               value: '소비',
@@ -451,8 +451,8 @@ class _BookState extends State<Book> {
                                   transactionFilter = value;
                                 });
                               },
-                              title: const Text('소비'),
-                              subtitle: const Text('소비 내역만'),
+                              title: const AutoSizeText('소비', maxLines: 1),
+                              // subtitle: const Text('소비 내역만'),
                             ),
                             RadioListTile<String>(
                               value: '수입',
@@ -462,8 +462,8 @@ class _BookState extends State<Book> {
                                   transactionFilter = value;
                                 });
                               },
-                              title: const Text('수입'),
-                              subtitle: const Text('수입 내역만'),
+                              title: const AutoSizeText('수입', maxLines: 1),
+                              // subtitle: const Text('수입 내역만'),
                             ),
                             RadioListTile<String>(
                               value: '전체',
@@ -473,8 +473,8 @@ class _BookState extends State<Book> {
                                   transactionFilter = value;
                                 });
                               },
-                              title: const Text('전체'),
-                              subtitle: const Text('소비 + 수입 + 이체'),
+                              title: const AutoSizeText('전체', maxLines: 1),
+                              // subtitle: const Text('소비 + 수입 + 이체'),
                             ),
                           ],
                         ),

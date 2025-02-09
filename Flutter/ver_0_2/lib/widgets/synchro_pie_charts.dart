@@ -366,7 +366,7 @@ class _BudgetMainPagePieChartState extends State<BudgetMainPagePieChart> {
       totalValue = totalValue + data['totalAmount'].abs();
     }
     if(fetchedIncomeData.isNotEmpty) {
-      income = fetchedIncomeData.first['totalAmount'];
+      income = fetchedIncomeData.first['totalAmount'] ?? 0;
     } else {
       income = localIncomeData['income'].toDouble();
     }

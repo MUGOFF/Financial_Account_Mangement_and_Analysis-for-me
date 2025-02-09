@@ -737,10 +737,19 @@ class _LastPageState extends State<LastPage> {
               MoneyTransaction transaction = MoneyTransaction(
                 transactionTime: installTransactionTime,
                 amount: double.parse((double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()) / formattedInstallment).toStringAsFixed(2)),
-                goods: '${row[columnNames.indexOf(widget.modelColumnrelations[2])].toString()}_${i+1}차분',
+                goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
                 category: formattedcategory,
                 categoryType: formattedcategoryType,
-                description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
+                description: widget.modelColumnrelations[5] != null 
+                ? 
+                  formattedcategory=="특별 예산" 
+                  ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #특별예산 ${i+1}차분'
+                  : '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} ${i+1}차분'
+                : 
+                  formattedcategory=="특별 예산" 
+                  ? "#특별예산 ${i+1}차분 "
+                  : "${i+1}차분 "
+                ,
                 extraBudget: formattedcategory=="특별 예산" ? true : false,
               );
 
@@ -772,7 +781,13 @@ class _LastPageState extends State<LastPage> {
               goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
               category: formattedcategory,
               categoryType: formattedcategoryType,
-              description: widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])].toString() : "",
+              description: widget.modelColumnrelations[5] != null 
+              ? formattedcategory=="특별 예산" 
+                ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #특별예산 '
+                : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
+              : formattedcategory=="특별 예산" 
+                ? "#특별예산 "
+                : "",
               extraBudget: formattedcategory=="특별 예산" ? true : false,
             );
             bool exists = await DatabaseAdmin().checkIfTransCodeExists(

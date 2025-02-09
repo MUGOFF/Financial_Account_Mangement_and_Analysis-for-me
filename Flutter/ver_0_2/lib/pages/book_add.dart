@@ -855,12 +855,12 @@ class _BookAddState extends State<BookAdd> {
         final MoneyTransaction transaction = MoneyTransaction(
           transactionTime: transactionTime,
           amount: double.parse((double.parse(_amountController.text) / installmentMonths).toStringAsFixed(2)), // 할부로 나눈 금액
-          goods: '${_targetgoodsController.text}_${i+1}차분',
+          goods: _targetgoodsController.text,
           category: _categoryController.text,
           categoryType: currentCategory,
           description: _categoryController.text == "특별 예산" && !_memoController.text.contains("#특별예산")
-              ? '#특별예산 ${_memoController.text}'
-              : _memoController.text,
+              ? '#특별예산 ${i+1}차분 ${_memoController.text}'
+              : '${i+1}차분 ${_memoController.text}',
           extraBudget: _categoryController.text == "특별 예산" ? true : false,
         );
 

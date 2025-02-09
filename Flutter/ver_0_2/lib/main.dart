@@ -1,13 +1,14 @@
 // import 'dart:convert';
 // import 'dart:async';
-// import 'dart:math';
-
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 // import 'package:syncfusion_flutter_charts/charts.dart';
 // import 'package:http/http.dart' as http;
 // import 'package:logger/logger.dart';
+// import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 // import 'package:syncfusion_flutter_core/core.dart';
 import 'package:ver_0_2/pages/book.dart';
 // import 'package:ver_0_2/pages/investment.dart';
@@ -20,6 +21,9 @@ import 'package:ver_0_2/widgets/synchro_pie_charts.dart';
 import 'package:ver_0_2/widgets/models/budget_setting.dart';
 import 'package:ver_0_2/colorsholo.dart';
 // import 'package:ver_0_2/widgets/models/current_holdings.dart';
+
+/// 안전한 로그 함수 (log10 대체)
+double log10(num x) => log(x) / ln10;
 
 void main() {
   // SyncfusionLicense.registerLicense("YOUR LICENSE KEY"); 
@@ -139,6 +143,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
   final TextEditingController _textFieldSavingController = TextEditingController();
   final TextEditingController _textFieldIncomeController = TextEditingController();
   final TextEditingController _textFieldInputController = TextEditingController();
+  Logger logger = Logger();
   int? income;
   int? incomeId;
   bool isloading = true;
@@ -200,8 +205,183 @@ class _HomePageCotentState extends State<HomePageCotent> {
     }
   }
 
+  ///소비 평가 함수
+  Future<List<List<dynamic>>>  getPriorityTighteningCategory() async {
+    List<List<Map<String, dynamic>>> allMonthlySpendingData = [];
+    final now = DateTime.now();
+    for (int i = 0; i < 12; i++) {
+      int year = now.year;
+      int month = now.month - i;
+      if (month <= 0) {
+        year -= 1;
+        month += 12;
+      }
+
+      List<Map<String, dynamic>> spendingData = await DatabaseAdmin().getTransactionsSUMByCategoryandDate(year, month);
+      allMonthlySpendingData.add(spendingData);
+    }
+
+    Map<String, double> spendingScores = calculateSpendingScore(allMonthlySpendingData.sublist(0, 2));
+    Map<String, double> patternScores = calculatePatternScore(allMonthlySpendingData);
+    Map<String, double> trendScores = calculateTrendScore(allMonthlySpendingData.sublist(0, 2));
+
+    Map<String, double> finalScores = {};
+
+    spendingScores.forEach((category, score) {
+      finalScores[category] = (spendingScores[category] ?? 0) + (patternScores[category] ?? 0) + (trendScores[category] ?? 0);
+    });
+
+    List<MapEntry<String, double>> sortedEntries = finalScores.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+
+    List<String> focusCategories = sortedEntries.take(3).map((entry) => entry.key).toList();
+    List<double> focusScores = sortedEntries.take(3).map((entry) => entry.value).toList();
+    return [focusCategories, focusScores];
+  }
+  
+
+  Map<String, double> calculateSpendingScore(List<List<Map<String, dynamic>>> spendingDatas) {
+    List<Map<String, double>> categoryAverages = [];
+    for (var individualData in spendingDatas) {
+      if (individualData.isEmpty) continue; 
+
+      for (var data in individualData) {
+        String category = data['category'];
+        double totalAmount = data['totalAmount'];
+
+        var entry = categoryAverages.firstWhere(
+          (element) => element.containsKey(category),
+          orElse: () => {category: 0.0},
+        );
+        entry[category] = (entry[category] ?? 0) + totalAmount / 3;
+        if (!categoryAverages.contains(entry)) categoryAverages.add(entry);
+      }
+    }
+
+    double maxAmount = categoryAverages.fold(0, (prev, elem) => elem.values.first > prev ? elem.values.first : prev);
+
+    Map<String, double> spendingScores = {};
+    for (var entry in categoryAverages) {
+      String category = entry.keys.first;
+      double avgAmount = entry.values.first;
+      spendingScores[category] = (avgAmount / maxAmount) * 60;
+    }
+
+    return spendingScores;
+  }
+
+  Map<String, double> calculatePatternScore(List<List<Map<String, dynamic>>> spendingDatas) {
+    Map<String, List<double>> monthlySpending = {};
+
+    for (var individualData in spendingDatas) {
+      if (individualData.isEmpty) continue; 
+
+      for (var data in individualData) {
+        String category = data['category'];
+        double amount = data['totalAmount'];
+
+        if (!monthlySpending.containsKey(category)) {
+          monthlySpending[category] = [];
+        }
+        monthlySpending[category]!.add(amount);
+      }
+    }
+
+    Map<String, double> patternScores = {};
+
+    monthlySpending.forEach((category, amounts) {
+      if (amounts.length < 3) {
+        patternScores[category] = 10.0;
+        return;
+      }
+
+      amounts.sort();
+
+      // 평균 계산
+      double mean = amounts.reduce((a, b) => a + b) / amounts.length;
+
+      // 평균 이하 그룹 (최솟값 제외, 최대 3개)
+      List<double> belowMean = amounts.where((x) => x < mean).toList();
+      if (belowMean.length > 1) belowMean.removeAt(0);
+      if (belowMean.length > 3) {
+        belowMean = belowMean.sublist(0, 3);
+      }
+
+      // 평균 초과 그룹 (최댓값 제외, 최대 3개)
+      List<double> aboveMean = amounts.where((x) => x > mean).toList();
+      if (aboveMean.length > 1) aboveMean.removeLast();
+      if (aboveMean.length > 3) {
+        aboveMean = aboveMean.sublist(aboveMean.length - 3);
+      }
+
+      // 두 그룹의 평균값 계산
+      double belowMeanAvg = belowMean.isNotEmpty ? belowMean.reduce((a, b) => a + b) / belowMean.length : mean;
+      double aboveMeanAvg = aboveMean.isNotEmpty ? aboveMean.reduce((a, b) => a + b) / aboveMean.length : mean;
+
+      // 평균 차이 계산
+      double diff = (aboveMeanAvg - belowMeanAvg).abs();
+
+      // 로그 기반 점수 계산
+      double score = log(1 + diff) * 10.0;
+
+      // 점수가 30을 초과하면 감소하는 선형 보정 적용
+      if (score > 30.0) {
+        score = 30.0 - ((score - 30.0) / score * 30.0);
+      }
+
+      patternScores[category] = score;
+    });
+
+    return patternScores;
+  }
+
+  Map<String, double> calculateTrendScore(List<List<Map<String, dynamic>>> spendingDatas) {
+    Map<String, double> trends = {};
+      
+    for (var individualData in spendingDatas) {
+      if (individualData.isEmpty) continue; 
+
+      for (var data in individualData) {
+        String category = data['category'];
+        double totalAmount = data['totalAmount'];
+
+        if (!trends.containsKey(category)) {
+          trends[category] = 0.0;
+        }
+        trends[category] = trends[category]! + totalAmount * (spendingDatas.indexOf(individualData) == 0 ? 1 : spendingDatas.indexOf(individualData) == 1 ? 0.5 : 0.25);
+      }
+    }
+
+    double maxTrend = trends.values.reduce((a, b) => max(a, b));
+    Map<String, double> trendScores = {};
+    trends.forEach((category, trend) {
+      trendScores[category] = ((1 - (trend / maxTrend)) * 10).clamp(0, 10);
+    });
+
+    return trendScores;
+  }
+
+  // Future<String> determineSavingsFocus() async {
+  //   Map<String, double> spendingScores = await calculateSpendingScore();
+  //   Map<String, double> patternScores = await calculatePatternScore();
+  //   Map<String, double> trendScores = await calculateTrendScore();
+
+  //   Map<String, double> finalScores = {};
+
+  //   spendingScores.forEach((category, score) {
+  //     finalScores[category] = (spendingScores[category] ?? 0) + (patternScores[category] ?? 0) + (trendScores[category] ?? 0);
+  //   });
+
+  //   String focusCategory = finalScores.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+  //   return focusCategory;
+  // }
+
   @override
   Widget build(BuildContext context) {
+    const mainCarousels0 = 'most_expenses_category';
+    const mainCarousels1 = 'netincome_graph';
+    const mainCarousels2 = 'monthly_income_expenses';
+    const mainCarousels3 = 'income_graph';
+    var carosuelItems = [mainCarousels0, mainCarousels1, mainCarousels2, mainCarousels3];
     if (isloading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator())
@@ -234,12 +414,13 @@ class _HomePageCotentState extends State<HomePageCotent> {
                       viewportFraction: 0.9,
                       autoPlayInterval: const Duration(seconds: 3),
                     ),
-                    items: [1,2,3].map((i) {
+                    items: carosuelItems.map((i) {
                       return Builder(
                         builder: (BuildContext context) {
                           switch (i) {
-                            case 1:
+                            case 'monthly_income_expenses':
                               if (budgetSet.isEmpty || income == null) {
+                                // continue case 'income_graph';
                                 return Stack(
                                   children: [ 
                                     const Padding(
@@ -293,7 +474,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
                                   ],
                                 );
                               }
-                            case 2:
+                            case 'income_graph':
                               return Stack(
                                 children: [ 
                                 const Padding(
@@ -302,7 +483,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
                                   Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text("최근 3개월 소득",style: TextStyle(
+                                      Text("최근 3개월 소득 구성",style: TextStyle(
                                         fontSize: 32,
                                         fontWeight: FontWeight.bold,
                                       ),),
@@ -340,7 +521,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
                                   ),
                                 ],
                               );
-                            case 3:
+                            case 'netincome_graph':
                               return Stack(
                                 children: [
                                   const Padding(
@@ -377,6 +558,32 @@ class _HomePageCotentState extends State<HomePageCotent> {
                                       },
                                     ),
                                   ),
+                                ],
+                              );
+                            case 'most_expenses_category':
+                              return
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('절약 주목 카테고리', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),),
+                                  Expanded(
+                                    child: Center(
+                                      child: FutureBuilder<List<List<dynamic>>>(
+                                        future: getPriorityTighteningCategory(),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return const CircularProgressIndicator();
+                                          } else if (snapshot.hasError) {
+                                            return const Text("데이터를 가져오는데 오류 발생");
+                                          } else {
+                                            List<String> nameData = snapshot.data![0].cast<String>();
+                                            List<double> valueData = snapshot.data![1].cast<double>();
+                                            return BubbleMainpage(nameList: nameData, valueList: valueData);
+                                          }
+                                        },
+                                      )
+                                    ) 
+                                  ) 
                                 ],
                               );
                             default:
@@ -444,7 +651,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
-                      content: const Text('이전에 입력한 수입 금액 기준으로 예산을 설정합니까?'),
+                      content: Text('이전에 입력한 수입 금액 기준으로 예산을 설정합니까? ($income 만원)'),
                       actions: [
                         TextButton(
                           onPressed: () {
