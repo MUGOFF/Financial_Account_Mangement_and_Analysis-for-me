@@ -255,8 +255,9 @@ class StackChartsMainpage extends StatefulWidget {
 class _StackChartsMainpageState extends State<StackChartsMainpage> {
   Logger logger = Logger();
   bool isloading = false;
-  late TooltipBehavior _tooltip;
+  // late TooltipBehavior _tooltip;
   ZoomPanBehavior _zoomPanBehavior = ZoomPanBehavior();
+  TrackballBehavior _trackballBehavior = TrackballBehavior(enable: true,);
   List<StackChartDataDatetime> chartData = [];
   List<String> categoryList = [];
   double maxYvalue = 100;
@@ -266,11 +267,23 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
 
   @override
   void initState() {
-    _tooltip = TooltipBehavior(
+    // _tooltip = TooltipBehavior(
+    //   enable: true,
+    //   canShowMarker: false,
+    //   textStyle: const TextStyle(fontSize: 20),
+    //   header: '',
+    // );
+    _trackballBehavior = TrackballBehavior(
+      // Enables the trackball
       enable: true,
-      canShowMarker: false,
-      textStyle: const TextStyle(fontSize: 20),
-      header: '',
+      activationMode: ActivationMode.singleTap,
+      tooltipDisplayMode: TrackballDisplayMode.groupAllPoints,
+      tooltipSettings: const InteractiveTooltip(
+        enable: true,
+        // format: 'point.name : \n point.y',
+        color: HoloColors.otonoseKanade,
+        textStyle: TextStyle(color: Colors.white, fontSize: 16,fontWeight: FontWeight.bold),
+      )
     );
     super.initState();
     _fetchChartDatas().then((_) {
@@ -350,6 +363,9 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
     } else {
       double zoomfactorCal = 6/chartData.length > 1 ? 1 : 6/chartData.length;
       return SfCartesianChart(
+        // tooltipBehavior: _tooltip,
+        zoomPanBehavior: _zoomPanBehavior,
+        trackballBehavior: _trackballBehavior,
         title: const ChartTitle(
           // text: '${widget.tagName} 월간 양상',
           alignment: ChartAlignment.center,
@@ -357,8 +373,6 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
           borderColor: Colors.transparent,
           borderWidth: 10
         ),
-        tooltipBehavior: _tooltip,
-        zoomPanBehavior: _zoomPanBehavior,
         primaryXAxis: DateTimeAxis(
           labelRotation: 60,
           dateFormat: DateFormat.yM(),
@@ -387,6 +401,7 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
               yValueMapper: (StackChartDataDatetime data, _) {
                 return data.ylist != null ? data.ylist![i] : 0;
               },
+              name: categoryList[i],
               onPointDoubleTap: widget.onPieDoubleSelected,
               dataLabelSettings: DataLabelSettings(
                 labelAlignment: ChartDataLabelAlignment.top,
@@ -395,6 +410,7 @@ class _StackChartsMainpageState extends State<StackChartsMainpage> {
                 textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 showCumulativeValues: true,
               ),
+              dataLabelMapper: (StackChartDataDatetime data, _) => data.ylist![i] == data.ylist!.max ? data.ylist![i].toString() : '',
             );
           },
         )
@@ -462,7 +478,7 @@ class _BubbleMainpageState extends State<BubbleMainpage> {
         chartData.add(BubbleChartData(widget.nameList[1], 1, 1, widget.valueList![1]));
       } else if (widget.nameList.length == 3) {
         chartData.add(BubbleChartData(widget.nameList[0], 7, 7, widget.valueList![0]));
-        chartData.add(BubbleChartData(widget.nameList[1], 2, 4, widget.valueList![1]));
+        chartData.add(BubbleChartData(widget.nameList[1], 3, 4, widget.valueList![1]));
         chartData.add(BubbleChartData(widget.nameList[2], 6, 2, widget.valueList![2]));
       }
     }
@@ -498,7 +514,7 @@ class _BubbleMainpageState extends State<BubbleMainpage> {
             BubbleSeries<BubbleChartData, num>(
                 dataSource: chartData,
                 minimumRadius: 10,
-                maximumRadius: 50,
+                maximumRadius: 30,
                 sizeValueMapper: (BubbleChartData data, _) => data.size,
                 xValueMapper: (BubbleChartData data, _) => data.x,
                 yValueMapper: (BubbleChartData data, _) => data.y,

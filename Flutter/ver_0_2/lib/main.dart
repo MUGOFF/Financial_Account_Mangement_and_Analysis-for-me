@@ -665,7 +665,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
                             Navigator.pop(context);
                             setState(() {
                               if (income != null) {
-                                int budget = income! - int.parse(_textFieldSavingController.text);
+                                int budget = (income!/10000).floor() - int.parse(_textFieldSavingController.text);
                                 insertNewBudgetToDatabase(budget);
                                 _fetchDatas();
                               }
