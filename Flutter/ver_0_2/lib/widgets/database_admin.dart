@@ -960,6 +960,113 @@ class DatabaseAdmin {
       return [];
     }
   }
+
+  
+  /// 스트 가져오기 및 동일한 'installment' 항목을 기준으로 통합
+  Future<List<MoneyTransaction>> getExportTransactions() async {
+    try {
+      final db = await database;
+      // 태그가 포함된 거래들을 찾는 쿼리
+      final List<Map<String, dynamic>> rawList = await db.query(
+        'money_transactions',
+      );
+      // final List<Map<String, dynamic>> rawList = await db.query(
+      //   'money_transactions',
+      //   where: "description GLOB ? OR description GLOB ?",
+      //   whereArgs: ['*$tagName *', '*$tagName'],
+      // );
+      // logger.d(rawList);
+
+      // final List<MoneyTransaction> rawList =List.generate(transactionMaps.length, (i) {
+      //   return MoneyTransaction(
+      //     id: transactionMaps[i]['id'],
+      //     transactionTime: transactionMaps[i]['transactionTime'],
+      //     // account: transactionMaps[i]['account'],
+      //     amount: transactionMaps[i]['amount'],
+      //     goods: transactionMaps[i]['goods'],
+      //     category: transactionMaps[i]['category'],
+      //     categoryType: transactionMaps[i]['categoryType'],
+      //     description: transactionMaps[i]['description'],
+      //     parameter: transactionMaps[i]['parameter'],
+      //     extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
+      //   );
+      // });
+
+      // installBaseId에 맞는 거래들을 그룹화
+      Map<String, MoneyTransaction> groupedTransactions = {};
+      for (Map<String, dynamic> transactionMap in rawList) {
+        // logger.d(transactionMap);
+
+        String? parameter = transactionMap['parameter'];
+        Map<String, dynamic> parameterMap = jsonDecode(parameter!);
+
+        // 'installment' 항목을 체크하고 base_id와 비교
+        if (parameterMap['installment'] != null) {
+          String baseId = parameterMap['installment']['base_id'].toString();
+
+          if (groupedTransactions.containsKey(baseId)) {
+            // 기존에 있는 항목에 amount를 합산
+            MoneyTransaction existingTransaction = groupedTransactions[baseId]!;
+            double newAmount = existingTransaction.amount + transactionMap['amount'];
+            groupedTransactions[baseId] = existingTransaction.copyWith(amount: newAmount);
+          } else {
+            // 새로운 항목을 추가
+            groupedTransactions[baseId] = MoneyTransaction(
+              id: transactionMap['id'],
+              transactionTime: transactionMap['transactionTime'],
+              amount: transactionMap['amount'],
+              goods: transactionMap['goods'],
+              category: transactionMap['category'],
+              categoryType: transactionMap['categoryType'],
+              description: transactionMap['description'],
+              parameter: transactionMap['parameter'],
+              extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
+            );
+          }
+        } else {
+          // installment가 없는 경우 별도로 추가
+          String transactionId = transactionMap['id'].toString();
+          groupedTransactions[transactionId] = MoneyTransaction(
+            id: transactionMap['id'],
+            transactionTime: transactionMap['transactionTime'],
+            amount: transactionMap['amount'],
+            goods: transactionMap['goods'],
+            category: transactionMap['category'],
+            categoryType: transactionMap['categoryType'],
+            description: transactionMap['description'],
+            parameter: transactionMap['parameter'],
+            extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
+          );
+        }
+      }
+
+      // 결과를 리스트로 변환
+      List<MoneyTransaction> combinedTransactions = groupedTransactions.values.toList();
+
+      // List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
+      //   logger.i(i);
+      //   return MoneyTransaction(
+      //     id: groupedTransactions[i]['id'],
+      //     transactionTime: groupedTransactions[i]['transactionTime'],
+      //     // account: groupedTransactions[i]['account'],
+      //     amount: groupedTransactions[i]['amount'],
+      //     goods: groupedTransactions[i]['goods'],
+      //     category: groupedTransactions[i]['category'],
+      //     categoryType: groupedTransactions[i]['categoryType'],
+      //     description: groupedTransactions[i]['description'],
+      //     parameter: groupedTransactions[i]['parameter'],
+      //     extraBudget: groupedTransactions[i]['extraBudget'] == 0 ? false : true,
+      //   );
+      // });
+      
+      logger.i(combinedTransactions.length);
+      return combinedTransactions;
+
+    } catch (e) {
+      logger.e('Error fetching transactions by tag and installment: $e');
+      return [];
+    }
+  }
   // ///태그 소비 리스트 가져오기
   // Future<List<MoneyTransaction>> getTransactionsByTag(String tagName) async {
   //   try {

@@ -1,12 +1,16 @@
-// import 'dart:math';
+import 'dart:io';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:path_provider/path_provider.dart';
+// import 'package:permission_handler/permission_handler.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
+import 'package:syncfusion_flutter_datagrid_export/export.dart';
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xls;
 import 'package:syncfusion_flutter_core/theme.dart';
+import 'package:ver_0_2/colorsholo.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
 import 'package:ver_0_2/widgets/models/extra_budget_group.dart';
@@ -561,4 +565,231 @@ class _ExtraBudgetDataGridState extends State<ExtraBudgetDataGrid> {
     DatabaseAdmin().updateExtraJsonData(savedata, id);
   }
 
+}
+
+class TransactionExportGridDataSource extends DataGridSource {
+  final List<MoneyTransaction> transanctions;
+  TransactionExportGridDataSource({required this.transanctions}) {
+    dataGridRows = transanctions
+        .map<DataGridRow>((dataGridRow) => DataGridRow(cells: [
+              DataGridCell<String>(columnName: 'Date', value: dataGridRow.transactionTime),
+              DataGridCell<String>(columnName: 'Name', value: dataGridRow.goods),
+              DataGridCell<double>(columnName: 'Amount', value: dataGridRow.amount),
+              DataGridCell<String>(columnName: 'Category', value: dataGridRow.category),
+              DataGridCell<String>(columnName: 'CategoryType', value: dataGridRow.categoryType),
+              DataGridCell<String>(columnName: 'Description', value: dataGridRow.description),
+            ]))
+        .toList();
+  }
+
+  Logger logger = Logger();
+
+  String formatterK(num number) {
+    String preproNumber;
+    if(number % 1 == 0) {
+      preproNumber = (number * -1).toStringAsFixed(0);
+    } else {
+      preproNumber =  (number * -1).toString();
+    }
+
+    String newText = preproNumber.replaceAll(RegExp(r'[^0-9.-]'), '');
+    if (newText.isEmpty) return "0";
+
+    final double value = double.parse(newText);
+    final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
+
+    return formattedText;
+  }
+
+  String formatterDate(String dateString) {
+    DateFormat dateFormat = DateFormat("yyyy년 MM월 dd일'T'HH:mm");
+    String formattedDatetime = DateFormat('yyyy년 MM월 dd일').format(dateFormat.parse(dateString));
+
+    return formattedDatetime;
+  }
+
+  List<DataGridRow> dataGridRows = [];
+
+  @override
+  List<DataGridRow> get rows => dataGridRows;
+
+  @override
+  DataGridRowAdapter? buildRow(DataGridRow row) {
+    return DataGridRowAdapter(
+      cells: row.getCells().map<Widget>((dataGridCell) {
+      return Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          child: AutoSizeText(
+            (dataGridCell.columnName == 'Amount')
+            ? formatterK(dataGridCell.value)
+            : (dataGridCell.columnName == 'Date')
+            ? formatterDate(dataGridCell.value)
+            : dataGridCell.value.toString(),
+            overflow: (dataGridCell.columnName == 'Name')
+              ? TextOverflow.ellipsis
+              : TextOverflow.clip,
+            maxLines: 1,
+            style:  const TextStyle(fontSize: 16),
+            minFontSize: 12,
+          )
+        );
+    }).toList());
+  }
+}
+/// 데이터 내보내기기
+class DataGridExportExample extends StatefulWidget {
+
+  const DataGridExportExample({super.key});
+  
+  @override
+  State<DataGridExportExample> createState() => _DataGridExportExampleState();
+}
+
+class _DataGridExportExampleState extends State<DataGridExportExample> {
+  final GlobalKey<SfDataGridState> key = GlobalKey<SfDataGridState>();
+  Logger logger = Logger();
+  List<MoneyTransaction> transactionData = <MoneyTransaction>[];
+  TransactionExportGridDataSource transactionDataSource = TransactionExportGridDataSource(transanctions: []);
+
+  @override
+  void initState() {
+    super.initState();
+    getTagTransactionData();
+  }
+    
+  Future<void> getTagTransactionData() async {
+    List<MoneyTransaction> fetchedTransactions = await DatabaseAdmin().getExportTransactions();
+    // 날짜 형식에 맞는 DateFormat 생성
+    DateFormat format = DateFormat("yyyy년 MM월 dd일'T'HH:mm");
+
+    fetchedTransactions.sort((a, b) {
+      DateTime dateA = format.parse(a.transactionTime); // String -> DateTime 변환
+      DateTime dateB = format.parse(b.transactionTime); // String -> DateTime 변환
+      return dateA.compareTo(dateB); // DateTime으로 정렬
+    });
+    
+    setState(() {
+      transactionData = fetchedTransactions;
+      transactionDataSource = TransactionExportGridDataSource(transanctions: transactionData);
+    });
+  }
+
+  Future<void> exportToExcel(List<int> bytes) async {
+    try {
+      final directory = Directory('/storage/emulated/0/Download');
+      final filePath = '${directory.path}/DataGrid.xlsx';
+
+      final file = File(filePath);
+      await file.writeAsBytes(bytes, flush: true);
+
+      logger.d('엑셀 파일이 다운로드 경로에 성공적으로 저장되었습니다: $filePath');
+    } catch (e) {
+      logger.e('저장소 접근 권한이 필요합니다: $e');
+      try {
+        // 앱 전용 경로 가져오기
+        final directory = await getDownloadsDirectory();
+        final filePath = '${directory!.path}/DataGrid.xlsx';
+        
+        // 파일 저장
+        final file = File(filePath);
+        await file.writeAsBytes(bytes, flush: true);
+
+        logger.d('엑셀 파일이 성공적으로 저장되었습니다: $filePath');
+      } catch (e) {
+        logger.e('파일 저장 중 오류 발생: $e');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return  Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        SizedBox(
+          width: MediaQuery.of(context).size.width * 0.6,
+          height: MediaQuery.of(context).size.height * 0.4*0.3,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30.0), // 원하는 모양으로 조절
+              ),
+              backgroundColor: HoloColors.nekomataOkayu
+            ),
+            onPressed: () async {
+              // final Workbook workbook =
+              //     key.currentState!.exportToExcelWorkbook();
+              // final List<int> bytes = workbook.saveAsStream();
+              // workbook.dispose();
+              // await helper.saveAndLaunchFile(bytes, 'DataGrid.xlsx');
+              final xls.Workbook workbook = xls.Workbook();
+              final xls.Worksheet worksheet = workbook.worksheets[0];
+              key.currentState!.exportToExcelWorksheet(worksheet);
+              final List<int> bytes = workbook.saveAsStream();
+              await exportToExcel(bytes);
+              // File('DataGrid.xlsx').writeAsBytes(bytes, flush: true);
+            },
+            child: const AutoSizeText('데이터 \n다운로드', style: TextStyle(fontSize: 36, color: Colors.white), maxLines: 2),
+          ),
+        ),
+        Offstage(
+          child: SfDataGrid(
+            key: key,
+            source: transactionDataSource,
+            columns: <GridColumn>[
+              GridColumn(
+                columnName: 'Date',
+                label: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  alignment: Alignment.center,
+                  child: const Text('Date')
+                )
+              ),
+              GridColumn(
+                columnName: 'Name',
+                label: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  alignment: Alignment.center,
+                  child: const Text('Name')
+                )
+              ),
+              GridColumn(
+                columnName: 'Amount',
+                label: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  alignment: Alignment.center,
+                  child: const Text('Amount')
+                )
+              ),
+              GridColumn(
+                columnName: 'Category',
+                label: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  alignment: Alignment.center,
+                  child: const Text('Category')
+                )
+              ),
+              GridColumn(
+                columnName: 'CategoryType',
+                label: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  alignment: Alignment.center,
+                  child: const Text('CategoryType')
+                )
+              ),
+              GridColumn(
+                columnName: 'Description',
+                label: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  alignment: Alignment.center,
+                  child: const Text('Description')
+                )
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

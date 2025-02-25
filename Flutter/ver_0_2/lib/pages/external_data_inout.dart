@@ -8,7 +8,9 @@ import 'package:auto_size_text/auto_size_text.dart';
 // import 'package:excel/excel.dart';
 import 'package:csv/csv.dart';
 import 'package:cp949_codec/cp949_codec.dart';
+import 'package:ver_0_2/colorsholo.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
+import 'package:ver_0_2/widgets/synchro_data_grid.dart';
 // import 'package:ver_0_2/widgets/models/bank_account.dart';
 // import 'package:ver_0_2/widgets/models/card_account.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
@@ -96,8 +98,9 @@ class TableDataIn extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30.0), // 원하는 모양으로 조절
               ),
+              backgroundColor: HoloColors.shioriNovella
             ),
-            child: const AutoSizeText('데이터 \n업로드', style: TextStyle(fontSize: 36), maxLines: 2),
+            child: const AutoSizeText('데이터 \n업로드', style: TextStyle(fontSize: 36, color: Colors.white), maxLines: 2),
           ),
         ),
       ],
@@ -831,6 +834,17 @@ class TableDataOut extends StatefulWidget {
 class _TableDataOutState extends State<TableDataOut> {
   @override
   Widget build(BuildContext context) {
-    return const Text("업데이트 예정");
+    return const Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.download,
+          size: 100.0,
+        ),
+        SizedBox(height: 50),
+        DataGridExportExample(),
+      ],
+    );
+    // return const Text("업데이트 예정");
   }
 }
