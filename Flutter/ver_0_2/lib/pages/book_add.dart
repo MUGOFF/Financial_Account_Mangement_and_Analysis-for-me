@@ -764,17 +764,24 @@ class _BookAddState extends State<BookAdd> {
                     tryValidator: true,
                   ),
                 ),
-                if(timeShow)
-                Expanded(
-                  child: TimePicker(
-                    controller: timeController,
-                    tryValidator: true,
+                Visibility(
+                  visible: timeShow,
+                  child: Flexible(
+                    child: TimePicker(
+                      onCancelTimeSet: () {
+                        setState(() {
+                          timeShow = false;
+                        });
+                      },
+                      controller: timeController,
+                      tryValidator: true,
+                    ),
                   ),
                 ),
-                if(!timeShow)
-                Expanded(
-                  child: 
-                    Row(
+                Visibility(
+                  visible: !timeShow,
+                  child: Flexible(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Checkbox(
@@ -788,6 +795,7 @@ class _BookAddState extends State<BookAdd> {
                         const Text('시간 설정하기')
                       ],
                     )
+                  ),
                 ),
               ],
             ),
@@ -805,7 +813,7 @@ class _BookAddState extends State<BookAdd> {
         backgroundColor: WidgetStateProperty.resolveWith<Color>(
           (Set<WidgetState> states) {
             if (_selectedButton == value) {
-              return color.withOpacity(0.4);
+              return color.withValues(alpha: 0.4);
             }
             return Colors.transparent;
           },

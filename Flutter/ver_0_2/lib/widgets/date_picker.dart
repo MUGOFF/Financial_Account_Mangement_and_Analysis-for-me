@@ -44,9 +44,10 @@ class DatePicker extends StatelessWidget  {
 class TimePicker extends StatelessWidget  {
   final TextEditingController controller;
   final void Function(TimeOfDay)? onTimeSelected;
+  final void Function() onCancelTimeSet;
   final bool tryValidator;
 
-  const TimePicker({required this.controller,this.onTimeSelected,this.tryValidator=false,super.key});
+  const TimePicker({required this.controller,this.onTimeSelected, required this.onCancelTimeSet, this.tryValidator=false,super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +67,15 @@ class TimePicker extends StatelessWidget  {
           }
         }
       },
+      decoration: InputDecoration(
+        suffixIcon: IconButton(
+          onPressed: (){
+            onCancelTimeSet();
+          },
+          // iconSize: 10,
+          icon: const Icon(Icons.cancel_outlined)
+        ),
+      ),
       validator: tryValidator
         ? (value) {
             if (value == null || value.isEmpty) {

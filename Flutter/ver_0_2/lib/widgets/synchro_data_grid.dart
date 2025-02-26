@@ -602,7 +602,7 @@ class TransactionExportGridDataSource extends DataGridSource {
   }
 
   String formatterDate(String dateString) {
-    DateFormat dateFormat = DateFormat("yyyy년 MM월 dd일'T'HH:mm");
+    DateFormat dateFormat = DateFormat("yyyy년 MM월 dd일 HH:mm");
     String formattedDatetime = DateFormat('yyyy년 MM월 dd일').format(dateFormat.parse(dateString));
 
     return formattedDatetime;
@@ -661,7 +661,7 @@ class _DataGridExportExampleState extends State<DataGridExportExample> {
   Future<void> getTagTransactionData() async {
     List<MoneyTransaction> fetchedTransactions = await DatabaseAdmin().getExportTransactions();
     // 날짜 형식에 맞는 DateFormat 생성
-    DateFormat format = DateFormat("yyyy년 MM월 dd일'T'HH:mm");
+    DateFormat format = DateFormat("yyyy년 MM월 dd일 HH:mm");
 
     fetchedTransactions.sort((a, b) {
       DateTime dateA = format.parse(a.transactionTime); // String -> DateTime 변환
@@ -678,9 +678,11 @@ class _DataGridExportExampleState extends State<DataGridExportExample> {
   Future<void> exportToExcel(List<int> bytes) async {
     try {
       final directory = Directory('/storage/emulated/0/Download');
-      final filePath = '${directory.path}/DataGrid.xlsx';
+      final filePath = '${directory.path}/BookExport.xlsx';
 
-      final file = File(filePath);
+      final uniqueFilePath = getUniqueFilePath(directory.path, 'BookExport.xlsx');
+
+      final file = File(uniqueFilePath);
       await file.writeAsBytes(bytes, flush: true);
 
       logger.d('엑셀 파일이 다운로드 경로에 성공적으로 저장되었습니다: $filePath');
@@ -689,10 +691,12 @@ class _DataGridExportExampleState extends State<DataGridExportExample> {
       try {
         // 앱 전용 경로 가져오기
         final directory = await getDownloadsDirectory();
-        final filePath = '${directory!.path}/DataGrid.xlsx';
+        final filePath = '${directory!.path}/BookExport.xlsx';
+
+        final uniqueFilePath = getUniqueFilePath(directory.path, 'BookExport.xlsx');
         
         // 파일 저장
-        final file = File(filePath);
+        final file = File(uniqueFilePath);
         await file.writeAsBytes(bytes, flush: true);
 
         logger.d('엑셀 파일이 성공적으로 저장되었습니다: $filePath');
@@ -700,6 +704,20 @@ class _DataGridExportExampleState extends State<DataGridExportExample> {
         logger.e('파일 저장 중 오류 발생: $e');
       }
     }
+  }
+
+  String getUniqueFilePath(String dir, String fileName) {
+    File file = File('$dir/$fileName');
+    String name = fileName.split('.').first; // "DataGrid"
+    String extension = fileName.split('.').last; // "xlsx"
+    int counter = 1;
+
+    while (file.existsSync()) {
+      file = File('$dir/${name}_($counter).$extension');
+      counter++;
+    }
+
+    return file.path;
   }
 
   @override
