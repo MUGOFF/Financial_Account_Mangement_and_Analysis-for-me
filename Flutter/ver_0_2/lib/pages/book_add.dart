@@ -744,6 +744,7 @@ class _BookAddState extends State<BookAdd> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Expanded(
             flex: 1,
@@ -758,44 +759,46 @@ class _BookAddState extends State<BookAdd> {
             flex: 3,
             child: Row(
               children: [
-                Expanded(
+                Flexible(
+                  flex: 6,
+                  fit: FlexFit.loose,
                   child: DatePicker(
                     controller: dateController,
                     tryValidator: true,
                   ),
                 ),
-                Visibility(
-                  visible: timeShow,
-                  child: Flexible(
-                    child: TimePicker(
-                      onCancelTimeSet: () {
-                        setState(() {
-                          timeShow = false;
-                        });
-                      },
-                      controller: timeController,
-                      tryValidator: true,
-                    ),
+                if(timeShow)
+                Flexible(
+                  flex: 4,
+                  fit: FlexFit.loose,
+                  child: TimePicker(
+                    onCancelTimeSet: () {
+                      setState(() {
+                        timeShow = false;
+                      });
+                    },
+                    controller: timeController,
+                    tryValidator: true,
                   ),
                 ),
-                Visibility(
-                  visible: !timeShow,
-                  child: Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Checkbox(
-                          value: timeShow,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              timeShow = value!;
-                            });
-                          },
-                        ),
-                        const Text('시간 설정하기')
-                      ],
-                    )
-                  ),
+                if(!timeShow)
+                Flexible(
+                  flex: 6,
+                  fit: FlexFit.loose,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Checkbox(
+                        value: timeShow,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            timeShow = value!;
+                          });
+                        },
+                      ),
+                      const Text('시간 설정하기')
+                    ],
+                  )
                 ),
               ],
             ),

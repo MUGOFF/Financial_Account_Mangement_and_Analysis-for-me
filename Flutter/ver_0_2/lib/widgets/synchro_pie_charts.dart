@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:ver_0_2/colorsholo.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
+import 'package:ver_0_2/widgets/models/budget_setting.dart';
 
 
 
@@ -331,6 +333,7 @@ class _BudgetMainPagePieChartState extends State<BudgetMainPagePieChart> {
   int currentMonth = DateTime.now().month;
   late TooltipBehavior _tooltip;
   List<_PieChartData> chartData = [];
+  double toatalBudget = 0;
 
   @override
   void initState() {
@@ -347,18 +350,18 @@ class _BudgetMainPagePieChartState extends State<BudgetMainPagePieChart> {
       int pointIndex, int seriesIndex) {
         return  Container(
           padding: const EdgeInsets.all(7),
-          child: Text(NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(data.y), style: const TextStyle(color: Colors.white, fontSize: 24)),
+          child: Text('${data.yp < 20 ? '${data.yp.toStringAsFixed(2)}%' : ''} ${NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(data.y)}', style: const TextStyle(color: Colors.white, fontSize: 24)),
         );
       }
     );
+    _fetchBudgetDatas();
     _fetchChartDatas();
   }
 
   Future<void> _fetchChartDatas() async {
     List<_PieChartData> localChartData = [];
     double totalValue = 0;
-    double limitedtotalValue = 0;
-    
+   
     List<Map<String, dynamic>> fetchedDatas = (await DatabaseAdmin().getTransactionsSUMByCategoryMonthNegative(currentYear,currentMonth)).toList();
 
     fetchedDatas.sort((prev, next) => next['totalAmount'].compareTo(prev['totalAmount']));
@@ -367,26 +370,38 @@ class _BudgetMainPagePieChartState extends State<BudgetMainPagePieChart> {
       totalValue = totalValue + data['totalAmount'];
     }
 
-    // var limitedFetchedDatas = fetchedDatas.take(5);
-    // for (var data in limitedFetchedDatas) {
-    //   localChartData.add(_PieChartData(data['category'], data['totalAmount'], data['totalAmount']/totalValue*100));
-    // }
-
-    var limitedFetchedDatas = fetchedDatas.take(5);
-    for (var data in limitedFetchedDatas) {
-      limitedtotalValue = limitedtotalValue + data['totalAmount'];
-    }
-    for (var data in limitedFetchedDatas) {
-      localChartData.add(_PieChartData(data['category'], data['totalAmount'], data['totalAmount']/totalValue*100));
+    for (var data in fetchedDatas) {
+      if (toatalBudget > totalValue) {
+        localChartData.add(_PieChartData(data['category'], data['totalAmount'], data['totalAmount']/toatalBudget*100));
+      } else {
+        localChartData.add(_PieChartData(data['category'], data['totalAmount'], data['totalAmount']/totalValue*100));
+      }
     }
 
-    double etcValue = totalValue - limitedtotalValue;
-    localChartData.add(_PieChartData('etc', etcValue, etcValue/totalValue*100));
-
+    if (toatalBudget > 0) {
+      double etcValue = toatalBudget - totalValue;
+      if (etcValue > 0) {
+        localChartData.add(_PieChartData('여유 예산', etcValue, etcValue/toatalBudget*100));
+      }
+    }
 
     if (mounted) {
       setState(() {
         chartData = localChartData;
+      });
+    }
+  }
+
+  Future<void> _fetchBudgetDatas() async {
+    double localBudget = 0;
+    List<BudgetSetting> fetchedBudgetSet = await DatabaseAdmin().getMonthBugetList(currentYear,currentMonth);
+    if (fetchedBudgetSet.isNotEmpty && fetchedBudgetSet[0].budgetList != null) {
+      // logger.i(fetchedBudgetSet[0].budgetList!['총 예산']);
+      localBudget = fetchedBudgetSet[0].budgetList!['총 예산'] ?? 0;
+    }
+    if (mounted) {
+      setState(() {
+        toatalBudget = localBudget;
       });
     }
   }
@@ -400,18 +415,21 @@ class _BudgetMainPagePieChartState extends State<BudgetMainPagePieChart> {
         PieSeries<_PieChartData, String>(
           dataSource: chartData,
           pointColorMapper:(_PieChartData data, _){
-            int code = data.x.hashCode.abs();
-            return Color.fromARGB(
-              255, // 알파 값 (255는 완전 불투명)
-              code % 256, // 빨강 값
-              (code ~/ 255) % 256, // 초록 값
-              ((code - 255) ~/ (256*3)) % 256, // 파랑 값
-            );
+            if (data.x == '여유 예산'){
+              return HoloColors.shiroganeNoel;
+            } else {
+              int code = data.x.hashCode.abs();
+              return Color.fromARGB(
+                255, // 알파 값 (255는 완전 불투명)
+                code % 256, // 빨강 값
+                (code ~/ 255) % 256, // 초록 값
+                ((code - 255) ~/ (256*3)) % 256, // 파랑 값
+              );
+            }
           },
           xValueMapper: (_PieChartData data, _) => data.x,
           yValueMapper: (_PieChartData data, _) => data.y,
-          dataLabelMapper: (_PieChartData data, _) => '${data.yp.toStringAsFixed(2)}%',
-          // onPointTap: widget.onPieMonoSelected,
+          dataLabelMapper: (_PieChartData data, _) => data.yp > 15 ? '${data.yp.toStringAsFixed(2)}%' : '',
           dataLabelSettings: const DataLabelSettings(
             isVisible: true,
             labelIntersectAction: LabelIntersectAction.shift,

@@ -11,6 +11,8 @@ class DatePicker extends StatelessWidget  {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double textSize = (screenWidth * 0.035).clamp(12, 24);
     return TextFormField(
       controller: controller,
       readOnly: true,
@@ -29,6 +31,7 @@ class DatePicker extends StatelessWidget  {
           }
         }
       },
+      style: TextStyle(fontSize: textSize),
       validator: tryValidator
         ? (value) {
             if (value == null || value.isEmpty) {
@@ -51,6 +54,8 @@ class TimePicker extends StatelessWidget  {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double textSize = (screenWidth * 0.035).clamp(12, 24);
     return TextFormField(
       controller: controller,
       readOnly: true,
@@ -67,6 +72,7 @@ class TimePicker extends StatelessWidget  {
           }
         }
       },
+      style: TextStyle(fontSize: textSize),
       decoration: InputDecoration(
         suffixIcon: IconButton(
           onPressed: (){

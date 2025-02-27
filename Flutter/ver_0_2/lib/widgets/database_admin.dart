@@ -962,7 +962,7 @@ class DatabaseAdmin {
   }
 
   
-  /// 스트 가져오기 및 동일한 'installment' 항목을 기준으로 통합
+  /// 리스트 가져오기 및 동일한 'installment' 항목을 기준으로 통합
   Future<List<MoneyTransaction>> getExportTransactions() async {
     try {
       final db = await database;
