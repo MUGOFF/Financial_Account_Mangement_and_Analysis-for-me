@@ -1561,7 +1561,7 @@ class _BudgetSettingYearlyPageState extends State<BudgetSettingYearlyPage> with 
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: Text('${widget.year}년 특별 예산 등록'),
+                    title: Text('${widget.year}년 연간 예산 항목 등록'),
                     content:  Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1573,6 +1573,9 @@ class _BudgetSettingYearlyPageState extends State<BudgetSettingYearlyPage> with 
                               child: TextField(
                                 readOnly: true,
                                 controller: _categoryFieldController,
+                                onTap: () {
+                                  _showCategoryModal(context);
+                                },
                               ),
                             ),
                             Expanded(
@@ -1765,6 +1768,47 @@ class _BudgetSettingYearlyPageState extends State<BudgetSettingYearlyPage> with 
           )
         )
       ],
+    );
+  }
+
+  void _showCategoryModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return FutureBuilder<TransactionCategory>(
+          future: DatabaseAdmin().getYearlyExpenseCategories(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator(); // 데이터 로딩 중이면 로딩 인디케이터 표시
+            }
+            if (snapshot.hasError) {
+              return AutoSizeText(maxLines: 3,'Error: ${snapshot.error}');
+            }
+            List<String> fetchedCategorys = snapshot.data!.itemList ?? [];
+            return Container(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.3), // 원하는 최대 높이로 설정
+              child:SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...fetchedCategorys.map((item) { 
+                      return ListTile(
+                        title: Text(item),
+                        onTap: () {
+                          setState(() {
+                            _categoryFieldController.text = item;
+                            Navigator.pop(context);
+                          });
+                        },
+                      );
+                    })
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

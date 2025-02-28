@@ -686,6 +686,7 @@ class _DataGridExportExampleState extends State<DataGridExportExample> {
       await file.writeAsBytes(bytes, flush: true);
 
       logger.d('엑셀 파일이 다운로드 경로에 성공적으로 저장되었습니다: $filePath');
+      filedropMessage(filePath);
     } catch (e) {
       logger.e('저장소 접근 권한이 필요합니다: $e');
       try {
@@ -700,9 +701,21 @@ class _DataGridExportExampleState extends State<DataGridExportExample> {
         await file.writeAsBytes(bytes, flush: true);
 
         logger.d('엑셀 파일이 성공적으로 저장되었습니다: $filePath');
+        filedropMessage(filePath);
       } catch (e) {
         logger.e('파일 저장 중 오류 발생: $e');
       }
+    }
+  }
+
+  void filedropMessage(String filePath) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('파일이 저장되었습니다 \n $filePath', style: const TextStyle(fontSize: 16)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 

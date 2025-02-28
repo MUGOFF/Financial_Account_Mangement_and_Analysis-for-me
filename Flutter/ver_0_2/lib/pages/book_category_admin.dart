@@ -16,16 +16,13 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
   Logger logger = Logger();
   List<TransactionCategory> categories = [];
   List<String> itemList = [];
+  List<String> yearlyCategoryList = [];
+  bool addYearlyCategoryList = false;
   String currentCategory = "수입"; // 기본 카테고리 설정
   String selectedCard  = ""; // 선택값  설정
   bool showFA  = true; // 선택값  설정
   PersistentBottomSheetController? bottomSheetController;
   final TextEditingController _textFieldController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,18 +55,22 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else {
-                      categories = snapshot.data!;
-                      itemList = categories
-                      .firstWhere((category) => category.name == currentCategory,
-                          orElse: () => TransactionCategory(name: '', itemList: []))
-                      .itemList ?? [];
+                  categories = snapshot.data!;
+                  yearlyCategoryList = categories
+                  .firstWhere((category) => category.name == '연간 예산',
+                      orElse: () => TransactionCategory(name: '', itemList: []))
+                  .itemList ?? [];
+                  itemList = categories
+                  .firstWhere((category) => category.name == currentCategory,
+                      orElse: () => TransactionCategory(name: '', itemList: []))
+                  .itemList ?? [];
                     return Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: GridView.builder(
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
-                        mainAxisSpacing: 8.0, // 주축(main axis) 방향의 간격을 8.0 픽셀로 설정합니다.
-                        crossAxisSpacing: 8.0, // 교차축(cross axis) 방향의 간격을 8.0 픽셀로 설정합니다.
+                        mainAxisSpacing: 8.0,
+                        crossAxisSpacing: 8.0,
                       ),
                       itemCount: itemList.length,
                       itemBuilder: (context, index) {
@@ -77,10 +78,9 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                           onLongPress: () {
                             setState(() {
                               selectedCard = itemList[index];
-                              showFA = false; // 홀드 상태일 때 selectedCard에 텍스트 값 저장
+                              showFA = false;
                             });
                             _showSeletedModal(context);
-                            // 여기서 화면을 변경하거나 다른 작업을 수행할 수 있습니다.
                           },
                           child: DottedBorder(
                             borderType: BorderType.RRect,
@@ -93,15 +93,16 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                                 child: Center(
                                   child: selectedCard == itemList[index]
                                   ? const Icon(
-                                      Icons.check, // 홀드 상태일 때 아이콘 체크를 표시
-                                      size: 36.0, // 아이콘 크기 설정
-                                      color: Colors.white, // 아이콘 색상 설정
+                                      Icons.check,
+                                      size: 36.0,
+                                      color: Colors.white,
                                     )
                                   : Text(
-                                      itemList[index], // 홀드 상태가 아닐 때 카드 내용을 표시
-                                      style: const TextStyle(
+                                      itemList[index],
+                                      style: TextStyle(
+                                        color: yearlyCategoryList.contains(itemList[index]) ? HoloColors.tokinoSora : HoloColors.azkI,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 18.0, // Increased font size
+                                        fontSize: 18.0,
                                       ),
                                   ),
                                 ),
@@ -125,39 +126,69 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
             showDialog(
               context: context,
               builder: (BuildContext context) {
-                return AlertDialog(
-                  title: Text(' $currentCategory 카테고리 추가'),
-                  content: TextField(
-                    controller: _textFieldController,
-                  ),
-                  actions: <Widget>[
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('취소'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        // Implement logic to add item to selected category
-                        setState(() {
-                          if(!itemList.contains(_textFieldController.text)) {
-                            itemList.add(_textFieldController.text);
-                            updateDataToDatabase();
-                          } else {
-                            const snackBar = SnackBar(
-                              content:  Text('중복된 카테고리 입니다.',style: TextStyle(fontSize: 16),),
-                              duration: Duration(seconds: 2),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                          }
-                        });
-                        _textFieldController.clear();
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('추가'),
-                    ),
-                  ],
+                return StatefulBuilder(
+                builder: (context, setStateDialog) {
+                    return AlertDialog(
+                      title: Text(' $currentCategory 카테고리 추가'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: _textFieldController,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox.adaptive(
+                                value: addYearlyCategoryList,
+                                onChanged: (value) {
+                                  setStateDialog(() {
+                                    addYearlyCategoryList = value!;
+                                    if (value == true) {
+                                      yearlyCategoryList.add(_textFieldController.text);
+                                    } else {
+                                      yearlyCategoryList.remove(_textFieldController.text);
+                                    }
+                                  });
+                                },
+                              ),
+                              const Text("연간 예산 설정")
+                            ],
+                          )
+                        ]
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () {
+                            _textFieldController.clear();
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('취소'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            // Implement logic to add item to selected category
+                            setState(() {
+                              if(!itemList.contains(_textFieldController.text)) {
+                                itemList.add(_textFieldController.text);
+                                updateDataToDatabase();
+                              } else {
+                                const snackBar = SnackBar(
+                                  content:  Text('중복된 카테고리 입니다.',style: TextStyle(fontSize: 16),),
+                                  duration: Duration(seconds: 2),
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                              }
+                            });
+                            _textFieldController.clear();
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('추가'),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             );
@@ -217,6 +248,7 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
   }
 
   void _showSeletedModal(BuildContext context) {
+    logger.d(selectedCard);
     bottomSheetController = showBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -279,18 +311,9 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  // Implement logic to add item to selected category
                                   setState(() {
-                                    if(selectedCard != '특별 예산'){
-                                      itemList.remove(selectedCard);
-                                      updateDataToDatabase();
-                                    } else {
-                                      const snackBar = SnackBar(
-                                        content:  Text('삭제가 불가능한 카테고리 입니다',style: TextStyle(fontSize: 16),),
-                                        duration: Duration(seconds: 2),
-                                      );
-                                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                                    }
+                                    itemList.remove(selectedCard);
+                                    updateDataToDatabase();
                                     selectedCard = "";
                                   });
                                   Navigator.of(context).pop();
@@ -302,7 +325,6 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                         );
                       },
                     );
-                    // 첫 번째 버튼을 눌렀을 때 수행할 작업
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.redAccent,
@@ -314,7 +336,6 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                 ),
               ),
               const SizedBox(width: 16),
-               // 간격 조절
               SizedBox (
                 width: MediaQuery.of(context).size.width * 0.4,
                 child:ElevatedButton(
@@ -327,65 +348,79 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        return PopScope(
-                          // onPopInvoked: (didPop) {
-                          //   setState(() {
-                          //     selectedCard = "";
-                          //   });
-                          // },
-                          onPopInvokedWithResult: (bool didPop, Object? result) async {
-                            setState(() {
-                              selectedCard = "";
-                              showFA = true;
-                            });
-                          }, 
-                          child: AlertDialog(
-                            title: const Text('카테고리 수정'),
-                            content: TextField(
-                              controller: _textFieldController, // 초기 값으로 선택한 카테고리 설정
-                            ),
-                            actions: <Widget>[
-                              TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      selectedCard = "";
-                                      showFA = true;
-                                    });
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text('취소'),
+                        return StatefulBuilder(
+                          builder: (context, setStateDialog) {
+                           return PopScope(
+                              onPopInvokedWithResult: (bool didPop, Object? result) async {
+                                setState(() {
+                                  selectedCard = "";
+                                  showFA = true;
+                                });
+                              }, 
+                              child: AlertDialog(
+                                title: const Text('카테고리 수정'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextField(
+                                      controller: _textFieldController,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Checkbox.adaptive(
+                                          value: yearlyCategoryList.contains(selectedCard),
+                                          onChanged: (value) {
+                                            setStateDialog(() {
+                                              if (value == true) {
+                                                yearlyCategoryList.add(_textFieldController.text);
+                                              } else {
+                                                yearlyCategoryList.remove(_textFieldController.text);
+                                              }
+                                            });
+                                          },
+                                        ),
+                                        const Text("연간 예산 설정")
+                                      ],
+                                    )
+                                  ]
                                 ),
-                              TextButton(
-                                  onPressed: () {
-                                    // Implement logic to add item to selected category
-                                    setState(() {
-                                      if(selectedCard != '특별 예산'){
-                                        int itemIndex = itemList.indexOf(selectedCard);
-                                        if (_textFieldController.text.isNotEmpty && itemIndex != -1) {
-                                          itemList[itemIndex] = _textFieldController.text;
-                                        }
-                                        updateDataToDatabase();
-                                      } else {
-                                        const snackBar = SnackBar(
-                                          content:  Text('수정이 불가능한 카테고리 입니다',style: TextStyle(fontSize: 16),),
-                                          duration: Duration(seconds: 2),
-                                        );
-                                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                                      }
-                                      _textFieldController.clear();
-                                      selectedCard = "";
-                                      showFA = true;
-                                    });
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text('수정'),
-                                ),
-                            ],
-                          ),
+                                actions: <Widget>[
+                                  TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _textFieldController.clear();
+                                          selectedCard = "";
+                                          showFA = true;
+                                        });
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text('취소'),
+                                    ),
+                                  TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          int itemIndex = itemList.indexOf(selectedCard);
+                                          if (_textFieldController.text.isNotEmpty && itemIndex != -1) {
+                                            itemList[itemIndex] = _textFieldController.text;
+                                          }
+                                          updateDataToDatabase();
+                                          _textFieldController.clear();
+                                          selectedCard = "";
+                                          showFA = true;
+                                        });
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text('수정'),
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
                         );
-                      },
+                      }
                     );
-                    // 두 번째 버튼을 눌렀을 때 수행할 작업
                   },
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(
@@ -406,5 +441,6 @@ class _CategoryAdminPageState extends State<CategoryAdminPage> {
   void updateDataToDatabase() {
     // 데이터베이스에 정정
     DatabaseAdmin().updateTransactionCategoryItemList( currentCategory, itemList);
+    DatabaseAdmin().updateTransactionCategoryItemList( '연간 예산', yearlyCategoryList);
   }
 }

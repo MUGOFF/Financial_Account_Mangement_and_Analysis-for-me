@@ -32,7 +32,7 @@ class DatabaseAdmin {
     String path = join(await getDatabasesPath(), 'debug_app.db');
     return openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -45,6 +45,7 @@ class DatabaseAdmin {
         _addTriggerForParameterUpdateRenewal(db);
         processExistingData(db);
         _createIncomeTable(db);
+        _insertYearlyExpenseCategories(db);
         // _createBankAccountTable(db);
         // _createCardAccountTable(db);
         // _createExpirationInvestmentTable(db);
@@ -67,6 +68,9 @@ class DatabaseAdmin {
         }
         if (oldVersion < 8) {
           _createIncomeTable(db);
+        }
+        if (oldVersion < 9) {
+          _insertYearlyExpenseCategories(db);
         }
         // if (oldVersion < 4) {
         //   _createCurrentHoldingTable(db);
@@ -376,6 +380,7 @@ class DatabaseAdmin {
     );
   }
 
+  /// 테이블 키 추가가
   void _addColumnHiddenPrameterToMoneyTransactionTable(Database db) async  {
     db.execute(
       """
@@ -1242,8 +1247,24 @@ class DatabaseAdmin {
   Future<void> _insertDefaultCategories(Database db) async {
     Map<String, List<String>> defaultCategories = {
       "수입": ["급여소득", "금융소득", "기타소득", "용돈", "페이백"],
-      "소비": ["식비", "외식비", "주거비", "통신비", "생활비", "미용비", "의료비", "문화비", "유흥비", "교통비", "세금", "금융비용", "보험", "기타", '특별 예산'],
+      "소비": ["식비", "외식비", "주거비", "통신비", "생활비", "미용비", "의료비", "문화비", "유흥비", "교통비", "세금", '여행비', "금융비용", "보험", "기타",],
       "이체": ["내계좌송금", "타계좌송금", "내계좌수신", "저축", "투자", "충전", "카드대금"]
+    };
+
+    await Future.forEach(defaultCategories.entries, (entry) async {
+      String categoryName = entry.key;
+      List<String> itemList = entry.value;
+
+      await db.insert('transactions_categorys', {
+        'name': categoryName,
+        'itemList': itemList.join(','),
+      });
+    });
+  }
+
+  Future<void> _insertYearlyExpenseCategories(Database db) async {
+    Map<String, List<String>> defaultCategories = {
+      "연간 예산": ["여행비"],
     };
 
     await Future.forEach(defaultCategories.entries, (entry) async {
@@ -1277,6 +1298,26 @@ class DatabaseAdmin {
         itemList: categoryMaps[i]['itemList'] != null ? List<String>.from(categoryMaps[i]['itemList'].split(',')) : [],
       );
     });
+  }
+
+  Future<TransactionCategory> getYearlyExpenseCategories() async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> categoryMaps = await db.query(
+        'transactions_categorys',
+        where: "name = 연간 예산",
+      );
+      return List.generate(categoryMaps.length, (i) {
+        return TransactionCategory(
+          id: categoryMaps[i]['id'],
+          name: categoryMaps[i]['name'],
+          itemList: categoryMaps[i]['itemList'] != null ? List<String>.from(categoryMaps[i]['itemList'].split(',')) : [],
+        );
+      }).first;
+    } catch(e) {
+      logger.e(e);
+      return TransactionCategory(name: '오류', itemList: []);
+    }
   }
   
 ///
@@ -1653,7 +1694,7 @@ class DatabaseAdmin {
 ///
 ///
 ///
-  /// 수입 설정정
+  /// 수입 설정
   void _createIncomeTable(Database db) {
     db.execute(
       """

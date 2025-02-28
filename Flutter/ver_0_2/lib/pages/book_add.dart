@@ -47,6 +47,7 @@ class _BookAddState extends State<BookAdd> {
   TextStyle tagStyle = TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20, backgroundColor: Colors.yellow.shade100);
   List<String> allTags = [];
   List<String> suggestedTags = [];
+  List<String> yearlyExpenseCategory = [];
   OverlayEntry? _overlayEntry;
 
   @override
@@ -120,6 +121,7 @@ class _BookAddState extends State<BookAdd> {
       _amountdisplayController.text = _thousandsFormmater(_amountController.text);
     }
     allTags = await DatabaseAdmin().getTransactionsTags();
+    yearlyExpenseCategory = (await DatabaseAdmin().getYearlyExpenseCategories()).itemList ?? [];
     // logger.d(allTags);
   }
 
@@ -872,7 +874,7 @@ class _BookAddState extends State<BookAdd> {
           description: _categoryController.text == "특별 예산" && !_memoController.text.contains("#특별예산")
               ? '#특별예산 ${i+1}차분 ${_memoController.text}'
               : '${i+1}차분 ${_memoController.text}',
-          extraBudget: _categoryController.text == "특별 예산" ? true : false,
+          extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
         );
 
         // 데이터베이스에 삽입
@@ -895,7 +897,7 @@ class _BookAddState extends State<BookAdd> {
         category: _categoryController.text,
         categoryType: currentCategory,
         description: _categoryController.text=="특별 예산" &&  !_memoController.text.contains("#특별예산")? '#특별예산 ${_memoController.text}' : _memoController.text,
-        extraBudget: _categoryController.text=="특별 예산" ? true : false,
+        extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
       );
 
       // 이제 transaction 객체를 데이터베이스에 삽입합니다.
@@ -924,7 +926,7 @@ class _BookAddState extends State<BookAdd> {
       category: _categoryController.text,
       categoryType: currentCategory,
       description:_categoryController.text=="특별 예산" &&  !_memoController.text.contains("#특별예산 ")? '#특별예산 ${_memoController.text}' : _memoController.text,
-      extraBudget: _categoryController.text=="특별 예산" ? true : false,
+      extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
     );
     // 데이터베이스에 은행 계좌 정보 장장
     DatabaseAdmin().updateMoneyTransaction(transaction);
