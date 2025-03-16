@@ -602,7 +602,7 @@ class TransactionExportGridDataSource extends DataGridSource {
   }
 
   String formatterDate(String dateString) {
-    DateFormat dateFormat = DateFormat("yyyy년 MM월 dd일 HH:mm");
+    DateFormat dateFormat = DateFormat("yyyy년 MM월 dd일THH:mm");
     String formattedDatetime = DateFormat('yyyy년 MM월 dd일').format(dateFormat.parse(dateString));
 
     return formattedDatetime;
@@ -661,7 +661,7 @@ class _DataGridExportExampleState extends State<DataGridExportExample> {
   Future<void> getTagTransactionData() async {
     List<MoneyTransaction> fetchedTransactions = await DatabaseAdmin().getExportTransactions();
     // 날짜 형식에 맞는 DateFormat 생성
-    DateFormat format = DateFormat("yyyy년 MM월 dd일 HH:mm");
+    DateFormat format = DateFormat("yyyy년 MM월 dd일THH:mm");
 
     fetchedTransactions.sort((a, b) {
       DateTime dateA = format.parse(a.transactionTime); // String -> DateTime 변환
