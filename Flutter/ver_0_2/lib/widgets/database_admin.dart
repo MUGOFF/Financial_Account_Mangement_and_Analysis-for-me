@@ -32,7 +32,7 @@ class DatabaseAdmin {
     String path = join(await getDatabasesPath(), 'debug_app.db');
     return openDatabase(
       path,
-      version: 9,
+      version: 10,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -46,6 +46,8 @@ class DatabaseAdmin {
         processExistingData(db);
         _createIncomeTable(db);
         _insertYearlyExpenseCategories(db);
+        _createMoneyTransactionDisplayTable(db);
+        _addColumnInstallationToMoneyTransactionTable(db);
         // _createBankAccountTable(db);
         // _createCardAccountTable(db);
         // _createExpirationInvestmentTable(db);
@@ -71,6 +73,10 @@ class DatabaseAdmin {
         }
         if (oldVersion < 9) {
           _insertYearlyExpenseCategories(db);
+        }
+        if (oldVersion < 10) {
+          _createMoneyTransactionDisplayTable(db);
+          _addColumnInstallationToMoneyTransactionTable(db);
         }
         // if (oldVersion < 4) {
         //   _createCurrentHoldingTable(db);
@@ -380,12 +386,39 @@ class DatabaseAdmin {
     );
   }
 
-  /// 테이블 키 추가가
+  void _createMoneyTransactionDisplayTable(Database db) {
+    db.execute(
+      """
+        CREATE TABLE money_transactions_display(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          transactionTime TEXT,
+          amount REAL,
+          goods TEXT,
+          categoryType TEXT,
+          category TEXT,
+          description TEXT,
+          )
+      """,
+      // account TEXT,
+    );
+  }
+
+  /// 테이블 키 추가
   void _addColumnHiddenPrameterToMoneyTransactionTable(Database db) async  {
     db.execute(
       """
       ALTER TABLE money_transactions
       ADD COLUMN parameter TEXT
+      """
+    );
+  }
+
+  /// 테이블 키 추가(할부기간)
+  void _addColumnInstallationToMoneyTransactionTable(Database db) async  {
+    db.execute(
+      """
+      ALTER TABLE money_transactions
+      ADD COLUMN installation INTEGER DEFAULT 1
       """
     );
   }

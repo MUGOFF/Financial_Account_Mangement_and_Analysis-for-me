@@ -110,7 +110,8 @@ class _BookAddState extends State<BookAdd> {
       _amountdisplayController.text = _thousandsFormmater(_amountController.text);
       _targetgoodsController.text = widget.moneyTransaction!.goods;
       _categoryController.text = widget.moneyTransaction!.category;
-      logger.d(widget.moneyTransaction!.categoryType);
+      _installmentController.text = widget.moneyTransaction!.installment.toString();
+      // logger.d(widget.moneyTransaction!.categoryType);
       currentCategory = widget.moneyTransaction!.categoryType;
       _selectedButton = currentCategory == '소비' ? 1 : currentCategory == '수입' ? 2 : 3 ;
       _memoController.text = widget.moneyTransaction!.description ?? '';
@@ -313,7 +314,7 @@ class _BookAddState extends State<BookAdd> {
                 // Date, String, Int, String, String Fields
                 buildDateTimeRow("날짜", _dateController, _timeController),
                 amountRow("거래금액", _amountdisplayController),
-                if(installmentShow)
+                if(installmentShow || _installmentController.text.isNotEmpty)
                 Row(
                   children: [
                     const Expanded(
@@ -843,8 +844,8 @@ class _BookAddState extends State<BookAdd> {
   }
 
   Future<void> insertDataToDatabase() async {
-    int insertID = 1;
-    int installID = 1;
+    // int insertID = 1;
+    // int installID = 1;
     String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
     if (_amountController.text.startsWith('-')) {
       amountText = '-${amountText.substring(1).replaceAll('-', '')}';
@@ -856,38 +857,39 @@ class _BookAddState extends State<BookAdd> {
       _timeController.text = '12:00';
     }
 
-    if (installmentShow) {
-      int installmentMonths = int.tryParse(_installmentController.text) ?? 1; // 할부 개월 수 가져오기
-      DateTime startDate = DateFormat('yyyy년 MM월 dd일').parse(_dateController.text); // 시작 날짜
-      for (int i = 0; i < installmentMonths; i++) {
-        // 해당 달의 날짜 계산
-        DateTime installmentDate = DateTime(startDate.year, startDate.month + i, startDate.day);
-        String transactionTime = '${DateFormat('yyyy년 MM월 dd일').format(installmentDate).toString()}T${_timeController.text}';
+    // if (installmentShow) {
+    //   int installmentMonths = int.tryParse(_installmentController.text) ?? 1; // 할부 개월 수 가져오기
+    //   DateTime startDate = DateFormat('yyyy년 MM월 dd일').parse(_dateController.text); // 시작 날짜
+    //   for (int i = 0; i < installmentMonths; i++) {
+    //     // 해당 달의 날짜 계산
+    //     DateTime installmentDate = DateTime(startDate.year, startDate.month + i, startDate.day);
+    //     String transactionTime = '${DateFormat('yyyy년 MM월 dd일').format(installmentDate).toString()}T${_timeController.text}';
         
-        // 할부에 맞는 transaction 생성
-        final MoneyTransaction transaction = MoneyTransaction(
-          transactionTime: transactionTime,
-          amount: double.parse((double.parse(_amountController.text) / installmentMonths).toStringAsFixed(2)), // 할부로 나눈 금액
-          goods: _targetgoodsController.text,
-          category: _categoryController.text,
-          categoryType: currentCategory,
-          description: _categoryController.text == "특별 예산" && !_memoController.text.contains("#특별예산")
-              ? '#특별예산 ${i+1}차분 ${_memoController.text}'
-              : '${i+1}차분 ${_memoController.text}',
-          extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
-        );
+    //     // 할부에 맞는 transaction 생성
+    //     final MoneyTransaction transaction = MoneyTransaction(
+    //       transactionTime: transactionTime,
+    //       amount: double.parse((double.parse(_amountController.text) / installmentMonths).toStringAsFixed(2)), // 할부로 나눈 금액
+    //       goods: _targetgoodsController.text,
+    //       category: _categoryController.text,
+    //       categoryType: currentCategory,
+    //       description: yearlyExpenseCategory.contains(_categoryController.text) && !_memoController.text.contains("#연간예산")
+    //           ? '#연간예산 ${i+1}차분 ${_memoController.text}'
+    //           : '${i+1}차분 ${_memoController.text}',
+    //       extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
+    //     );
 
-        // 데이터베이스에 삽입
-        if(i == 0) {
-          insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-          installID = insertID;
-          DatabaseAdmin().addInstallmentToParameter(insertID, installID);
-        } else {
-          insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-          DatabaseAdmin().addInstallmentToParameter(insertID, installID);
-        }
-      }
-    } else {
+    //     // 데이터베이스에 삽입
+    //     if(i == 0) {
+    //       insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+    //       installID = insertID;
+    //       DatabaseAdmin().addInstallmentToParameter(insertID, installID);
+    //     } else {
+    //       insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
+    //       DatabaseAdmin().addInstallmentToParameter(insertID, installID);
+    //     }
+    //   }
+    // } else {
+      int installmentMonths = int.tryParse(_installmentController.text) ?? 1;
       final MoneyTransaction transaction = MoneyTransaction(
         transactionTime: '${_dateController.text}T${_timeController.text}', // 여기서는 현재 시간을 사용할 수 있습니다. 
         // account: _accountController.text,
@@ -896,16 +898,18 @@ class _BookAddState extends State<BookAdd> {
         goods: _targetgoodsController.text,
         category: _categoryController.text,
         categoryType: currentCategory,
-        description: _categoryController.text=="특별 예산" &&  !_memoController.text.contains("#특별예산")? '#특별예산 ${_memoController.text}' : _memoController.text,
+        installment: installmentMonths,
+        description: yearlyExpenseCategory.contains(_categoryController.text) &&  !_memoController.text.contains("#연간예산")? '#연간예산 ${_memoController.text}' : _memoController.text,
         extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
       );
 
       // 이제 transaction 객체를 데이터베이스에 삽입합니다.
       // 예시:
-      insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-      installID = insertID;
-      DatabaseAdmin().addInstallmentToParameter(insertID, installID);
-    }
+      // insertID = 
+      await DatabaseAdmin().insertMoneyTransaction(transaction);
+      // installID = insertID;
+      // DatabaseAdmin().addInstallmentToParameter(insertID, installID);
+    // }
   }
 
   void updateDataToDatabase() {
@@ -925,7 +929,8 @@ class _BookAddState extends State<BookAdd> {
       goods: _targetgoodsController.text,
       category: _categoryController.text,
       categoryType: currentCategory,
-      description:_categoryController.text=="특별 예산" &&  !_memoController.text.contains("#특별예산 ")? '#특별예산 ${_memoController.text}' : _memoController.text,
+      installment: int.tryParse(_installmentController.text),
+      description: yearlyExpenseCategory.contains(_categoryController.text) &&  !_memoController.text.contains("#연간예산 ")? '#연간예산 ${_memoController.text}' : _memoController.text,
       extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
     );
     // 데이터베이스에 은행 계좌 정보 장장
