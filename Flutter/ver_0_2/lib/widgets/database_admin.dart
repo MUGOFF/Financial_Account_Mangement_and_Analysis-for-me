@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-// import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 // import 'package:ver_0_2/widgets/models/bank_account.dart';
 // import 'package:ver_0_2/widgets/models/card_account.dart';
@@ -32,7 +32,7 @@ class DatabaseAdmin {
     String path = join(await getDatabasesPath(), 'debug_app.db');
     return openDatabase(
       path,
-      version: 10,
+      version: 12,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -46,8 +46,9 @@ class DatabaseAdmin {
         processExistingData(db);
         _createIncomeTable(db);
         _insertYearlyExpenseCategories(db);
-        _createMoneyTransactionDisplayTable(db);
         _addColumnInstallationToMoneyTransactionTable(db);
+        _createMoneyTransactionDisplayTable(db);
+        _addColumnidToMoneyDisplayTransactionTable(db);
         // _createBankAccountTable(db);
         // _createCardAccountTable(db);
         // _createExpirationInvestmentTable(db);
@@ -77,6 +78,10 @@ class DatabaseAdmin {
         if (oldVersion < 10) {
           _createMoneyTransactionDisplayTable(db);
           _addColumnInstallationToMoneyTransactionTable(db);
+        }
+        if (oldVersion < 12) {
+          _createMoneyTransactionDisplayTable(db);
+          _addColumnidToMoneyDisplayTransactionTable(db);
         }
         // if (oldVersion < 4) {
         //   _createCurrentHoldingTable(db);
@@ -386,23 +391,6 @@ class DatabaseAdmin {
     );
   }
 
-  void _createMoneyTransactionDisplayTable(Database db) {
-    db.execute(
-      """
-        CREATE TABLE money_transactions_display(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          transactionTime TEXT,
-          amount REAL,
-          goods TEXT,
-          categoryType TEXT,
-          category TEXT,
-          description TEXT,
-          )
-      """,
-      // account TEXT,
-    );
-  }
-
   /// 테이블 키 추가
   void _addColumnHiddenPrameterToMoneyTransactionTable(Database db) async  {
     db.execute(
@@ -419,6 +407,34 @@ class DatabaseAdmin {
       """
       ALTER TABLE money_transactions
       ADD COLUMN installation INTEGER DEFAULT 1
+      """
+    );
+  }
+
+  /// 디스플레이 테이블 생성
+  void _createMoneyTransactionDisplayTable(Database db) {
+    db.execute(
+      """
+        CREATE TABLE IF NOT EXISTS money_transactions_display(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          transactionTime TEXT,
+          amount REAL,
+          goods TEXT,
+          categoryType TEXT,
+          category TEXT,
+          description TEXT
+          )
+      """,
+      // account TEXT,
+    );
+  }
+
+  /// 테이블 키 추가(소속 id)
+  void _addColumnidToMoneyDisplayTransactionTable(Database db) async  {
+    db.execute(
+      """
+      ALTER TABLE money_transactions_display
+      ADD COLUMN foreign_id INTEGER NOT NULL DEFAULT 1
       """
     );
   }
@@ -443,6 +459,21 @@ class DatabaseAdmin {
   //     """
   //   );
   // }
+
+  ///내역 데이터베이스 초기화
+  Future<void> clearMoneyTransactionTable() async {
+    final db = await database;
+    // await db.delete('money_transactions');
+    // await db.delete('money_transactions_display');
+    await db.transaction((txn) async {
+      await txn.delete('money_transactions');
+      await txn.delete('money_transactions_display');
+
+      // AUTOINCREMENT 초기화
+      await txn.rawDelete("DELETE FROM sqlite_sequence WHERE name = 'money_transactions'");
+      await txn.rawDelete("DELETE FROM sqlite_sequence WHERE name = 'money_transactions_display'");
+    });
+  }
   void _addTriggerForParameterUpdateRenewal(Database db) async {
     // 기존 트리거 제거
     await db.execute("DROP TRIGGER IF EXISTS update_parameter_trigger");
@@ -533,13 +564,32 @@ class DatabaseAdmin {
   
   Future<int> insertMoneyTransaction(MoneyTransaction moneyTransaction) async {
     final db = await database;
-    // updateAccountBalance(moneyTransaction);
+    insertMoneyTransactionDisplay(moneyTransaction);
     return await db.insert('money_transactions', moneyTransaction.toMap());
+  }
+
+  Future<int> insertMoneyTransactionDisplay(MoneyTransaction moneyTransaction) async {
+    final db = await database;
+    Map<String, dynamic> transactionData = moneyTransaction.toMap();
+    transactionData['foreign_id'] = moneyTransaction.id;
+    transactionData['amount'] = moneyTransaction.amount/ (moneyTransaction.installment ?? 1);
+    if (moneyTransaction.installment != null && moneyTransaction.installment! > 1) {
+      DateFormat dateInputFormat = DateFormat('yyyy년 MM월 dd일THH:mm');
+      DateTime baseDate = dateInputFormat.parse(moneyTransaction.transactionTime); 
+      for (int i = 0; i < moneyTransaction.installment!; i++) {
+        transactionData['transactionTime'] = dateInputFormat.format(DateTime(baseDate.year, baseDate.month + i, baseDate.day, baseDate.hour, baseDate.minute));
+        transactionData['amount'] = moneyTransaction.amount / moneyTransaction.installment!;
+        await db.insert('money_transactions_display', transactionData);
+      }
+    } else {
+      await db.insert('money_transactions_display', transactionData);
+    }
+    return 1;
   }
 
   Future<int> updateMoneyTransaction(MoneyTransaction updatedTransaction) async {
     final db = await database;
-    // updateAccountBalance(updatedTransaction);
+    updateMoneyTransactionDisplay(updatedTransaction);
     return await db.update(
       'money_transactions',
       updatedTransaction.toMap(),
@@ -548,34 +598,62 @@ class DatabaseAdmin {
     );
   }
 
-  ///특정 대상 카테고리 일괄 변경
-  Future<void> updateCategorySearchAllTable(String goodsname, String newValue, String newValueType, bool isPositive) async {
+  Future<int> updateMoneyTransactionDisplay(MoneyTransaction updatedTransaction) async {
     final db = await database;
-    try { 
-      await db.transaction((txn) async {
-        await txn.update(
-          'money_transactions',
-          {'category': newValue, 'categoryType': newValueType},
-          where: 'goods  = ? AND ${isPositive ? 'amount  > 0' : 'amount < 0'}',
-          whereArgs: [goodsname],
-        );
-      });
-    } catch (e){
-      logger.e(e);
+    await db.delete(
+      'money_transactions_display',
+      where: 'foreign_id = ?',
+      whereArgs: [updatedTransaction.id],
+    );
+    Map<String, dynamic> transactionData = updatedTransaction.toMap();
+    transactionData['foreign_id'] = updatedTransaction.id;
+    transactionData['amount'] = updatedTransaction.amount/ (updatedTransaction.installment ?? 1);
+    if (updatedTransaction.installment != null && updatedTransaction.installment! > 1) {
+      DateFormat dateInputFormat = DateFormat('yyyy년 MM월 dd일THH:mm');
+      DateTime baseDate = dateInputFormat.parse(updatedTransaction.transactionTime); 
+      for (int i = 0; i < updatedTransaction.installment!; i++) {
+        transactionData['transactionTime'] = dateInputFormat.format(DateTime(baseDate.year, baseDate.month + i, baseDate.day, baseDate.hour, baseDate.minute));
+        transactionData['amount'] = updatedTransaction.amount / updatedTransaction.installment!;
+        await db.insert('money_transactions_display', transactionData);
+      }
+    } else {
+      await db.insert('money_transactions_display', transactionData);
     }
+    return 1;
   }
+
+  // ///특정 대상 카테고리 일괄 변경
+  // Future<void> updateCategorySearchAllTable(String goodsname, String newValue, String newValueType, bool isPositive) async {
+  //   final db = await database;
+  //   try { 
+  //     await db.transaction((txn) async {
+  //       await txn.update(
+  //         'money_transactions',
+  //         {'category': newValue, 'categoryType': newValueType},
+  //         where: 'goods  = ? AND ${isPositive ? 'amount  > 0' : 'amount < 0'}',
+  //         whereArgs: [goodsname],
+  //       );
+  //     });
+  //   } catch (e){
+  //     logger.e(e);
+  //   }
+  // }
 
   Future<int> deleteMoneyTransaction(int id) async {
     final db = await database;
-    // List<Map<String, dynamic>> transactions = await db.query(
-    //   'money_transactions',
-    //   where: 'id = ?',
-    //   whereArgs: [id],
-    // );
-    // deletionUpdateAccountBalance(transactions.first);
+    deleteMoneyTransactionDisplay(id);
     return await db.delete(
       'money_transactions',
       where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteMoneyTransactionDisplay(int id) async {
+    final db = await database;
+    return await db.delete(
+      'money_transactions_display',
+      where: 'foreign_id = ?',
       whereArgs: [id],
     );
   }

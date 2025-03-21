@@ -6,6 +6,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:ver_0_2/pages/book_category_admin.dart';
 import 'package:ver_0_2/pages/external_data_inout.dart';
 import 'package:ver_0_2/colorsholo.dart';
+import 'package:ver_0_2/widgets/database_admin.dart';
 
 // final Logger logger = Logger();
 class AppDrawer extends StatelessWidget {
@@ -101,7 +102,6 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             title: const Text('가계부 카테고리 관리'),
             onTap: () {
-              // Handle menu item 2 tap
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const CategoryAdminPage()),
@@ -111,11 +111,42 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             title: const Text('데이터 가져오기/내보내기'),
             onTap: () {
-              // Handle menu item 2 tap
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ExternalTerminal()),
               );
+            },
+          ),
+          ListTile(
+            title: const Text('내역 초기화'),
+            onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('삭제 확인'),
+                      content: const Text('데이터베이스를 초기화 하시겠습니까?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text('취소'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            DatabaseAdmin().clearMoneyTransactionTable();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('거래 내역 데이터베이스가 초기화되었습니다!')),
+                            );
+                          },
+                          child: const Text('삭제'),
+                        ),
+                      ],
+                    );
+                  },
+                );
             },
           ),
         ],

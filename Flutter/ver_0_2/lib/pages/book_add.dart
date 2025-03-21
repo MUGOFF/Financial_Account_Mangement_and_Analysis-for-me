@@ -480,32 +480,32 @@ class _BookAddState extends State<BookAdd> {
                               setState(() {
                                 _categoryController.text = item;
                                 Navigator.pop(context);
-                                if( _pageType == "수정") {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: const Text('삭제 확인'),
-                                        content: const Text('같은 대상을 일괄 변경하시겠습니까?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                            },
-                                            child: const Text('취소'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              DatabaseAdmin().updateCategorySearchAllTable(_targetgoodsController.text,item,currentCategory, double.parse(_amountController.text) > 0);
-                                            },
-                                            child: const Text('확인'),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                } 
+                                // if( _pageType == "수정") {
+                                //   showDialog(
+                                //     context: context,
+                                //     builder: (BuildContext context) {
+                                //       return AlertDialog(
+                                //         title: const Text('삭제 확인'),
+                                //         content: const Text('같은 대상을 일괄 변경하시겠습니까?'),
+                                //         actions: [
+                                //           TextButton(
+                                //             onPressed: () {
+                                //               Navigator.pop(context);
+                                //             },
+                                //             child: const Text('취소'),
+                                //           ),
+                                //           TextButton(
+                                //             onPressed: () {
+                                //               Navigator.pop(context);
+                                //               DatabaseAdmin().updateCategorySearchAllTable(_targetgoodsController.text,item,currentCategory, double.parse(_amountController.text) > 0);
+                                //             },
+                                //             child: const Text('확인'),
+                                //           ),
+                                //         ],
+                                //       );
+                                //     },
+                                //   );
+                                // } 
                               });
                             },
                           );
