@@ -786,7 +786,7 @@ class _LastPageState extends State<LastPage> {
               goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
               category: formattedcategory,
               categoryType: formattedcategoryType,
-              installment: formattedInstallment ?? 1,
+              installation: formattedInstallment ?? 1,
               description: widget.modelColumnrelations[5] != null 
               ? yearlyExpenseCategory.contains(formattedcategory) 
                 ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '

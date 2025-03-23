@@ -9,7 +9,7 @@ class MoneyTransaction {
   final String categoryType;
   final String? description;
   final String? parameter;
-  final int? installment;
+  final int? installation;
   final bool extraBudget;
 
   MoneyTransaction({
@@ -24,7 +24,7 @@ class MoneyTransaction {
     this.description ="",
     this.parameter ="",
     this.extraBudget = false,
-    this.installment = 1,
+    this.installation = 1,
   });
 
   /// Transaction을 Map<String, dynamic>으로 변환하는 메서드
@@ -40,7 +40,7 @@ class MoneyTransaction {
       'description': description!="" ? description : " ",
       'parameter': parameter!="" ? parameter : "{}",
       'extraBudget': extraBudget ? 1 : 0,
-      'installment': installment,
+      'installation': installation,
     };
   }
 
@@ -63,7 +63,7 @@ class MoneyTransaction {
     String? description,
     String? parameter,
     bool? extraBudget,
-    int? installment,
+    int? installation,
   }) {
     return MoneyTransaction(
       id: id ?? this.id,
@@ -76,7 +76,7 @@ class MoneyTransaction {
       description: description ?? this.description,
       parameter: parameter ?? this.parameter,
       extraBudget: extraBudget ?? this.extraBudget,
-      installment: installment ?? this.installment,
+      installation: installation ?? this.installation,
     );
   }
 }

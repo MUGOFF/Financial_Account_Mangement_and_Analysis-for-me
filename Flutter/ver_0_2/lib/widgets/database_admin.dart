@@ -32,7 +32,7 @@ class DatabaseAdmin {
     String path = join(await getDatabasesPath(), 'debug_app.db');
     return openDatabase(
       path,
-      version: 12,
+      version: 20,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -41,14 +41,15 @@ class DatabaseAdmin {
         _createExtraBugetSettingTable(db);
         _deleteNameinExtraGroupTable(db);
         _addColumnHiddenPrameterToMoneyTransactionTable(db);
-        // _addTriggerForParameterUpdate(db);
         _addTriggerForParameterUpdateRenewal(db);
         processExistingData(db);
         _createIncomeTable(db);
         _insertYearlyExpenseCategories(db);
         _addColumnInstallationToMoneyTransactionTable(db);
-        _createMoneyTransactionDisplayTable(db);
+        _createMoneyTransactionDisplayTableRenewal(db);
         _addColumnidToMoneyDisplayTransactionTable(db);
+        // _addTriggerForParameterUpdate(db);
+        // _createMoneyTransactionDisplayTable(db);
         // _createBankAccountTable(db);
         // _createCardAccountTable(db);
         // _createExpirationInvestmentTable(db);
@@ -76,11 +77,14 @@ class DatabaseAdmin {
           _insertYearlyExpenseCategories(db);
         }
         if (oldVersion < 10) {
-          _createMoneyTransactionDisplayTable(db);
+          // _createMoneyTransactionDisplayTable(db);
           _addColumnInstallationToMoneyTransactionTable(db);
         }
-        if (oldVersion < 12) {
-          _createMoneyTransactionDisplayTable(db);
+        // if (oldVersion < 12) {
+        //   // _createMoneyTransactionDisplayTable(db);
+        // }
+        if (oldVersion < 20) {
+          _createMoneyTransactionDisplayTableRenewal(db);
           _addColumnidToMoneyDisplayTransactionTable(db);
         }
         // if (oldVersion < 4) {
@@ -401,7 +405,7 @@ class DatabaseAdmin {
     );
   }
 
-  /// 테이블 키 추가(할부기간)
+   /// 테이블 키 추가(할부기간)
   void _addColumnInstallationToMoneyTransactionTable(Database db) async  {
     db.execute(
       """
@@ -412,8 +416,8 @@ class DatabaseAdmin {
   }
 
   /// 디스플레이 테이블 생성
-  void _createMoneyTransactionDisplayTable(Database db) {
-    db.execute(
+  void _createMoneyTransactionDisplayTableRenewal(Database db) async {
+    await db.execute(
       """
         CREATE TABLE IF NOT EXISTS money_transactions_display(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -564,38 +568,57 @@ class DatabaseAdmin {
   
   Future<int> insertMoneyTransaction(MoneyTransaction moneyTransaction) async {
     final db = await database;
-    insertMoneyTransactionDisplay(moneyTransaction);
-    return await db.insert('money_transactions', moneyTransaction.toMap());
+    int insertedId = await db.insert('money_transactions', moneyTransaction.toMap());
+    logger.d('insertedId: $insertedId');
+    return insertMoneyTransactionDisplay(moneyTransaction.copyWith(id: insertedId));
   }
 
   Future<int> insertMoneyTransactionDisplay(MoneyTransaction moneyTransaction) async {
     final db = await database;
     Map<String, dynamic> transactionData = moneyTransaction.toMap();
-    transactionData['foreign_id'] = moneyTransaction.id;
-    transactionData['amount'] = moneyTransaction.amount/ (moneyTransaction.installment ?? 1);
-    if (moneyTransaction.installment != null && moneyTransaction.installment! > 1) {
+    try{
+      transactionData.remove('updateTime');
+      transactionData.remove('parameter');
+      transactionData.remove('extraBudget');
+
+      transactionData['foreign_id'] = moneyTransaction.id;
+
+      // int installmentCount = moneyTransaction.installation ?? 1;
+      // double dividedAmount = moneyTransaction.amount / installmentCount;
+
       DateFormat dateInputFormat = DateFormat('yyyy년 MM월 dd일THH:mm');
       DateTime baseDate = dateInputFormat.parse(moneyTransaction.transactionTime); 
-      for (int i = 0; i < moneyTransaction.installment!; i++) {
-        transactionData['transactionTime'] = dateInputFormat.format(DateTime(baseDate.year, baseDate.month + i, baseDate.day, baseDate.hour, baseDate.minute));
-        transactionData['amount'] = moneyTransaction.amount / moneyTransaction.installment!;
+
+      if (moneyTransaction.installation != null && moneyTransaction.installation! > 1) {
+        for (int i = 0; i < moneyTransaction.installation!; i++) {
+          transactionData['transactionTime'] = dateInputFormat.format(DateTime(baseDate.year, baseDate.month + i, baseDate.day, baseDate.hour, baseDate.minute));
+          transactionData['amount'] = moneyTransaction.amount / moneyTransaction.installation!;
+          transactionData['description'] = '${moneyTransaction.description}_${i+1}개월차 ${DateFormat('yyyy년 MM월 dd일거래').format(DateTime(baseDate.year, baseDate.month + i, baseDate.day))}';
+
+          transactionData.remove('installation');
+          await db.insert('money_transactions_display', transactionData);
+        }
+      } else {
+        transactionData.remove('installation');
         await db.insert('money_transactions_display', transactionData);
       }
-    } else {
-      await db.insert('money_transactions_display', transactionData);
+      return 1;
+    } catch (e) {
+      logger.e(e);
+      return 0;
     }
-    return 1;
   }
 
   Future<int> updateMoneyTransaction(MoneyTransaction updatedTransaction) async {
     final db = await database;
-    updateMoneyTransactionDisplay(updatedTransaction);
-    return await db.update(
+     await db.update(
       'money_transactions',
       updatedTransaction.toMap(),
       where: 'id = ?',
       whereArgs: [updatedTransaction.id],
     );
+    return
+    updateMoneyTransactionDisplay(updatedTransaction);
   }
 
   Future<int> updateMoneyTransactionDisplay(MoneyTransaction updatedTransaction) async {
@@ -606,20 +629,34 @@ class DatabaseAdmin {
       whereArgs: [updatedTransaction.id],
     );
     Map<String, dynamic> transactionData = updatedTransaction.toMap();
-    transactionData['foreign_id'] = updatedTransaction.id;
-    transactionData['amount'] = updatedTransaction.amount/ (updatedTransaction.installment ?? 1);
-    if (updatedTransaction.installment != null && updatedTransaction.installment! > 1) {
+    try {
+      transactionData.remove('updateTime');
+      transactionData.remove('parameter');
+      transactionData.remove('extraBudget');
+
+      transactionData['foreign_id'] = updatedTransaction.id;
+
       DateFormat dateInputFormat = DateFormat('yyyy년 MM월 dd일THH:mm');
       DateTime baseDate = dateInputFormat.parse(updatedTransaction.transactionTime); 
-      for (int i = 0; i < updatedTransaction.installment!; i++) {
-        transactionData['transactionTime'] = dateInputFormat.format(DateTime(baseDate.year, baseDate.month + i, baseDate.day, baseDate.hour, baseDate.minute));
-        transactionData['amount'] = updatedTransaction.amount / updatedTransaction.installment!;
+
+      if (updatedTransaction.installation != null && updatedTransaction.installation! > 1) {
+        for (int i = 0; i < updatedTransaction.installation!; i++) {
+          transactionData['transactionTime'] = dateInputFormat.format(DateTime(baseDate.year, baseDate.month + i, baseDate.day, baseDate.hour, baseDate.minute));
+          transactionData['amount'] = updatedTransaction.amount / updatedTransaction.installation!;
+          transactionData['description'] = '${updatedTransaction.description}_${i+1}개월차 ${DateFormat('yyyy년 MM월 dd일거래').format(DateTime(baseDate.year, baseDate.month + i, baseDate.day))}';
+
+          transactionData.remove('installation');
+          await db.insert('money_transactions_display', transactionData);
+        }
+      } else {
+        transactionData.remove('installation');
         await db.insert('money_transactions_display', transactionData);
       }
-    } else {
-      await db.insert('money_transactions_display', transactionData);
+      return 1;
+    } catch (e) {
+      logger.e(e);
+      return 0;
     }
-    return 1;
   }
 
   // ///특정 대상 카테고리 일괄 변경
@@ -688,7 +725,30 @@ class DatabaseAdmin {
         categoryType: transactionMaps[i]['categoryType'],
         description: transactionMaps[i]['description'],
         parameter: transactionMaps[i]['parameter'],
+        installation: transactionMaps[i]['installation'],
         extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
+      );
+    });
+  }
+
+  ///월간 거래내역(디스플레이) 가져오기
+  Future<List<MoneyTransaction>> getTransactionsDisplayerByMonth(int year, int month) async {
+    final db = await database;
+    final List<Map<String, dynamic>> transactionMaps = await db.query(
+      'money_transactions_display',
+      where: "substr(transactionTime,1,9) = ?",
+      whereArgs: ['$year년 ${month.toString().padLeft(2, '0')}월'],
+    );
+    return List.generate(transactionMaps.length, (i) {
+      return MoneyTransaction(
+        id: transactionMaps[i]['foreign_id'],
+        transactionTime: transactionMaps[i]['transactionTime'],
+        // account: transactionMaps[i]['account'],
+        amount: transactionMaps[i]['amount'],
+        goods: transactionMaps[i]['goods'],
+        category: transactionMaps[i]['category'],
+        categoryType: transactionMaps[i]['categoryType'],
+        description: transactionMaps[i]['description'],
       );
     });
   }
@@ -979,97 +1039,91 @@ class DatabaseAdmin {
         where: "description LIKE ? OR description LIKE ?",
         whereArgs: ['%$secureTagname %', '%$secureTagname'],
       );
-      // final List<Map<String, dynamic>> rawList = await db.query(
-      //   'money_transactions',
-      //   where: "description GLOB ? OR description GLOB ?",
-      //   whereArgs: ['*$tagName *', '*$tagName'],
-      // );
-      // logger.d(rawList);
 
-      // final List<MoneyTransaction> rawList =List.generate(transactionMaps.length, (i) {
-      //   return MoneyTransaction(
-      //     id: transactionMaps[i]['id'],
-      //     transactionTime: transactionMaps[i]['transactionTime'],
-      //     // account: transactionMaps[i]['account'],
-      //     amount: transactionMaps[i]['amount'],
-      //     goods: transactionMaps[i]['goods'],
-      //     category: transactionMaps[i]['category'],
-      //     categoryType: transactionMaps[i]['categoryType'],
-      //     description: transactionMaps[i]['description'],
-      //     parameter: transactionMaps[i]['parameter'],
-      //     extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
-      //   );
-      // });
+      return List.generate(rawList.length, (i) {
+        return MoneyTransaction(
+          id: rawList[i]['id'],
+          transactionTime: rawList[i]['transactionTime'],
+          // account: rawList[i]['account'],
+          amount: rawList[i]['amount'],
+          goods: rawList[i]['goods'],
+          category: rawList[i]['category'],
+          categoryType: rawList[i]['categoryType'],
+          description: rawList[i]['description'],
+          parameter: rawList[i]['parameter'],
+          extraBudget: rawList[i]['extraBudget'] == 0 ? false : true,
+        );
+      });
 
-      // installBaseId에 맞는 거래들을 그룹화
-      Map<String, MoneyTransaction> groupedTransactions = {};
-      for (Map<String, dynamic> transactionMap in rawList) {
-        // logger.d(transactionMap);
+      // // installBaseId에 맞는 거래들을 그룹화
+      // Map<String, MoneyTransaction> groupedTransactions = {};
+      // for (Map<String, dynamic> transactionMap in rawList) {
+      //   // logger.d(transactionMap);
 
-        String? parameter = transactionMap['parameter'];
-        Map<String, dynamic> parameterMap = jsonDecode(parameter!);
+      //   String? parameter = transactionMap['parameter'];
+      //   Map<String, dynamic> parameterMap = jsonDecode(parameter!);
 
-        // 'installment' 항목을 체크하고 base_id와 비교
-        if (parameterMap['installment'] != null) {
-          String baseId = parameterMap['installment']['base_id'].toString();
+      //   // 'installment' 항목을 체크하고 base_id와 비교
+      //   if (parameterMap['installment'] != null) {
+      //     String baseId = parameterMap['installment']['base_id'].toString();
 
-          if (groupedTransactions.containsKey(baseId)) {
-            // 기존에 있는 항목에 amount를 합산
-            MoneyTransaction existingTransaction = groupedTransactions[baseId]!;
-            double newAmount = existingTransaction.amount + transactionMap['amount'];
-            groupedTransactions[baseId] = existingTransaction.copyWith(amount: newAmount);
-          } else {
-            // 새로운 항목을 추가
-            groupedTransactions[baseId] = MoneyTransaction(
-              id: transactionMap['id'],
-              transactionTime: transactionMap['transactionTime'],
-              amount: transactionMap['amount'],
-              goods: transactionMap['goods'],
-              category: transactionMap['category'],
-              categoryType: transactionMap['categoryType'],
-              description: transactionMap['description'],
-              parameter: transactionMap['parameter'],
-              extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
-            );
-          }
-        } else {
-          // installment가 없는 경우 별도로 추가
-          String transactionId = transactionMap['id'].toString();
-          groupedTransactions[transactionId] = MoneyTransaction(
-            id: transactionMap['id'],
-            transactionTime: transactionMap['transactionTime'],
-            amount: transactionMap['amount'],
-            goods: transactionMap['goods'],
-            category: transactionMap['category'],
-            categoryType: transactionMap['categoryType'],
-            description: transactionMap['description'],
-            parameter: transactionMap['parameter'],
-            extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
-          );
-        }
-      }
+      //     if (groupedTransactions.containsKey(baseId)) {
+      //       // 기존에 있는 항목에 amount를 합산
+      //       MoneyTransaction existingTransaction = groupedTransactions[baseId]!;
+      //       double newAmount = existingTransaction.amount + transactionMap['amount'];
+      //       groupedTransactions[baseId] = existingTransaction.copyWith(amount: newAmount);
+      //     } else {
+      //       // 새로운 항목을 추가
+      //       groupedTransactions[baseId] = MoneyTransaction(
+      //         id: transactionMap['id'],
+      //         transactionTime: transactionMap['transactionTime'],
+      //         amount: transactionMap['amount'],
+      //         goods: transactionMap['goods'],
+      //         category: transactionMap['category'],
+      //         categoryType: transactionMap['categoryType'],
+      //         description: transactionMap['description'],
+      //         parameter: transactionMap['parameter'],
+      //         extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
+      //       );
+      //     }
+      //   } else {
+      //     // installment가 없는 경우 별도로 추가
+      //     String transactionId = transactionMap['id'].toString();
+      //     groupedTransactions[transactionId] = MoneyTransaction(
+      //       id: transactionMap['id'],
+      //       transactionTime: transactionMap['transactionTime'],
+      //       amount: transactionMap['amount'],
+      //       goods: transactionMap['goods'],
+      //       category: transactionMap['category'],
+      //       categoryType: transactionMap['categoryType'],
+      //       description: transactionMap['description'],
+      //       parameter: transactionMap['parameter'],
+      //       extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
+      //     );
+      //   }
+      // }
 
-      // 결과를 리스트로 변환
-      List<MoneyTransaction> combinedTransactions = groupedTransactions.values.toList();
+      // // 결과를 리스트로 변환
+      // List<MoneyTransaction> combinedTransactions = groupedTransactions.values.toList();
 
-      // List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
-      //   logger.i(i);
-      //   return MoneyTransaction(
-      //     id: groupedTransactions[i]['id'],
-      //     transactionTime: groupedTransactions[i]['transactionTime'],
-      //     // account: groupedTransactions[i]['account'],
-      //     amount: groupedTransactions[i]['amount'],
-      //     goods: groupedTransactions[i]['goods'],
-      //     category: groupedTransactions[i]['category'],
-      //     categoryType: groupedTransactions[i]['categoryType'],
-      //     description: groupedTransactions[i]['description'],
-      //     parameter: groupedTransactions[i]['parameter'],
-      //     extraBudget: groupedTransactions[i]['extraBudget'] == 0 ? false : true,
-      //   );
-      // });
+      // // List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
+      // //   logger.i(i);
+      // //   return MoneyTransaction(
+      // //     id: groupedTransactions[i]['id'],
+      // //     transactionTime: groupedTransactions[i]['transactionTime'],
+      // //     // account: groupedTransactions[i]['account'],
+      // //     amount: groupedTransactions[i]['amount'],
+      // //     goods: groupedTransactions[i]['goods'],
+      // //     category: groupedTransactions[i]['category'],
+      // //     categoryType: groupedTransactions[i]['categoryType'],
+      // //     description: groupedTransactions[i]['description'],
+      // //     parameter: groupedTransactions[i]['parameter'],
+      // //     extraBudget: groupedTransactions[i]['extraBudget'] == 0 ? false : true,
+      // //   );
+      // // });
       
-      logger.i(combinedTransactions.length);
-      return combinedTransactions;
+      // logger.i(combinedTransactions.length);
+      // return combinedTransactions;
 
     } catch (e) {
       logger.e('Error fetching transactions by tag and installment: $e');
@@ -1078,7 +1132,7 @@ class DatabaseAdmin {
   }
 
   
-  /// 리스트 가져오기 및 동일한 'installment' 항목을 기준으로 통합
+  ///거래낸역 밖으로 보내기
   Future<List<MoneyTransaction>> getExportTransactions() async {
     try {
       final db = await database;
@@ -1086,97 +1140,92 @@ class DatabaseAdmin {
       final List<Map<String, dynamic>> rawList = await db.query(
         'money_transactions',
       );
-      // final List<Map<String, dynamic>> rawList = await db.query(
-      //   'money_transactions',
-      //   where: "description GLOB ? OR description GLOB ?",
-      //   whereArgs: ['*$tagName *', '*$tagName'],
-      // );
-      // logger.d(rawList);
 
-      // final List<MoneyTransaction> rawList =List.generate(transactionMaps.length, (i) {
-      //   return MoneyTransaction(
-      //     id: transactionMaps[i]['id'],
-      //     transactionTime: transactionMaps[i]['transactionTime'],
-      //     // account: transactionMaps[i]['account'],
-      //     amount: transactionMaps[i]['amount'],
-      //     goods: transactionMaps[i]['goods'],
-      //     category: transactionMaps[i]['category'],
-      //     categoryType: transactionMaps[i]['categoryType'],
-      //     description: transactionMaps[i]['description'],
-      //     parameter: transactionMaps[i]['parameter'],
-      //     extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
-      //   );
-      // });
+      return List.generate(rawList.length, (i) {
+        return MoneyTransaction(
+          id: rawList[i]['id'],
+          transactionTime: rawList[i]['transactionTime'],
+          // account: rawList[i]['account'],
+          amount: rawList[i]['amount'],
+          goods: rawList[i]['goods'],
+          category: rawList[i]['category'],
+          categoryType: rawList[i]['categoryType'],
+          description: rawList[i]['description'],
+          parameter: rawList[i]['parameter'],
+          installation: rawList[i]['installation'],
+          extraBudget: rawList[i]['extraBudget'] == 0 ? false : true,
+        );
+      });
 
-      // installBaseId에 맞는 거래들을 그룹화
-      Map<String, MoneyTransaction> groupedTransactions = {};
-      for (Map<String, dynamic> transactionMap in rawList) {
-        // logger.d(transactionMap);
+      // // installBaseId에 맞는 거래들을 그룹화
+      // Map<String, MoneyTransaction> groupedTransactions = {};
+      // for (Map<String, dynamic> transactionMap in rawList) {
+      //   // logger.d(transactionMap);
 
-        String? parameter = transactionMap['parameter'];
-        Map<String, dynamic> parameterMap = jsonDecode(parameter!);
+      //   String? parameter = transactionMap['parameter'];
+      //   Map<String, dynamic> parameterMap = jsonDecode(parameter!);
 
-        // 'installment' 항목을 체크하고 base_id와 비교
-        if (parameterMap['installment'] != null) {
-          String baseId = parameterMap['installment']['base_id'].toString();
+      //   // 'installment' 항목을 체크하고 base_id와 비교
+      //   if (parameterMap['installment'] != null) {
+      //     String baseId = parameterMap['installment']['base_id'].toString();
 
-          if (groupedTransactions.containsKey(baseId)) {
-            // 기존에 있는 항목에 amount를 합산
-            MoneyTransaction existingTransaction = groupedTransactions[baseId]!;
-            double newAmount = existingTransaction.amount + transactionMap['amount'];
-            groupedTransactions[baseId] = existingTransaction.copyWith(amount: newAmount);
-          } else {
-            // 새로운 항목을 추가
-            groupedTransactions[baseId] = MoneyTransaction(
-              id: transactionMap['id'],
-              transactionTime: transactionMap['transactionTime'],
-              amount: transactionMap['amount'],
-              goods: transactionMap['goods'],
-              category: transactionMap['category'],
-              categoryType: transactionMap['categoryType'],
-              description: transactionMap['description'],
-              parameter: transactionMap['parameter'],
-              extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
-            );
-          }
-        } else {
-          // installment가 없는 경우 별도로 추가
-          String transactionId = transactionMap['id'].toString();
-          groupedTransactions[transactionId] = MoneyTransaction(
-            id: transactionMap['id'],
-            transactionTime: transactionMap['transactionTime'],
-            amount: transactionMap['amount'],
-            goods: transactionMap['goods'],
-            category: transactionMap['category'],
-            categoryType: transactionMap['categoryType'],
-            description: transactionMap['description'],
-            parameter: transactionMap['parameter'],
-            extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
-          );
-        }
-      }
+      //     if (groupedTransactions.containsKey(baseId)) {
+      //       // 기존에 있는 항목에 amount를 합산
+      //       MoneyTransaction existingTransaction = groupedTransactions[baseId]!;
+      //       double newAmount = existingTransaction.amount + transactionMap['amount'];
+      //       groupedTransactions[baseId] = existingTransaction.copyWith(amount: newAmount);
+      //     } else {
+      //       // 새로운 항목을 추가
+      //       groupedTransactions[baseId] = MoneyTransaction(
+      //         id: transactionMap['id'],
+      //         transactionTime: transactionMap['transactionTime'],
+      //         amount: transactionMap['amount'],
+      //         goods: transactionMap['goods'],
+      //         category: transactionMap['category'],
+      //         categoryType: transactionMap['categoryType'],
+      //         description: transactionMap['description'],
+      //         parameter: transactionMap['parameter'],
+      //         extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
+      //       );
+      //     }
+      //   } else {
+      //     // installment가 없는 경우 별도로 추가
+      //     String transactionId = transactionMap['id'].toString();
+      //     groupedTransactions[transactionId] = MoneyTransaction(
+      //       id: transactionMap['id'],
+      //       transactionTime: transactionMap['transactionTime'],
+      //       amount: transactionMap['amount'],
+      //       goods: transactionMap['goods'],
+      //       category: transactionMap['category'],
+      //       categoryType: transactionMap['categoryType'],
+      //       description: transactionMap['description'],
+      //       parameter: transactionMap['parameter'],
+      //       extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
+      //     );
+      //   }
+      // }
 
-      // 결과를 리스트로 변환
-      List<MoneyTransaction> combinedTransactions = groupedTransactions.values.toList();
+      // // 결과를 리스트로 변환
+      // List<MoneyTransaction> combinedTransactions = groupedTransactions.values.toList();
 
-      // List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
-      //   logger.i(i);
-      //   return MoneyTransaction(
-      //     id: groupedTransactions[i]['id'],
-      //     transactionTime: groupedTransactions[i]['transactionTime'],
-      //     // account: groupedTransactions[i]['account'],
-      //     amount: groupedTransactions[i]['amount'],
-      //     goods: groupedTransactions[i]['goods'],
-      //     category: groupedTransactions[i]['category'],
-      //     categoryType: groupedTransactions[i]['categoryType'],
-      //     description: groupedTransactions[i]['description'],
-      //     parameter: groupedTransactions[i]['parameter'],
-      //     extraBudget: groupedTransactions[i]['extraBudget'] == 0 ? false : true,
-      //   );
-      // });
+      // // List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
+      // //   logger.i(i);
+      // //   return MoneyTransaction(
+      // //     id: groupedTransactions[i]['id'],
+      // //     transactionTime: groupedTransactions[i]['transactionTime'],
+      // //     // account: groupedTransactions[i]['account'],
+      // //     amount: groupedTransactions[i]['amount'],
+      // //     goods: groupedTransactions[i]['goods'],
+      // //     category: groupedTransactions[i]['category'],
+      // //     categoryType: groupedTransactions[i]['categoryType'],
+      // //     description: groupedTransactions[i]['description'],
+      // //     parameter: groupedTransactions[i]['parameter'],
+      // //     extraBudget: groupedTransactions[i]['extraBudget'] == 0 ? false : true,
+      // //   );
+      // // });
       
-      logger.i(combinedTransactions.length);
-      return combinedTransactions;
+      // logger.i(combinedTransactions.length);
+      // return combinedTransactions;
 
     } catch (e) {
       logger.e('Error fetching transactions by tag and installment: $e');
@@ -1286,51 +1335,51 @@ class DatabaseAdmin {
     }
   }
 
-  Future<void> addInstallmentToParameter(int transactionId, int installBaseId) async {
-    final db = await database;
-    try {
-      // 기존 parameter 데이터 가져오기
-      final List<Map<String, dynamic>> result = await db.query(
-        'money_transactions',
-        where: 'id = ?',
-        whereArgs: [transactionId],
-      );
+  // Future<void> addInstallmentToParameter(int transactionId, int installBaseId) async {
+  //   final db = await database;
+  //   try {
+  //     // 기존 parameter 데이터 가져오기
+  //     final List<Map<String, dynamic>> result = await db.query(
+  //       'money_transactions',
+  //       where: 'id = ?',
+  //       whereArgs: [transactionId],
+  //     );
 
-      if (result.isNotEmpty) {
-        // 기존 parameter 값을 JSON 형식으로 가져오기
-        String? parameter = result.first['parameter'];
+  //     if (result.isNotEmpty) {
+  //       // 기존 parameter 값을 JSON 형식으로 가져오기
+  //       String? parameter = result.first['parameter'];
 
-        // parameter가 null인 경우 빈 JSON 객체로 초기화
-        parameter ??= '{}';
+  //       // parameter가 null인 경우 빈 JSON 객체로 초기화
+  //       parameter ??= '{}';
 
-        // JSON 파싱 및 installment 추가
-        Map<String, dynamic> parameterMap = jsonDecode(parameter);
-        if (parameterMap['installment'] == null) {
-          parameterMap['installment'] = {};
-        }
+  //       // JSON 파싱 및 installment 추가
+  //       Map<String, dynamic> parameterMap = jsonDecode(parameter);
+  //       if (parameterMap['installment'] == null) {
+  //         parameterMap['installment'] = {};
+  //       }
 
 
-        parameterMap['installment']['base_id'] = installBaseId;
+  //       parameterMap['installment']['base_id'] = installBaseId;
 
-        // 업데이트된 parameter를 다시 JSON 문자열로 변환
-        String updatedParameter = jsonEncode(parameterMap);
-        // logger.d(updatedParameter);
-        // parameter 업데이트
-        await db.update(
-          'money_transactions',
-          {'parameter': updatedParameter},
-          where: 'id = ?',
-          whereArgs: [transactionId],
-        );
+  //       // 업데이트된 parameter를 다시 JSON 문자열로 변환
+  //       String updatedParameter = jsonEncode(parameterMap);
+  //       // logger.d(updatedParameter);
+  //       // parameter 업데이트
+  //       await db.update(
+  //         'money_transactions',
+  //         {'parameter': updatedParameter},
+  //         where: 'id = ?',
+  //         whereArgs: [transactionId],
+  //       );
 
-        logger.i('Installment added successfully to transaction $transactionId');
-      } else {
-        logger.e('Transaction not found with ID: $transactionId');
-      }
-    } catch (e) {
-      logger.e('Error adding installment to parameter: $e');
-    }
-  }
+  //       logger.i('Installment added successfully to transaction $transactionId');
+  //     } else {
+  //       logger.e('Transaction not found with ID: $transactionId');
+  //     }
+  //   } catch (e) {
+  //     logger.e('Error adding installment to parameter: $e');
+  //   }
+  // }
 
 ///
 ///
@@ -1416,7 +1465,7 @@ class DatabaseAdmin {
       final db = await database;
       final List<Map<String, dynamic>> categoryMaps = await db.query(
         'transactions_categorys',
-        where: "name = 연간 예산",
+        where: "name = '연간 예산'",
       );
       return List.generate(categoryMaps.length, (i) {
         return TransactionCategory(

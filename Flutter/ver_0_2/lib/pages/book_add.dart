@@ -110,7 +110,7 @@ class _BookAddState extends State<BookAdd> {
       _amountdisplayController.text = _thousandsFormmater(_amountController.text);
       _targetgoodsController.text = widget.moneyTransaction!.goods;
       _categoryController.text = widget.moneyTransaction!.category;
-      _installmentController.text = widget.moneyTransaction!.installment.toString();
+      _installmentController.text = widget.moneyTransaction!.installation.toString();
       // logger.d(widget.moneyTransaction!.categoryType);
       currentCategory = widget.moneyTransaction!.categoryType;
       _selectedButton = currentCategory == '소비' ? 1 : currentCategory == '수입' ? 2 : 3 ;
@@ -898,7 +898,7 @@ class _BookAddState extends State<BookAdd> {
         goods: _targetgoodsController.text,
         category: _categoryController.text,
         categoryType: currentCategory,
-        installment: installmentMonths,
+        installation: installmentMonths,
         description: yearlyExpenseCategory.contains(_categoryController.text) &&  !_memoController.text.contains("#연간예산")? '#연간예산 ${_memoController.text}' : _memoController.text,
         extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
       );
@@ -929,7 +929,7 @@ class _BookAddState extends State<BookAdd> {
       goods: _targetgoodsController.text,
       category: _categoryController.text,
       categoryType: currentCategory,
-      installment: int.tryParse(_installmentController.text),
+      installation: int.tryParse(_installmentController.text),
       description: yearlyExpenseCategory.contains(_categoryController.text) &&  !_memoController.text.contains("#연간예산 ")? '#연간예산 ${_memoController.text}' : _memoController.text,
       extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
     );

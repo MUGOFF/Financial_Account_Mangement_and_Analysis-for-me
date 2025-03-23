@@ -578,6 +578,7 @@ class TransactionExportGridDataSource extends DataGridSource {
               DataGridCell<String>(columnName: 'Category', value: dataGridRow.category),
               DataGridCell<String>(columnName: 'CategoryType', value: dataGridRow.categoryType),
               DataGridCell<String>(columnName: 'Description', value: dataGridRow.description),
+              DataGridCell<int>(columnName: 'installation', value: dataGridRow.installation),
             ]))
         .toList();
   }
@@ -603,7 +604,7 @@ class TransactionExportGridDataSource extends DataGridSource {
 
   String formatterDate(String dateString) {
     DateFormat dateFormat = DateFormat("yyyy년 MM월 dd일THH:mm");
-    String formattedDatetime = DateFormat('yyyy년 MM월 dd일').format(dateFormat.parse(dateString));
+    String formattedDatetime = DateFormat('yyyy-MM-dd HH:mm').format(dateFormat.parse(dateString));
 
     return formattedDatetime;
   }
@@ -815,6 +816,14 @@ class _DataGridExportExampleState extends State<DataGridExportExample> {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   alignment: Alignment.center,
                   child: const Text('Description')
+                )
+              ),
+              GridColumn(
+                columnName: 'installation',
+                label: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  alignment: Alignment.center,
+                  child: const Text('installation')
                 )
               ),
             ],

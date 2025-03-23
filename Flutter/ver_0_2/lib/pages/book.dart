@@ -60,7 +60,7 @@ class _BookState extends State<Book> {
   }
   
   Future<void> _fetchTransactions() async {
-    List<MoneyTransaction> fetchedTransactions = await DatabaseAdmin().getTransactionsByMonth(year, month);
+    List<MoneyTransaction> fetchedTransactions = await DatabaseAdmin().getTransactionsDisplayerByMonth(year, month);
     // 날짜 형식에 맞는 DateFormat 생성
     DateFormat format = DateFormat("yyyy년 MM월 dd일'T'HH:mm");
 
