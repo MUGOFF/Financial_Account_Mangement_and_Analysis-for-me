@@ -5,6 +5,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 // import 'package:logger/logger.dart';
 import 'package:ver_0_2/pages/book_category_admin.dart';
 import 'package:ver_0_2/pages/external_data_inout.dart';
+import 'package:ver_0_2/pages/personal_setting.dart';
 import 'package:ver_0_2/colorsholo.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 
@@ -114,6 +115,15 @@ class AppDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ExternalTerminal()),
+              );
+            },
+          ),
+          ListTile(
+            title: const Text('기타 설정'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PersonalSettings()),
               );
             },
           ),

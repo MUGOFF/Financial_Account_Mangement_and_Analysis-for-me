@@ -523,6 +523,7 @@ class LastPage extends StatefulWidget {
 class _LastPageState extends State<LastPage> {
   final Logger logger = Logger();
   bool? isDateOnly = false;
+  bool isProcessing = false;
   String? dateFormat;
   final List<String> dateFormats = [
     'yyyy-MM-dd',
@@ -726,6 +727,39 @@ class _LastPageState extends State<LastPage> {
   Future<void> insertDatasToDatabase(List<List<dynamic>> dataRows) async{
     // int insertID = 1;
     // int installID = 1;
+
+    int processedCount = 0;
+    isProcessing = true;
+
+    // 로딩 다이얼로그 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: Colors.black.withAlpha(128), // 투명도 50%
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 10),
+                    Text(
+                      "처리 중: $processedCount / ${dataRows.length}",
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
     try {
       for (var row in dataRows) {
         String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
@@ -822,6 +856,11 @@ class _LastPageState extends State<LastPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error file format type')),
         );
+      }
+    } finally {
+      isProcessing = false;
+      if (mounted) {
+        Navigator.of(context).pop();
       }
     }
     

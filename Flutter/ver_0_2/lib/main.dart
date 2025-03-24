@@ -3,6 +3,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 // import 'package:syncfusion_flutter_charts/charts.dart';
 // import 'package:http/http.dart' as http;
@@ -25,13 +26,16 @@ import 'package:ver_0_2/colorsholo.dart';
 /// 안전한 로그 함수 (log10 대체)
 double log10(num x) => log(x) / ln10;
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();  // Flutter 프레임워크 초기화
+  final SharedPreferences prefs = await SharedPreferences.getInstance();  // Shared Preferences 초기화
   // SyncfusionLicense.registerLicense("YOUR LICENSE KEY"); 
-  runApp(const DemoApp());
+  runApp(DemoApp(prefs: prefs));
 }
 
 class DemoApp extends StatelessWidget {
-  const DemoApp({super.key});
+  final SharedPreferences prefs;
+  const DemoApp({super.key, required this.prefs});
 
   // This widget is the root of your application.
   @override

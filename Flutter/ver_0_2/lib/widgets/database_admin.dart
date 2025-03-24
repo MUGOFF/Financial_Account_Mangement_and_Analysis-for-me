@@ -12,11 +12,20 @@ import 'package:ver_0_2/widgets/models/transaction_category.dart';
 // import 'package:ver_0_2/widgets/models/current_holdings.dart';
 import 'package:ver_0_2/widgets/models/budget_setting.dart';
 import 'package:ver_0_2/widgets/models/extra_budget_group.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DatabaseAdmin {
   final Logger logger = Logger();
   static final DatabaseAdmin _instance = DatabaseAdmin._internal();
   factory DatabaseAdmin() => _instance;
+
+  bool isInstallmentSpread = false;
+  Future<void> loadSettings() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    isInstallmentSpread = prefs.getBool("intallmentCalculation") ?? false;
+    logger.d('settiong load');
+    logger.d(isInstallmentSpread);
+  }
 
   static Database? _database;
 
@@ -24,12 +33,13 @@ class DatabaseAdmin {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase();
+    _database = await initDatabase();
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
+  Future<Database> initDatabase() async {
     String path = join(await getDatabasesPath(), 'debug_app.db');
+    await loadSettings();
     return openDatabase(
       path,
       version: 20,
@@ -593,7 +603,7 @@ class DatabaseAdmin {
         for (int i = 0; i < moneyTransaction.installation!; i++) {
           transactionData['transactionTime'] = dateInputFormat.format(DateTime(baseDate.year, baseDate.month + i, baseDate.day, baseDate.hour, baseDate.minute));
           transactionData['amount'] = moneyTransaction.amount / moneyTransaction.installation!;
-          transactionData['description'] = '${moneyTransaction.description}_${i+1}개월차 ${DateFormat('yyyy년 MM월 dd일거래').format(DateTime(baseDate.year, baseDate.month + i, baseDate.day))}';
+          transactionData['description'] = '${moneyTransaction.description} ${DateFormat('yyyy년 MM월 dd일거래').format(DateTime(baseDate.year, baseDate.month + i, baseDate.day))}_${i+1}개월차';
 
           transactionData.remove('installation');
           await db.insert('money_transactions_display', transactionData);
@@ -643,7 +653,7 @@ class DatabaseAdmin {
         for (int i = 0; i < updatedTransaction.installation!; i++) {
           transactionData['transactionTime'] = dateInputFormat.format(DateTime(baseDate.year, baseDate.month + i, baseDate.day, baseDate.hour, baseDate.minute));
           transactionData['amount'] = updatedTransaction.amount / updatedTransaction.installation!;
-          transactionData['description'] = '${updatedTransaction.description}_${i+1}개월차 ${DateFormat('yyyy년 MM월 dd일거래').format(DateTime(baseDate.year, baseDate.month + i, baseDate.day))}';
+          transactionData['description'] = '${updatedTransaction.description} ${DateFormat('yyyy년 MM월 dd일거래').format(DateTime(baseDate.year, baseDate.month + i, baseDate.day))}_${i+1}개월차';
 
           transactionData.remove('installation');
           await db.insert('money_transactions_display', transactionData);
@@ -859,6 +869,8 @@ class DatabaseAdmin {
 
   ///월간 순수입 가져오기
   Future<List<Map<String, dynamic>>> getNetIncomeSumMonthlyByMonth(int? range) async {
+    // logger.d(isInstallmentSpread);
+    // loadSettings();
     try {
       final db = await database;
       if (range != null) {
@@ -879,7 +891,7 @@ class DatabaseAdmin {
           SELECT 
             substr(transactionTime, 1, 9) AS yearmonth,
             SUM(amount) AS totalAmount
-          FROM money_transactions
+          FROM ${isInstallmentSpread ? 'money_transactions_display'  : 'money_transactions'}
           WHERE substr(transactionTime, 1, 9) IN ($placeholders)
           GROUP BY yearmonth;
           ''',
@@ -892,7 +904,7 @@ class DatabaseAdmin {
           SELECT 
             substr(transactionTime, 1, 9) AS yearmonth,
             SUM(amount) AS totalAmount
-          FROM money_transactions
+          FROM ${isInstallmentSpread ? 'money_transactions_display'  : 'money_transactions'}
           GROUP BY yearmonth;
           ''',
         );
@@ -1054,77 +1066,6 @@ class DatabaseAdmin {
           extraBudget: rawList[i]['extraBudget'] == 0 ? false : true,
         );
       });
-
-      // // installBaseId에 맞는 거래들을 그룹화
-      // Map<String, MoneyTransaction> groupedTransactions = {};
-      // for (Map<String, dynamic> transactionMap in rawList) {
-      //   // logger.d(transactionMap);
-
-      //   String? parameter = transactionMap['parameter'];
-      //   Map<String, dynamic> parameterMap = jsonDecode(parameter!);
-
-      //   // 'installment' 항목을 체크하고 base_id와 비교
-      //   if (parameterMap['installment'] != null) {
-      //     String baseId = parameterMap['installment']['base_id'].toString();
-
-      //     if (groupedTransactions.containsKey(baseId)) {
-      //       // 기존에 있는 항목에 amount를 합산
-      //       MoneyTransaction existingTransaction = groupedTransactions[baseId]!;
-      //       double newAmount = existingTransaction.amount + transactionMap['amount'];
-      //       groupedTransactions[baseId] = existingTransaction.copyWith(amount: newAmount);
-      //     } else {
-      //       // 새로운 항목을 추가
-      //       groupedTransactions[baseId] = MoneyTransaction(
-      //         id: transactionMap['id'],
-      //         transactionTime: transactionMap['transactionTime'],
-      //         amount: transactionMap['amount'],
-      //         goods: transactionMap['goods'],
-      //         category: transactionMap['category'],
-      //         categoryType: transactionMap['categoryType'],
-      //         description: transactionMap['description'],
-      //         parameter: transactionMap['parameter'],
-      //         extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
-      //       );
-      //     }
-      //   } else {
-      //     // installment가 없는 경우 별도로 추가
-      //     String transactionId = transactionMap['id'].toString();
-      //     groupedTransactions[transactionId] = MoneyTransaction(
-      //       id: transactionMap['id'],
-      //       transactionTime: transactionMap['transactionTime'],
-      //       amount: transactionMap['amount'],
-      //       goods: transactionMap['goods'],
-      //       category: transactionMap['category'],
-      //       categoryType: transactionMap['categoryType'],
-      //       description: transactionMap['description'],
-      //       parameter: transactionMap['parameter'],
-      //       extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
-      //     );
-      //   }
-      // }
-
-      // // 결과를 리스트로 변환
-      // List<MoneyTransaction> combinedTransactions = groupedTransactions.values.toList();
-
-      // // List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
-      // //   logger.i(i);
-      // //   return MoneyTransaction(
-      // //     id: groupedTransactions[i]['id'],
-      // //     transactionTime: groupedTransactions[i]['transactionTime'],
-      // //     // account: groupedTransactions[i]['account'],
-      // //     amount: groupedTransactions[i]['amount'],
-      // //     goods: groupedTransactions[i]['goods'],
-      // //     category: groupedTransactions[i]['category'],
-      // //     categoryType: groupedTransactions[i]['categoryType'],
-      // //     description: groupedTransactions[i]['description'],
-      // //     parameter: groupedTransactions[i]['parameter'],
-      // //     extraBudget: groupedTransactions[i]['extraBudget'] == 0 ? false : true,
-      // //   );
-      // // });
-      
-      // logger.i(combinedTransactions.length);
-      // return combinedTransactions;
-
     } catch (e) {
       logger.e('Error fetching transactions by tag and installment: $e');
       return [];
@@ -1156,111 +1097,13 @@ class DatabaseAdmin {
           extraBudget: rawList[i]['extraBudget'] == 0 ? false : true,
         );
       });
-
-      // // installBaseId에 맞는 거래들을 그룹화
-      // Map<String, MoneyTransaction> groupedTransactions = {};
-      // for (Map<String, dynamic> transactionMap in rawList) {
-      //   // logger.d(transactionMap);
-
-      //   String? parameter = transactionMap['parameter'];
-      //   Map<String, dynamic> parameterMap = jsonDecode(parameter!);
-
-      //   // 'installment' 항목을 체크하고 base_id와 비교
-      //   if (parameterMap['installment'] != null) {
-      //     String baseId = parameterMap['installment']['base_id'].toString();
-
-      //     if (groupedTransactions.containsKey(baseId)) {
-      //       // 기존에 있는 항목에 amount를 합산
-      //       MoneyTransaction existingTransaction = groupedTransactions[baseId]!;
-      //       double newAmount = existingTransaction.amount + transactionMap['amount'];
-      //       groupedTransactions[baseId] = existingTransaction.copyWith(amount: newAmount);
-      //     } else {
-      //       // 새로운 항목을 추가
-      //       groupedTransactions[baseId] = MoneyTransaction(
-      //         id: transactionMap['id'],
-      //         transactionTime: transactionMap['transactionTime'],
-      //         amount: transactionMap['amount'],
-      //         goods: transactionMap['goods'],
-      //         category: transactionMap['category'],
-      //         categoryType: transactionMap['categoryType'],
-      //         description: transactionMap['description'],
-      //         parameter: transactionMap['parameter'],
-      //         extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
-      //       );
-      //     }
-      //   } else {
-      //     // installment가 없는 경우 별도로 추가
-      //     String transactionId = transactionMap['id'].toString();
-      //     groupedTransactions[transactionId] = MoneyTransaction(
-      //       id: transactionMap['id'],
-      //       transactionTime: transactionMap['transactionTime'],
-      //       amount: transactionMap['amount'],
-      //       goods: transactionMap['goods'],
-      //       category: transactionMap['category'],
-      //       categoryType: transactionMap['categoryType'],
-      //       description: transactionMap['description'],
-      //       parameter: transactionMap['parameter'],
-      //       extraBudget: transactionMap['extraBudget'] == 0 ? false : true,
-      //     );
-      //   }
-      // }
-
-      // // 결과를 리스트로 변환
-      // List<MoneyTransaction> combinedTransactions = groupedTransactions.values.toList();
-
-      // // List<MoneyTransaction> combinedTransactions = List.generate(groupedTransactions.length, (i) {
-      // //   logger.i(i);
-      // //   return MoneyTransaction(
-      // //     id: groupedTransactions[i]['id'],
-      // //     transactionTime: groupedTransactions[i]['transactionTime'],
-      // //     // account: groupedTransactions[i]['account'],
-      // //     amount: groupedTransactions[i]['amount'],
-      // //     goods: groupedTransactions[i]['goods'],
-      // //     category: groupedTransactions[i]['category'],
-      // //     categoryType: groupedTransactions[i]['categoryType'],
-      // //     description: groupedTransactions[i]['description'],
-      // //     parameter: groupedTransactions[i]['parameter'],
-      // //     extraBudget: groupedTransactions[i]['extraBudget'] == 0 ? false : true,
-      // //   );
-      // // });
-      
-      // logger.i(combinedTransactions.length);
-      // return combinedTransactions;
-
     } catch (e) {
       logger.e('Error fetching transactions by tag and installment: $e');
       return [];
     }
   }
-  // ///태그 소비 리스트 가져오기
-  // Future<List<MoneyTransaction>> getTransactionsByTag(String tagName) async {
-  //   try {
-  //     final db = await database;
-  //     final List<Map<String, dynamic>> transactionMaps = await db.query(
-  //       'money_transactions',
-  //       where: "description LIKE ?",
-  //       whereArgs: ['%$tagName%'],
-  //     );
 
-  //     return List.generate(transactionMaps.length, (i) {
-  //       return MoneyTransaction(
-  //         id: transactionMaps[i]['id'],
-  //         transactionTime: transactionMaps[i]['transactionTime'],
-  //         // account: transactionMaps[i]['account'],
-  //         amount: transactionMaps[i]['amount'],
-  //         goods: transactionMaps[i]['goods'],
-  //         category: transactionMaps[i]['category'],
-  //         categoryType: transactionMaps[i]['categoryType'],
-  //         description: transactionMaps[i]['description'],
-  //         parameter: transactionMaps[i]['parameter'],
-  //         extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
-  //       );
-  //     });
-  //   } catch(e) {
-  //     return [];
-  //   }
-  // }
-
+  //태그 가져오기
   Future<List<String>> getTransactionsTags() async {
     try {
       final db = await database;
@@ -1334,52 +1177,6 @@ class DatabaseAdmin {
       return false;
     }
   }
-
-  // Future<void> addInstallmentToParameter(int transactionId, int installBaseId) async {
-  //   final db = await database;
-  //   try {
-  //     // 기존 parameter 데이터 가져오기
-  //     final List<Map<String, dynamic>> result = await db.query(
-  //       'money_transactions',
-  //       where: 'id = ?',
-  //       whereArgs: [transactionId],
-  //     );
-
-  //     if (result.isNotEmpty) {
-  //       // 기존 parameter 값을 JSON 형식으로 가져오기
-  //       String? parameter = result.first['parameter'];
-
-  //       // parameter가 null인 경우 빈 JSON 객체로 초기화
-  //       parameter ??= '{}';
-
-  //       // JSON 파싱 및 installment 추가
-  //       Map<String, dynamic> parameterMap = jsonDecode(parameter);
-  //       if (parameterMap['installment'] == null) {
-  //         parameterMap['installment'] = {};
-  //       }
-
-
-  //       parameterMap['installment']['base_id'] = installBaseId;
-
-  //       // 업데이트된 parameter를 다시 JSON 문자열로 변환
-  //       String updatedParameter = jsonEncode(parameterMap);
-  //       // logger.d(updatedParameter);
-  //       // parameter 업데이트
-  //       await db.update(
-  //         'money_transactions',
-  //         {'parameter': updatedParameter},
-  //         where: 'id = ?',
-  //         whereArgs: [transactionId],
-  //       );
-
-  //       logger.i('Installment added successfully to transaction $transactionId');
-  //     } else {
-  //       logger.e('Transaction not found with ID: $transactionId');
-  //     }
-  //   } catch (e) {
-  //     logger.e('Error adding installment to parameter: $e');
-  //   }
-  // }
 
 ///
 ///
