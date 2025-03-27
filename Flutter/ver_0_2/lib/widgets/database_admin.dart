@@ -579,7 +579,7 @@ class DatabaseAdmin {
   Future<int> insertMoneyTransaction(MoneyTransaction moneyTransaction) async {
     final db = await database;
     int insertedId = await db.insert('money_transactions', moneyTransaction.toMap());
-    logger.d('insertedId: $insertedId');
+    // logger.d('insertedId: $insertedId');
     return insertMoneyTransactionDisplay(moneyTransaction.copyWith(id: insertedId));
   }
 
@@ -621,14 +621,13 @@ class DatabaseAdmin {
 
   Future<int> updateMoneyTransaction(MoneyTransaction updatedTransaction) async {
     final db = await database;
-     await db.update(
+    await db.update(
       'money_transactions',
       updatedTransaction.toMap(),
       where: 'id = ?',
       whereArgs: [updatedTransaction.id],
     );
-    return
-    updateMoneyTransactionDisplay(updatedTransaction);
+    return updateMoneyTransactionDisplay(updatedTransaction);
   }
 
   Future<int> updateMoneyTransactionDisplay(MoneyTransaction updatedTransaction) async {
@@ -686,7 +685,29 @@ class DatabaseAdmin {
   //   }
   // }
 
+  Future<void> deleteProcessTransaction(int id) async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> transactionDisplayerMaps = await db.query(
+        'money_transactions_display',
+        where: "id = ?",
+        whereArgs: [id],
+      );
+      Map<String, dynamic> transactionData = transactionDisplayerMaps.first;
+      final List<Map<String, dynamic>> transactionDBMaps = await db.query(
+        'money_transactions',
+        where: "id = ?",
+        whereArgs: [transactionData['foreign_id']],
+      );
+      Map<String, dynamic> firstTransaction = transactionDBMaps.first;
+      deleteMoneyTransaction(firstTransaction['id']);
+     } catch (e) {
+      logger.e(e);
+    }
+  }
+  
   Future<int> deleteMoneyTransaction(int id) async {
+    logger.d(id);
     final db = await database;
     deleteMoneyTransactionDisplay(id);
     return await db.delete(
@@ -698,6 +719,7 @@ class DatabaseAdmin {
 
   Future<int> deleteMoneyTransactionDisplay(int id) async {
     final db = await database;
+    logger.d(id);
     return await db.delete(
       'money_transactions_display',
       where: 'foreign_id = ?',
@@ -714,6 +736,56 @@ class DatabaseAdmin {
       where: 'id = ?',
       whereArgs: [moneyTransaction.id],
     );
+  }
+
+  ///디스플레이 연동동 거래내역 가져오기
+  Future<MoneyTransaction> getTransactionsFromDisplayer(MoneyTransaction displayer) async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> transactionDisplayerMaps = await db.query(
+        'money_transactions_display',
+        where: "id = ?",
+        whereArgs: [displayer.id],
+      );
+      Map<String, dynamic> transactionData = transactionDisplayerMaps.first;
+      // logger.i(transactionData);
+      final List<Map<String, dynamic>> transactionDBMaps = await db.query(
+        'money_transactions',
+        where: "id = ?",
+        whereArgs: [transactionData['foreign_id']],
+      );
+      // logger.i(transactionDBMaps);
+      /// Map<String, dynamic> to MoneyTransaction
+      Map<String, dynamic> firstTransaction = transactionDBMaps.first;
+      return MoneyTransaction(
+        id: firstTransaction['id'],
+        transactionTime: firstTransaction['transactionTime'],
+        // account: firstTransaction['account'],
+        amount: firstTransaction['amount'],
+        goods: firstTransaction['goods'],
+        category: firstTransaction['category'],
+        categoryType: firstTransaction['categoryType'],
+        description: firstTransaction['description'],
+        parameter: firstTransaction['parameter'],
+        installation: firstTransaction['installation'],
+        extraBudget: firstTransaction['extraBudget'] == 0 ? false : true,
+      );
+     } catch (e) {
+      logger.e(e);
+      return MoneyTransaction(
+        id: 0,
+        transactionTime: '',
+        // account: '',
+        amount: 0,
+        goods: '',
+        category: '',
+        categoryType: '',
+        description: '오류 페이지지',
+        parameter: '',
+        installation: 1,
+        extraBudget: false,
+      );
+    }
   }
 
   ///월간 거래내역 가져오기
@@ -751,7 +823,7 @@ class DatabaseAdmin {
     );
     return List.generate(transactionMaps.length, (i) {
       return MoneyTransaction(
-        id: transactionMaps[i]['foreign_id'],
+        id: transactionMaps[i]['id'],
         transactionTime: transactionMaps[i]['transactionTime'],
         // account: transactionMaps[i]['account'],
         amount: transactionMaps[i]['amount'],
@@ -961,7 +1033,7 @@ class DatabaseAdmin {
   Future<List<Map<String, dynamic>>> getYearlySumByCategory(int year) async {
     final db = await database;
     final List<Map<String, dynamic>> transactionMaps = await db.query(
-      'money_transactions',
+      isInstallmentSpread ? 'money_transactions_display'  : 'money_transactions',
       columns: ['category', 'SUM(amount) * -1 as totalAmount'],
       where: "substr(transactionTime,1,5) = ? AND categoryType = '소비'",
       whereArgs: ['$year년'],
@@ -975,7 +1047,7 @@ class DatabaseAdmin {
   Future<List<Map<String, dynamic>>> getYearlySumByCategoryNegative(int year) async {
     final db = await database;
     final List<Map<String, dynamic>> transactionMaps = await db.query(
-      'money_transactions',
+      isInstallmentSpread ? 'money_transactions_display'  : 'money_transactions',
       columns: ['category', 'SUM(amount) * -1 as totalAmount'],
       where: "substr(transactionTime,1,5) = ? AND categoryType = '소비' AND amount < 0",
       whereArgs: ['$year년'],
@@ -989,7 +1061,7 @@ class DatabaseAdmin {
   Future<List<Map<String, dynamic>>> getCategorySumByYear(String category) async {
     final db = await database;
     final List<Map<String, dynamic>> transactionMaps = await db.query(
-      'money_transactions',
+      isInstallmentSpread ? 'money_transactions_display'  : 'money_transactions',
       columns: ['substr(transactionTime,1,4) as year' , 'SUM(amount) * -1 as totalAmount'],
       where: "amount < 0 AND categoryType = '소비' AND category = ?",
       whereArgs: [category],

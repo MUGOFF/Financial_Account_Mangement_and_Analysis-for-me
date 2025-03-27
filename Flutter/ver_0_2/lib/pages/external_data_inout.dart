@@ -14,6 +14,7 @@ import 'package:ver_0_2/widgets/synchro_data_grid.dart';
 // import 'package:ver_0_2/widgets/models/bank_account.dart';
 // import 'package:ver_0_2/widgets/models/card_account.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
+import 'package:ver_0_2/widgets/loading_widget.dart';
 // import 'package:ver_0_2/widgets/models/expiration_investment.dart';
 // import 'package:ver_0_2/widgets/models/nonexpiration_investment.dart';
 
@@ -454,7 +455,7 @@ class _SecondPageState extends State<SecondPage> {
               }),
             ],
           ),
-          const SizedBox(height: 80),
+          const SizedBox(height: 24),
           SizedBox(
             width: MediaQuery.of(context).size.width * 0.6,
             height: MediaQuery.of(context).size.height * 0.4*0.2,
@@ -686,8 +687,8 @@ class _LastPageState extends State<LastPage> {
             height: MediaQuery.of(context).size.height * 0.4*0.2,
             child:ElevatedButton(
               onPressed: isButtonEnabled(relationColumnandValue) ? () {
-                insertDatasToDatabase(dataRows);
                 widget.onButtonPressed();
+                insertDatasToDatabase(context, dataRows);
               } : null,
               style: ElevatedButton.styleFrom(
                 shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(30))
@@ -724,146 +725,60 @@ class _LastPageState extends State<LastPage> {
   }
 
   /// modelColumnrelations = [transactionTime, amount, goods, category, categoryType, memo. installment]
-  Future<void> insertDatasToDatabase(List<List<dynamic>> dataRows) async{
-    // int insertID = 1;
-    // int installID = 1;
-
-    int processedCount = 0;
-    isProcessing = true;
-
-    // 로딩 다이얼로그 표시
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              backgroundColor: Colors.black.withAlpha(128), // 투명도 50%
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 10),
-                    Text(
-                      "처리 중: $processedCount / ${dataRows.length}",
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-
+  Future<void> insertDatasToDatabase(BuildContext context, List<List<dynamic>> dataRows) async{
+    LoadingDialog.show(context, message: "데이터 처리 중...");
+    int i = 0;
     try {
       for (var row in dataRows) {
+        i++;
         String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
         String formattedcategory = widget.modelColumnrelations[3] != null ? row[columnNames.indexOf(widget.modelColumnrelations[3])] : "";
         String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(row[columnNames.indexOf(widget.modelColumnrelations[4])]) ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "이체";
         int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parseToInt(row[columnNames.indexOf(widget.modelColumnrelations[6])]) : 1;
-        try { 
-          // if (formattedInstallment != null && formattedInstallment > 1) {
-          //   for (int i = 0; i < formattedInstallment; i++) {
-          //     DateTime startDate = DateFormat('yyyy년 MM월 dd일THH:mm').parse(formattedDatetime);
-          //     DateTime installmentDate = DateTime(startDate.year, startDate.month + i, startDate.day);
-          //     String installTransactionTime = '${DateFormat('yyyy년 MM월 dd일').format(installmentDate).toString()}T${startDate.hour}:${startDate.minute}';
-
-          //     MoneyTransaction transaction = MoneyTransaction(
-          //       transactionTime: installTransactionTime,
-          //       amount: double.parse((double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()) / formattedInstallment).toStringAsFixed(2)),
-          //       goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
-          //       category: formattedcategory,
-          //       categoryType: formattedcategoryType,
-          //       description: widget.modelColumnrelations[5] != null 
-          //       ? 
-          //         yearlyExpenseCategory.contains(formattedcategory)
-          //         ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 ${i+1}차분'
-          //         : '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} ${i+1}차분'
-          //       : 
-          //         yearlyExpenseCategory.contains(formattedcategory)
-          //         ? "#연간예산 ${i+1}차분 "
-          //         : "${i+1}차분 "
-          //       ,
-          //       extraBudget:  yearlyExpenseCategory.contains(formattedcategory) ? true : false,
-          //     );
-
-          //     // transCode 중복 확인
-          //     bool exists = await DatabaseAdmin().checkIfTransCodeExists(
-          //       transaction.transactionTime,
-          //       transaction.goods,
-          //       transaction.amount,
-          //     );
-          //     if (!exists) {
-          //       try {
-          //         if(i == 0) {
-          //           insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-          //           installID = insertID;
-          //           DatabaseAdmin().addInstallmentToParameter(insertID, installID);
-          //         } else {
-          //           insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-          //           DatabaseAdmin().addInstallmentToParameter(insertID, installID);
-          //         }
-          //       } catch (e) {
-          //         logger.e('error: $e, not enough row data: $row');
-          //       }
-          //     }
-          //   }
-          // } else {
-            MoneyTransaction transaction = MoneyTransaction(
-              transactionTime: formattedDatetime,
-              amount: double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()),
-              goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
-              category: formattedcategory,
-              categoryType: formattedcategoryType,
-              installation: formattedInstallment ?? 1,
-              description: widget.modelColumnrelations[5] != null 
-              ? yearlyExpenseCategory.contains(formattedcategory) 
-                ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
-                : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
-              : yearlyExpenseCategory.contains(formattedcategory) 
-                ? "#연간예산 "
-                : "",
-              extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
-            );
-            bool exists = await DatabaseAdmin().checkIfTransCodeExists(
-              transaction.transactionTime,
-              transaction.goods,
-              transaction.amount,
-            );
-            if (!exists) {
-              try {
-                // insertID = 
-                await DatabaseAdmin().insertMoneyTransaction(transaction);
-                // installID = insertID;
-                // DatabaseAdmin().addInstallmentToParameter(insertID, installID);
-              } catch (e) {
-                logger.e('error: $e, not enough row data: $row');
-              }
+        try {
+          MoneyTransaction transaction = MoneyTransaction(
+            transactionTime: formattedDatetime,
+            amount: double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()),
+            goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
+            category: formattedcategory,
+            categoryType: formattedcategoryType,
+            installation: formattedInstallment ?? 1,
+            description: widget.modelColumnrelations[5] != null 
+            ? yearlyExpenseCategory.contains(formattedcategory) 
+              ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
+              : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
+            : yearlyExpenseCategory.contains(formattedcategory) 
+              ? "#연간예산 "
+              : "",
+            extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
+          );
+          bool exists = await DatabaseAdmin().checkIfTransCodeExists(
+            transaction.transactionTime,
+            transaction.goods,
+            transaction.amount,
+          );
+          if (!exists) {
+            try {
+              await DatabaseAdmin().insertMoneyTransaction(transaction);
+            } catch (e) {
+              logger.e('error: $e, not enough row data: $row');
             }
-          // }
+          }
+          // logger.i('${context.mounted} $processedCount');
         } catch(e) {
           logger.e('error: $e, formData row: $row');
         }
+        LoadingDialog.updateProgress(((i) / dataRows.length) * 100);
       }
     } catch(e) {
       logger.e('error: $e, formmating error');
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error file format type')),
         );
       }
-    } finally {
-      isProcessing = false;
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
     }
-    
+    LoadingDialog.hide();
   }
 }
 

@@ -277,6 +277,9 @@ class _BookState extends State<Book> {
                         onTap: isSelectionMode
                           ? () => toggleSelection(transaction.id!)
                           : () {
+                            // logger.d(transactions[index]);
+                            // logger.d(transactions[index].id);
+                            // logger.d(transactions[index].transactionTime);
                             Navigator.push(
                               context,
                               PageRouteBuilder(
@@ -688,7 +691,7 @@ class _BookState extends State<Book> {
 
   void deleteDatasFromDatabase() {
     for (var id in selectedIds) {
-      DatabaseAdmin().deleteMoneyTransaction(id);
+      DatabaseAdmin().deleteProcessTransaction(id);
     }
 
     setState(() {
@@ -752,7 +755,7 @@ class _BookState extends State<Book> {
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
             timeInSecForIosWeb: 3,
-            backgroundColor: HoloColors.tokinoSora.withOpacity(0.5),
+            backgroundColor: HoloColors.tokinoSora.withValues(alpha: 0.5),
             textColor: HoloColors.azkI,
             fontSize: 20
           );
@@ -860,7 +863,7 @@ class _BookState extends State<Book> {
         },
         label: Text(inputText.substring(match.start, match.end).replaceAll(RegExp(r'#'),''), style: const TextStyle(fontSize: 14),),    
         style: TextButton.styleFrom(
-          backgroundColor: HoloColors.otonoseKanade.withOpacity(0.5), // 배경색
+          backgroundColor: HoloColors.otonoseKanade.withValues(alpha: 0.5), // 배경색
           foregroundColor: HoloColors.nekomataOkayu, // 텍스트 색상
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(100), // 둥근 모서리

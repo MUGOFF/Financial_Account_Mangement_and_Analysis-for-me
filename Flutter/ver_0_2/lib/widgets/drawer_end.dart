@@ -11,7 +11,8 @@ import 'package:ver_0_2/widgets/database_admin.dart';
 
 // final Logger logger = Logger();
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({super.key});
+  final void Function()? stateRefresh;
+  const AppDrawer({super.key, this.stateRefresh});
   
 
   Future<String> _getAppVersion() async {
@@ -150,6 +151,9 @@ class AppDrawer extends StatelessWidget {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('거래 내역 데이터베이스가 초기화되었습니다!')),
                             );
+                            if (stateRefresh != null) {
+                              stateRefresh!();
+                            }
                           },
                           child: const Text('삭제'),
                         ),

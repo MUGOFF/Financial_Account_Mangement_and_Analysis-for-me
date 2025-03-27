@@ -21,6 +21,7 @@ class BookAdd extends StatefulWidget {
 
 class _BookAddState extends State<BookAdd> {
   Logger logger = Logger();
+  MoneyTransaction? moneyTransactionOrigin;
   final FocusNode _focusAmountNode = FocusNode();
   final FocusNode _focusMemoNode = FocusNode();
   UnfocusDisposition disposition = UnfocusDisposition.scope;
@@ -28,8 +29,8 @@ class _BookAddState extends State<BookAdd> {
   final GlobalKey<FormState> _formBookAddKey = GlobalKey<FormState>();
   final GlobalKey<ScaffoldState> _scaffoldBookAddKey = GlobalKey<ScaffoldState>();
   final TextEditingController _idController = TextEditingController();
-  late final TextEditingController _dateController;
-  late final TextEditingController _timeController;
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
   // final TextEditingController _accountController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _amountdisplayController = TextEditingController();
@@ -52,7 +53,6 @@ class _BookAddState extends State<BookAdd> {
 
   @override
   void initState() {
-    super.initState();
     if(widget.moneyTransaction != null) {
       _pageType = "수정";
       // _isMemoEditing = false;
@@ -78,6 +78,7 @@ class _BookAddState extends State<BookAdd> {
       } 
     });
     _initializeControllers();
+    super.initState();
     //  _memoController.addListener(() {
     //   final input = _memoController.text;
     //   logger.i(input);
@@ -101,23 +102,25 @@ class _BookAddState extends State<BookAdd> {
   Future<void> _initializeControllers() async {
   // 페이지가 초기화될 때 받아온 정보를 사용하여 상태를 업데이트합니다.
     if (widget.moneyTransaction != null) {
-      _idController.text = widget.moneyTransaction!.id.toString();
-      List<String> parts = widget.moneyTransaction!.transactionTime.split('T');
-      _dateController = TextEditingController(text: parts[0].trim());
-      _timeController = TextEditingController(text: parts[1].trim());
-      // _accountController.text = widget.moneyTransaction!.account.toString();
-      _amountController.text = widget.moneyTransaction!.amount.toString();
+      // logger.d(widget.moneyTransaction!.id);
+      moneyTransactionOrigin = await DatabaseAdmin().getTransactionsFromDisplayer(widget.moneyTransaction!);
+      _idController.text = moneyTransactionOrigin!.id.toString();
+      List<String> parts = moneyTransactionOrigin!.transactionTime.split('T');
+      _dateController.text = parts[0].trim();
+      _timeController.text = parts[1].trim();
+      // _accountController.text = moneyTransactionOrigin!.account.toString();
+      _amountController.text = moneyTransactionOrigin!.amount.toString();
       _amountdisplayController.text = _thousandsFormmater(_amountController.text);
-      _targetgoodsController.text = widget.moneyTransaction!.goods;
-      _categoryController.text = widget.moneyTransaction!.category;
-      _installmentController.text = widget.moneyTransaction!.installation.toString();
-      // logger.d(widget.moneyTransaction!.categoryType);
-      currentCategory = widget.moneyTransaction!.categoryType;
+      _targetgoodsController.text = moneyTransactionOrigin!.goods;
+      _categoryController.text = moneyTransactionOrigin!.category;
+      _installmentController.text = moneyTransactionOrigin!.installation.toString();
+      // logger.d(moneyTransactionOrigin!.categoryType);
+      currentCategory = moneyTransactionOrigin!.categoryType;
       _selectedButton = currentCategory == '소비' ? 1 : currentCategory == '수입' ? 2 : 3 ;
-      _memoController.text = widget.moneyTransaction!.description ?? '';
+      _memoController.text = moneyTransactionOrigin!.description ?? '';
     } else {
-      _dateController = TextEditingController(text: DateFormat('yyyy년 MM월 dd일').format(DateTime.now()));
-      _timeController = TextEditingController(text:'${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}');
+      _dateController.text = DateFormat('yyyy년 MM월 dd일').format(DateTime.now());
+      _timeController.text = '${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}';
       _amountController.text = "-0";
       _amountdisplayController.text = _thousandsFormmater(_amountController.text);
     }
@@ -314,7 +317,7 @@ class _BookAddState extends State<BookAdd> {
                 // Date, String, Int, String, String Fields
                 buildDateTimeRow("날짜", _dateController, _timeController),
                 amountRow("거래금액", _amountdisplayController),
-                if(installmentShow || _installmentController.text.isNotEmpty)
+                if(installmentShow || _pageType == "수정")
                 Row(
                   children: [
                     const Expanded(
@@ -628,7 +631,7 @@ class _BookAddState extends State<BookAdd> {
                 ),
                 side: WidgetStateProperty.resolveWith<BorderSide>(
                   (Set<WidgetState> states) {
-                    return BorderSide(color: Colors.green.withOpacity(0.9));
+                    return BorderSide(color: Colors.green.withValues(alpha: 0.9));
                   },
                 ),
               ),
@@ -829,7 +832,7 @@ class _BookAddState extends State<BookAdd> {
             if (_selectedButton == value) {
               return const BorderSide(color: Colors.transparent);
             }
-            return BorderSide(color: color.withOpacity(0.9));
+            return BorderSide(color: color.withValues(alpha: 0.9));
           },
         ),
       ),
@@ -929,7 +932,7 @@ class _BookAddState extends State<BookAdd> {
       goods: _targetgoodsController.text,
       category: _categoryController.text,
       categoryType: currentCategory,
-      installation: int.tryParse(_installmentController.text),
+      installation: int.tryParse(_installmentController.text) ?? 1,
       description: yearlyExpenseCategory.contains(_categoryController.text) &&  !_memoController.text.contains("#연간예산 ")? '#연간예산 ${_memoController.text}' : _memoController.text,
       extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
     );

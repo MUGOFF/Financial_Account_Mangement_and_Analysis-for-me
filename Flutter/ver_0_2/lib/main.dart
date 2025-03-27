@@ -401,7 +401,10 @@ class _HomePageCotentState extends State<HomePageCotent> {
           // the App.build method, and use it to set our appbar title.
           // title: const Text('Home'),
         ),
-        endDrawer: const AppDrawer(),
+        endDrawer: AppDrawer(stateRefresh: () {
+          Navigator.pop(context);
+          setState(() {});}
+        ),
         body: SafeArea(
           // Center is a layout widget. It takes a single child and positions it
           // in the middle of the parent.
