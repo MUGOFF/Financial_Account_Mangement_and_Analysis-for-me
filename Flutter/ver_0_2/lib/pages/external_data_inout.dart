@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -527,19 +528,17 @@ class _LastPageState extends State<LastPage> {
   bool isProcessing = false;
   String? dateFormat;
   final List<String> dateFormats = [
-    'yyyy-MM-dd',
-    'MM/dd/yyyy',
-    'dd/MM/yyyy',
-    'yyyy년 MM월 dd일',
-    'yyyy/MM/dd',
     'yyyy.MM.dd',
-    'MM.dd.yyyy',
+    'yyyy-MM-dd',
+    'yyyy/MM/dd',
+    'yyyy년 MM월 dd일',
+    'dd/MM/yyyy',
     'dd.MM.yyyy',
+    'MM.dd.yyyy',
+    'MM/dd/yyyy',
   ];
   final List<String> timeFormats = [
-    'hh:mm:ss',
     'hh:mm',
-    'hh시 mm분 ss초',
     'hh시 mm분',
   ];
   final List<String> datetimeFormats = [];
@@ -724,11 +723,32 @@ class _LastPageState extends State<LastPage> {
     );
   }
 
+  // Future<void> insertDatasToDatabase(BuildContext context, List<List<dynamic>> dataRows) async {
+  //   LoadingDialog.show(context, message: "데이터 처리 중...");
+
+  //   try {
+  //     await TransactionIsolate.start(dataRows);
+
+  //     if (context.mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('데이터 삽입 완료!')),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     logger.e('error: $e');
+  //   }
+
+  //   LoadingDialog.hide();
+  // }
+
+  
+
+
   /// modelColumnrelations = [transactionTime, amount, goods, category, categoryType, memo. installment]
   Future<void> insertDatasToDatabase(BuildContext context, List<List<dynamic>> dataRows) async{
-    LoadingDialog.show(context, message: "데이터 처리 중...");
     int i = 0;
     try {
+      LoadingDialog.show(context, message: "데이터 처리 중...");
       for (var row in dataRows) {
         i++;
         String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
@@ -770,6 +790,7 @@ class _LastPageState extends State<LastPage> {
         }
         LoadingDialog.updateProgress(((i) / dataRows.length) * 100);
       }
+      LoadingDialog.hide();
     } catch(e) {
       logger.e('error: $e, formmating error');
       if (context.mounted) {
@@ -777,10 +798,95 @@ class _LastPageState extends State<LastPage> {
           const SnackBar(content: Text('Error file format type')),
         );
       }
+      LoadingDialog.hide();
     }
-    LoadingDialog.hide();
   }
 }
+
+// class TransactionIsolate {
+//   static Future<void> start(List<List<dynamic>> dataRows) async {
+//     final receivePort = ReceivePort();
+//     await Isolate.spawn(_processAndInsertTransactions, receivePort.sendPort);
+    
+//     final sendPort = await receivePort.first as SendPort;
+//     final responsePort = ReceivePort();
+    
+//     sendPort.send([dataRows, responsePort.sendPort]);
+    
+//     await for (var message in responsePort) {
+//       if (message == "done") {
+//         break;
+//       }
+//     }
+
+//     receivePort.close();
+//     responsePort.close();
+//   }
+
+//   static void _processAndInsertTransactions(SendPort sendPort) async {
+//     final port = ReceivePort();
+//     sendPort.send(port.sendPort);
+    
+//     await for (var message in port) {
+//       if (message is List) {
+//         List<List<dynamic>> dataRows = message[0];
+//         SendPort replyPort = message[1];
+
+//         for (var row in dataRows) {
+//           try {
+//             // 데이터 변환
+//             String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm')
+//                 .format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])])); 
+//             String formattedCategory = widget.modelColumnrelations[3] != null
+//                 ? row[columnNames.indexOf(widget.modelColumnrelations[3])]
+//                 : "";
+//             String formattedCategoryType = widget.modelColumnrelations[4] == null
+//                 ? "이체"
+//                 : ['소비', '수입', '이체'].contains(row[columnNames.indexOf(widget.modelColumnrelations[4])])
+//                     ? row[columnNames.indexOf(widget.modelColumnrelations[4])]
+//                     : "이체";
+//             int? formattedInstallment = widget.modelColumnrelations[6] != null
+//                 ? parseToInt(row[columnNames.indexOf(widget.modelColumnrelations[6])])
+//                 : 1;
+
+//             MoneyTransaction transaction = MoneyTransaction(
+//               transactionTime: formattedDatetime,
+//               amount: double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()),
+//               goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
+//               category: formattedCategory,
+//               categoryType: formattedCategoryType,
+//               installation: formattedInstallment ?? 1,
+//               description: widget.modelColumnrelations[5] != null
+//                   ? yearlyExpenseCategory.contains(formattedCategory)
+//                       ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
+//                       : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
+//                   : yearlyExpenseCategory.contains(formattedCategory)
+//                       ? "#연간예산 "
+//                       : "",
+//               extraBudget: yearlyExpenseCategory.contains(formattedCategory),
+//             );
+
+//             // 데이터베이스에 삽입
+//             bool exists = await DatabaseAdmin().checkIfTransCodeExists(
+//               transaction.transactionTime,
+//               transaction.goods,
+//               transaction.amount,
+//             );
+
+//             if (!exists) {
+//               await DatabaseAdmin().insertMoneyTransaction(transaction);
+//             }
+//           } catch (e) {
+//             logger.e('error: $e, formData row: $row');
+//           }
+//         }
+
+//         replyPort.send("done");
+//       }
+//     }
+//   }
+// }
+
 
 class TableDataOut extends StatefulWidget {
   const TableDataOut({super.key});
