@@ -116,7 +116,11 @@ class AppDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ExternalTerminal()),
-              );
+              ).then((value) {
+                if (stateRefresh != null) {
+                  stateRefresh!();
+                }
+              });
             },
           ),
           ListTile(

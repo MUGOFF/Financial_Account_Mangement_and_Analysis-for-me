@@ -405,12 +405,12 @@ class _BookAddState extends State<BookAdd> {
                       child: const Text('취소'),
                     ),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_formBookAddKey.currentState?.validate() ?? false) {
                           // Save data when Save button is pressed
                           _bottomSheetController?.close();
-                          updateDataToDatabase();
-                          Navigator.pop(context);
+                          await updateDataToDatabase();
+                          Navigator.pop(context, true);
                         }
                       },
                       child: const Text('수정'),
@@ -915,7 +915,7 @@ class _BookAddState extends State<BookAdd> {
     // }
   }
 
-  void updateDataToDatabase() {
+  Future<void> updateDataToDatabase() async {
     String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
     if (_amountController.text.startsWith('-')) {
       amountText = '-${amountText.substring(1).replaceAll('-', '')}';
@@ -937,7 +937,7 @@ class _BookAddState extends State<BookAdd> {
       extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
     );
     // 데이터베이스에 은행 계좌 정보 장장
-    DatabaseAdmin().updateMoneyTransaction(transaction);
+    await DatabaseAdmin().updateMoneyTransaction(transaction);
   }
 
 }

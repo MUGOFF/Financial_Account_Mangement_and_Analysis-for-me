@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
-import 'dart:isolate';
+// import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -790,7 +790,6 @@ class _LastPageState extends State<LastPage> {
         }
         LoadingDialog.updateProgress(((i) / dataRows.length) * 100);
       }
-      LoadingDialog.hide();
     } catch(e) {
       logger.e('error: $e, formmating error');
       if (context.mounted) {
@@ -798,6 +797,8 @@ class _LastPageState extends State<LastPage> {
           const SnackBar(content: Text('Error file format type')),
         );
       }
+    } finally {
+      logger.d('${context.mounted} fianl');
       LoadingDialog.hide();
     }
   }

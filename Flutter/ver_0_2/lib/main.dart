@@ -658,7 +658,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
-                      content: Text('이전에 입력한 수입 금액 기준으로 예산을 설정합니까? ($income 만원)'),
+                      content: Text('이전에 입력한 수입 금액 기준으로 예산을 설정합니까? (${(income!/10000).floor()} 만원)'),
                       actions: [
                         TextButton(
                           onPressed: () {

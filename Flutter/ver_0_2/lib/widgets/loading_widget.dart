@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 
 class LoadingDialog extends StatefulWidget {
   final String message;
@@ -9,7 +10,6 @@ class LoadingDialog extends StatefulWidget {
 
   @override
   State<LoadingDialog> createState() => LoadingDialogState();
-
   /// 외부에서 진행도를 업데이트할 수 있도록 `updateProgress`를 저장
   static late void Function(double) updateProgress;
 
@@ -33,8 +33,10 @@ class LoadingDialog extends StatefulWidget {
 
 class LoadingDialogState extends State<LoadingDialog> {
   double progress = 0.0;
+  Logger logger = Logger();
 
   void closeDialog() {
+    // logger.d('close');
     Navigator.of(context).pop(); // 다이얼로그 닫기
   }
 

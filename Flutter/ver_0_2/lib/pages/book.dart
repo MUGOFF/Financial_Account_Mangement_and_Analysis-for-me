@@ -38,7 +38,6 @@ class _BookState extends State<Book> {
   String? transactionFilter = '기본';
   String? lastTopDatetime;
   String searchTransacion= '';
-  MoneyTransaction? searchFocusTransacion;
 
   @override
   void initState() {
@@ -71,6 +70,7 @@ class _BookState extends State<Book> {
     });
     setState(() {
       transactions = fetchedTransactions;
+      // logger.d(transactions[0].id);
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(0);
       }
@@ -174,6 +174,7 @@ class _BookState extends State<Book> {
       ),
       endDrawer: const AppDrawer(),
       body: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children:[
           Container(
@@ -265,6 +266,7 @@ class _BookState extends State<Book> {
                       return const SizedBox.shrink();
                     }
                     final isSelected = selectedIds.contains(transaction.id);
+                    // logger.i(transactions[0].id);
                     return Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -277,9 +279,6 @@ class _BookState extends State<Book> {
                         onTap: isSelectionMode
                           ? () => toggleSelection(transaction.id!)
                           : () {
-                            // logger.d(transactions[index]);
-                            // logger.d(transactions[index].id);
-                            // logger.d(transactions[index].transactionTime);
                             Navigator.push(
                               context,
                               PageRouteBuilder(
@@ -299,12 +298,13 @@ class _BookState extends State<Book> {
                                   );
                                 },
                               ),
-                            ).then((result) {
-                              setState(() {
-                                _fetchTransactions();
-                              });
+                            ).then((result) async {
+                            logger.d(result);
+                            if (result == true) {  // 수정 완료된 경우
+                              await _fetchTransactions(); 
+                              setState(() {});  // UI 업데이트
                             }
-                          );
+                          });
                         },
                         onDoubleTap: isSelectionMode
                           ? ()  => toggleSelectionAll()

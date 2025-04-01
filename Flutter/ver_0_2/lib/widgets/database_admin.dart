@@ -661,6 +661,7 @@ class DatabaseAdmin {
         transactionData.remove('installation');
         await db.insert('money_transactions_display', transactionData);
       }
+      logger.i('change');
       return 1;
     } catch (e) {
       logger.e(e);
@@ -738,7 +739,7 @@ class DatabaseAdmin {
     );
   }
 
-  ///디스플레이 연동동 거래내역 가져오기
+  ///디스플레이 연동 거래내역 가져오기
   Future<MoneyTransaction> getTransactionsFromDisplayer(MoneyTransaction displayer) async {
     try {
       final db = await database;

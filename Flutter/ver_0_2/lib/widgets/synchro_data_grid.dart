@@ -750,14 +750,37 @@ class _DataGridExportExampleState extends State<DataGridExportExample> {
               backgroundColor: HoloColors.nekomataOkayu
             ),
             onPressed: () async {
-              // final Workbook workbook =
-              //     key.currentState!.exportToExcelWorkbook();
-              // final List<int> bytes = workbook.saveAsStream();
-              // workbook.dispose();
-              // await helper.saveAndLaunchFile(bytes, 'DataGrid.xlsx');
               final xls.Workbook workbook = xls.Workbook();
-              final xls.Worksheet worksheet = workbook.worksheets[0];
-              key.currentState!.exportToExcelWorksheet(worksheet);
+
+              try {
+                // 연월별로 데이터를 그룹화
+                final Map<String, List<DataGridRow>> groupedRows = {};
+                for (final row in transactionDataSource.rows) {
+                  final String? dateValue = row.getCells().firstWhere((cell) => cell.columnName == 'Date').value;
+                  if (dateValue == null) continue;
+
+                  final DateTime dateTime = DateFormat("yyyy년 MM월 dd일THH:mm").parse(dateValue);
+                  final String yearMonth = '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}';
+
+                  groupedRows.putIfAbsent(yearMonth, () => []).add(row);
+                }
+
+                // 각 연월별로 시트를 생성하여 데이터 추가
+                groupedRows.forEach((yearMonth, rows) {
+                  final xls.Worksheet worksheet = workbook.worksheets.addWithName(yearMonth);
+
+                  // 특정 행(rows)만 엑셀 시트로 내보내기
+                  key.currentState!.exportToExcelWorksheet(
+                    worksheet,
+                    rows: rows, // 연월별 데이터만 내보냄
+                  );
+                });
+              } catch (e) {
+                logger.e(e);
+                final xls.Worksheet worksheet = workbook.worksheets[0];
+                key.currentState!.exportToExcelWorksheet(worksheet);
+              }
+
               final List<int> bytes = workbook.saveAsStream();
               await exportToExcel(bytes);
               // File('DataGrid.xlsx').writeAsBytes(bytes, flush: true);
