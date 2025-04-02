@@ -42,7 +42,7 @@ class DatabaseAdmin {
     await loadSettings();
     return openDatabase(
       path,
-      version: 20,
+      version: 21,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -58,6 +58,7 @@ class DatabaseAdmin {
         _addColumnInstallationToMoneyTransactionTable(db);
         _createMoneyTransactionDisplayTableRenewal(db);
         _addColumnidToMoneyDisplayTransactionTable(db);
+        _createPeriodTransTable(db);
         // _addTriggerForParameterUpdate(db);
         // _createMoneyTransactionDisplayTable(db);
         // _createBankAccountTable(db);
@@ -96,6 +97,9 @@ class DatabaseAdmin {
         if (oldVersion < 20) {
           _createMoneyTransactionDisplayTableRenewal(db);
           _addColumnidToMoneyDisplayTransactionTable(db);
+        }
+        if (oldVersion < 21) {
+          _createPeriodTransTable(db);
         }
         // if (oldVersion < 4) {
         //   _createCurrentHoldingTable(db);
@@ -1943,6 +1947,60 @@ class DatabaseAdmin {
       id: groupDataMaps[0]['id'],
       dataList: groupDataMaps[0]['dataList'] != null ? Map<String, dynamic>.from(json.decode(groupDataMaps[0]['dataList'])) : null,
     );
+  }
+
+
+
+
+
+  ///정기 거래 테이블 생성
+  void _createPeriodTransTable(Database db) {
+    db.execute(
+      """
+        CREATE TABLE period_transactions(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          day INTEGER,
+          amount REAL,
+          name TEXT,
+          categoryType TEXT,
+          category TEXT
+          )
+      """,
+      // account TEXT,
+    );
+  }
+
+  
+  Future<int> insertPeriodTransaction(Map<String, dynamic>  periodTable) async {
+    final db = await database;
+    return await db.insert('period_transactions', periodTable);
+  }
+  
+  Future<int> updatePeriodTransaction(Map<String, dynamic>  periodTable) async {
+    final db = await database;
+    return await db.update(
+      'period_transactions',
+      periodTable,
+      where: 'id = ?',
+      whereArgs: [periodTable['id']],
+    );
+  }
+  
+  Future<int> deletePeriodTransaction(Map<String, dynamic>  periodTable) async {
+    final db = await database;
+    return await db.delete(
+      'period_transactions',
+      where: 'id = ?',
+      whereArgs: [periodTable['id']],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getPeriodTransactionList() async {
+    final db = await database;
+    final List<Map<String, dynamic>> transactionMaps = await db.query('period_transactions');
+
+
+    return transactionMaps;
   }
 
   

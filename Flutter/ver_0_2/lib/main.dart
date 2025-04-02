@@ -10,6 +10,9 @@ import 'package:carousel_slider/carousel_slider.dart';
 // import 'package:logger/logger.dart';
 // import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 // import 'package:syncfusion_flutter_core/core.dart';
 import 'package:ver_0_2/pages/book.dart';
 // import 'package:ver_0_2/pages/investment.dart';
@@ -27,10 +30,35 @@ import 'package:ver_0_2/colorsholo.dart';
 double log10(num x) => log(x) / ln10;
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();  // Flutter 프레임워크 초기화
-  final SharedPreferences prefs = await SharedPreferences.getInstance();  // Shared Preferences 초기화
+  WidgetsFlutterBinding.ensureInitialized();
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
   // SyncfusionLicense.registerLicense("YOUR LICENSE KEY"); 
   runApp(DemoApp(prefs: prefs));
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _initBackgroundMusic();
+  });
+}
+
+void _initBackgroundMusic() async {
+
+  BackgroundAudio().setPlaylist([
+    "https://www.youtube.com/watch?v=0VEWb2dcicI", //sirius
+    "https://www.youtube.com/watch?v=HJCn1urH4ww", //bunny girl
+    "https://www.youtube.com/watch?v=oc7xMNpxUOM", //color rise harmony
+    "https://www.youtube.com/watch?v=f7PhrnJWuuY", //sakura mirage
+    "https://www.youtube.com/watch?v=UpEPkPg8YP4", //caremel pain
+    "https://www.youtube.com/watch?v=x6GCUYJvdRI", //shoshinn ryokou
+    "https://www.youtube.com/watch?v=NXIDznszQhA", //colorful universe
+    "https://www.youtube.com/watch?v=CwZMBnPx4co", //capture the moment
+  ]);
+
+  final Connectivity connectivity = Connectivity();
+  List<ConnectivityResult> result = await connectivity.checkConnectivity();
+  logger.d(result);
+  if (result.contains(ConnectivityResult.wifi)) {
+    String musicUrl = "https://www.youtube.com/watch?v=0VEWb2dcicI";
+    await BackgroundAudio().play(musicUrl);
+  }
 }
 
 class DemoApp extends StatelessWidget {
@@ -870,6 +898,74 @@ class _LandScapeComboChartMainState extends State<LandScapeComboChartMain> {
         ),
       ),
     );
+  }
+}
+
+
+class BackgroundAudio {
+  static final BackgroundAudio _instance = BackgroundAudio._internal();
+  factory BackgroundAudio() => _instance;
+
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final YoutubeExplode _yt = YoutubeExplode();
+  final Logger _logger = Logger();
+
+  List<String> playlist = []; // 🎵 음악 리스트
+  int currentIndex = 0;
+  bool _isLooping = false; // 🔁 반복 재생 여부
+
+  BackgroundAudio._internal() {
+    // ✅ 음악 재생이 끝나면 자동으로 다음 곡 재생
+    _audioPlayer.onPlayerComplete.listen((_) {
+      _playNext();
+    });
+  }
+
+  Future<void> play(String videoUrl) async {
+    try {
+      var videoId = VideoId(videoUrl);
+      var manifest = await _yt.videos.streamsClient.getManifest(videoId);
+      var audioUrl = manifest.audioOnly.withHighestBitrate().url;
+
+      await _audioPlayer.play(UrlSource(audioUrl.toString()));
+      _logger.i("재생 중: $videoUrl");
+    } catch (e) {
+      _logger.e("오류 발생: $e");
+    }
+  }
+
+  void stop() {
+    _audioPlayer.stop();
+  }
+
+  void setPlaylist(List<String> newPlaylist) {
+    playlist = newPlaylist;
+    currentIndex = 0;
+  }
+
+  void playNext() {
+    if (playlist.isEmpty) return;
+    currentIndex = (currentIndex + 1) % playlist.length;
+    play(playlist[currentIndex]);
+  }
+
+  void playPrevious() {
+    if (playlist.isEmpty) return;
+    currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+    play(playlist[currentIndex]);
+  }
+
+  void toggleLoop() {
+    _isLooping = !_isLooping;
+    _logger.i("반복 재생 모드: $_isLooping");
+  }
+
+  void _playNext() {
+    if (_isLooping) {
+      play(playlist[currentIndex]); // 🔁 같은 곡 다시 재생
+    } else {
+      playNext(); // ⏭ 다음 곡 재생
+    }
   }
 }
 
