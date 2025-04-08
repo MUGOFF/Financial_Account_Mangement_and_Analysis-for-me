@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:logger/logger.dart';
+import 'package:ver_0_2/main.dart';
 import 'package:ver_0_2/pages/book_category_admin.dart';
 import 'package:ver_0_2/pages/external_data_inout.dart';
 import 'package:ver_0_2/pages/personal_setting.dart';
@@ -39,6 +41,12 @@ class AppDrawer extends StatelessWidget {
     }
   }
 
+  void saveMusicKeys() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList("music_keys", ["0001"]);
+    // initBackgroundMusic();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -66,6 +74,7 @@ class AppDrawer extends StatelessWidget {
                           //   foregroundColor: Colors.blue,
                           // ),
                           // child: const Text('Check for Updates'),
+                          onLongPress: saveMusicKeys,
                           icon: const Icon(Icons.info_outline),
                           label: Text(
                             'Version: $appVersion',

@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-// import 'package:excel/excel.dart';
+import 'package:excel/excel.dart';
 import 'package:csv/csv.dart';
 import 'package:cp949_codec/cp949_codec.dart';
 import 'package:ver_0_2/colorsholo.dart';
@@ -238,40 +238,70 @@ class _FirstPageState extends State<FirstPage> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['csv'],
+        allowedExtensions: ['csv', 'xlsx'],
         allowMultiple: false,
         withData: true,
       );
       if (result != null) {
-        try {
-          logger.d('CP949 TRY');
-          var input = await File(result.files.single.path!).readAsBytes();
-          var fields = const CsvToListConverter().convert(const CP949Codec().decoder.convert(input));
-          if (fields.isNotEmpty) {
-            widget.onFilePathSelected(result, 'CP949');
-            logger.i('CP949 END');
-          } 
-        } catch(e) {
-          logger.e('Error picking file type CP949: $e');
-          logger.d('UTF8 TRY');
+        final String filePath = result.files.single.path!;
+        final String extension = filePath.split('.').last.toLowerCase();
+         if (extension == 'csv') {
           try {
-            var input = File(result.files.single.path!).openRead();
-            var fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
+            logger.d('CP949 TRY');
+            var input = await File(result.files.single.path!).readAsBytes();
+            var fields = const CsvToListConverter().convert(const CP949Codec().decoder.convert(input));
             if (fields.isNotEmpty) {
-              widget.onFilePathSelected(result, 'UTF8');
-              logger.i('UTF8 END');
+              widget.onFilePathSelected(result, 'CP949');
+              logger.i('CP949 END');
             } 
+          } catch(e) {
+            logger.e('Error picking file type CP949: $e');
+            logger.d('UTF8 TRY');
+            try {
+              var input = File(result.files.single.path!).openRead();
+              var fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
+              if (fields.isNotEmpty) {
+                widget.onFilePathSelected(result, 'UTF8');
+                logger.i('UTF8 END');
+              } 
+            } catch (e) {
+              logger.e('Error picking file type or format: $e');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Error picking file type or format')),
+                );
+              }
+            }
+          }
+         } else if (extension == 'xlsx') {
+          try {
+            logger.d('XLSX TRY');
+            final bytes = File(filePath).readAsBytesSync();
+            final excel = Excel.decodeBytes(bytes);
+
+            // 첫 시트 기준으로 데이터 추출 (원하면 수정 가능)
+            final Sheet sheet = excel.tables[excel.tables.keys.first]!;
+            List<List<dynamic>> excelData = [];
+
+            for (List<Data?> row in sheet.rows) {
+              excelData.add(row.map((cell) => cell?.value ?? '').toList());
+            }
+
+            if (excelData.isNotEmpty) {
+              widget.onFilePathSelected(result, 'XLSX');
+              logger.i('XLSX END');
+              return;
+            }
           } catch (e) {
-            logger.e('Error picking file type or format: $e');
+            logger.e('Error XLSX: $e');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Error picking file type or format')),
+                const SnackBar(content: Text('XLSX 파일을 읽을 수 없습니다.')),
               );
             }
           }
         }
       } else {
-        // 사용자가 파일을 선택하지 않았을 때 처리할 로직을 구현합니다.
         logger.w('No file selected.');
       }
     } catch (e) {
@@ -297,7 +327,7 @@ class _FirstPageState extends State<FirstPage> {
               shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(30))
             ),
             // child: const Text('.csv(UTF-8)'),
-            child: const Text('.csv'),
+            child: const Text('업로드 파일 선택', style: TextStyle(fontSize: 24)),
           ),
         ),
         
@@ -349,7 +379,17 @@ class _SecondPageState extends State<SecondPage> {
       if (filePicked.files.isNotEmpty) {
         String? fileName = filePicked.files.single.path;
         List<List<dynamic>> fields = [];
-        if (widget.fileCodec == 'UTF8') {
+
+
+        if (fileName != null && fileName.endsWith('.xlsx')) {
+          final bytes = await File(fileName).readAsBytes();
+          final excel = Excel.decodeBytes(bytes);
+          final Sheet sheet = excel.tables[excel.tables.keys.first]!;
+
+          for (List<Data?> row in sheet.rows) {
+            fields.add(row.map((cell) => cell?.value ?? '').toList());
+          }
+        } else if (widget.fileCodec == 'UTF8') {
           var input = File(fileName!).openRead();
           fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
         } else {
@@ -357,7 +397,7 @@ class _SecondPageState extends State<SecondPage> {
           fields = const CsvToListConverter().convert(const CP949Codec().decoder.convert(input));
         }
         if (fields.isNotEmpty) {
-          columnNames = fields.first.map((field) => field.toString()).toList();
+          columnNames = fields.first.map((field) => field.toString().trim()).where((field) => field.isNotEmpty).toList();
           dataRows = fields.skip(1).toList();    
           setState(() {
             selectedTransactionTime = findMatchingColumn('transactionTime', '날짜', 0);
@@ -367,7 +407,8 @@ class _SecondPageState extends State<SecondPage> {
             selectedCategoryType = findMatchingColumn('categoryType', '타입', 4);
             selectedDescription = findMatchingColumn('memo', '메모', 5);
             selectedInstallment = findMatchingColumn('installment', '할부', 6);
-          }); 
+          });
+          // logger.d(columnNames); 
         }
       }
     } catch (e) {
@@ -526,6 +567,7 @@ class _LastPageState extends State<LastPage> {
   final Logger logger = Logger();
   bool? isDateOnly = false;
   bool isProcessing = false;
+  String? fileFromat;
   String? dateFormat;
   final List<String> dateFormats = [
     'yyyy.MM.dd',
@@ -564,11 +606,22 @@ class _LastPageState extends State<LastPage> {
       if (filePicked.files.isNotEmpty) {
         String? fileName = filePicked.files.single.path;
         List<List<dynamic>> fields = [];
-        if (widget.fileCodec == 'UTF8') {
+        if (fileName != null && fileName.endsWith('.xlsx')) {
+          fileFromat = 'xlsx';
+          final bytes = await File(fileName).readAsBytes();
+          final excel = Excel.decodeBytes(bytes);
+          final Sheet sheet = excel.tables[excel.tables.keys.first]!;
+
+          for (List<Data?> row in sheet.rows) {
+            fields.add(row.map((cell) => cell?.value ?? '').toList());
+          }
+        } else if (widget.fileCodec == 'UTF8') {
           var input = File(fileName!).openRead();
+          fileFromat = 'csv';
           fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
         } else {
           var input =await File(fileName!).readAsBytes();
+          fileFromat = 'csv';
           fields = const CsvToListConverter().convert(const CP949Codec().decoder.convert(input));
         }
         // var input = File(fileName!).openRead();
@@ -751,44 +804,130 @@ class _LastPageState extends State<LastPage> {
       LoadingDialog.show(context, message: "데이터 처리 중...");
       for (var row in dataRows) {
         i++;
-        String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])]));
-        String formattedcategory = widget.modelColumnrelations[3] != null ? row[columnNames.indexOf(widget.modelColumnrelations[3])] : "";
-        String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(row[columnNames.indexOf(widget.modelColumnrelations[4])]) ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "이체";
-        int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parseToInt(row[columnNames.indexOf(widget.modelColumnrelations[6])]) : 1;
-        try {
-          MoneyTransaction transaction = MoneyTransaction(
-            transactionTime: formattedDatetime,
-            amount: double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()),
-            goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
-            category: formattedcategory,
-            categoryType: formattedcategoryType,
-            installation: formattedInstallment ?? 1,
-            description: widget.modelColumnrelations[5] != null 
-            ? yearlyExpenseCategory.contains(formattedcategory) 
-              ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
-              : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
-            : yearlyExpenseCategory.contains(formattedcategory) 
-              ? "#연간예산 "
-              : "",
-            extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
-          );
-          bool exists = await DatabaseAdmin().checkIfTransCodeExists(
-            transaction.transactionTime,
-            transaction.goods,
-            transaction.amount,
-          );
-          if (!exists) {
-            try {
-              await DatabaseAdmin().insertMoneyTransaction(transaction);
-            } catch (e) {
-              logger.e('error: $e, not enough row data: $row');
-            }
+        if (fileFromat == 'csv') {
+          var rawDate = row[columnNames.indexOf(widget.modelColumnrelations[0])];
+          DateTime parsedDate;
+          if (rawDate is String) {
+            parsedDate = DateFormat(dateFormat).parse(rawDate);
+          } else if (rawDate is DateTime) {
+            parsedDate = rawDate;
+          } else {
+            throw Exception('Unsupported date format: $rawDate');
           }
-          // logger.i('${context.mounted} $processedCount');
-        } catch(e) {
-          logger.e('error: $e, formData row: $row');
+          String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(parsedDate);
+          String formattedcategory = widget.modelColumnrelations[3] != null ? row[columnNames.indexOf(widget.modelColumnrelations[3])] : "";
+          String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(row[columnNames.indexOf(widget.modelColumnrelations[4])]) ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "이체";
+          int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parseToInt(row[columnNames.indexOf(widget.modelColumnrelations[6])]) : 1;
+          try {
+            MoneyTransaction transaction = MoneyTransaction(
+              transactionTime: formattedDatetime,
+              amount: double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()),
+              goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
+              category: formattedcategory,
+              categoryType: formattedcategoryType,
+              installation: formattedInstallment ?? 1,
+              description: widget.modelColumnrelations[5] != null 
+              ? yearlyExpenseCategory.contains(formattedcategory) 
+                ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
+                : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
+              : yearlyExpenseCategory.contains(formattedcategory) 
+                ? "#연간예산 "
+                : "",
+              extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
+            );
+            bool exists = await DatabaseAdmin().checkIfTransCodeExists(
+              transaction.transactionTime,
+              transaction.goods,
+              transaction.amount,
+            );
+            if (!exists) {
+              try {
+                await DatabaseAdmin().insertMoneyTransaction(transaction);
+              } catch (e) {
+                logger.e('error: $e, not enough row data: $row');
+              }
+            }
+            // logger.i('${context.mounted} $processedCount');
+          } catch(e) {
+            logger.e('error: $e, formData row: $row');
+          }
+          LoadingDialog.updateProgress(((i) / dataRows.length) * 100);
+        ///엑셀의 경우
+        } else {
+          // logger.d('엑셀의 경우');
+          var rawDate = row[columnNames.indexOf(widget.modelColumnrelations[0])];
+          DateTime parsedDate;
+          if (rawDate is DateCellValue) {
+            parsedDate = rawDate.asDateTimeUtc();
+            // logger.i('엑셀의 경우 $parsedDate');
+          } else {
+            throw Exception('Unsupported date format: $rawDate');
+          }
+          TextCellValue rawCategory = row[columnNames.indexOf(widget.modelColumnrelations[3])];
+          // logger.i('엑셀의 경우 $rawCategory');
+          TextCellValue rawCategoryType = row[columnNames.indexOf(widget.modelColumnrelations[4])];
+          // logger.i('엑셀의 경우 $rawCategoryType');
+          var rawInstallment = widget.modelColumnrelations[6] != null ? row[columnNames.indexOf(widget.modelColumnrelations[6])] : const IntCellValue(1);
+          int parsedInstallment;
+          // logger.i(rawInstallment);
+          if (rawInstallment is IntCellValue) {
+            parsedInstallment = rawInstallment.value;
+          } else if(rawInstallment is TextCellValue) {
+            parsedInstallment = int.tryParse(rawInstallment.toString()) ?? 1;
+          } else {
+            throw Exception('Unsupported text or int format: $rawInstallment');
+          }
+          String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(parsedDate);
+          String formattedcategory = widget.modelColumnrelations[3] != null ? rawCategory.toString() : "";
+          String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(rawCategoryType.toString()) ? rawCategoryType.toString() : "이체";
+          int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parsedInstallment : 1;
+          var rawAmount = row[columnNames.indexOf(widget.modelColumnrelations[1])];
+          double parsedAmount;
+          if (rawAmount is IntCellValue) {
+            parsedAmount = rawAmount.value.toDouble();
+          } else if(rawAmount is TextCellValue) {
+            parsedAmount = double.tryParse(rawAmount.toString()) ?? 0.0;
+          } else if(rawAmount is DoubleCellValue) {
+            parsedAmount = rawAmount.value;
+          } else {
+            throw Exception('Unsupported double format: $rawAmount');
+          }
+          // logger.d(widget.modelColumnrelations[5]);
+          try {
+            MoneyTransaction transaction = MoneyTransaction(
+              transactionTime: formattedDatetime,
+              amount: parsedAmount,
+              goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
+              category: formattedcategory,
+              categoryType: formattedcategoryType,
+              installation: formattedInstallment,
+              description: widget.modelColumnrelations[5] != null 
+              ? yearlyExpenseCategory.contains(formattedcategory) 
+                ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
+                : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
+              : yearlyExpenseCategory.contains(formattedcategory) 
+                ? "#연간예산 "
+                : "",
+              extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
+            );
+            bool exists = await DatabaseAdmin().checkIfTransCodeExists(
+              transaction.transactionTime,
+              transaction.goods,
+              transaction.amount,
+            );
+            if (!exists) {
+              try {
+                await DatabaseAdmin().insertMoneyTransaction(transaction);
+              } catch (e) {
+                logger.e('error: $e, not enough row data: $row');
+              }
+            }
+            // logger.i('${context.mounted} $processedCount');
+          } catch(e) {
+            logger.e('error: $e, formData row: $row');
+          }
+          LoadingDialog.updateProgress(((i) / dataRows.length) * 100);
         }
-        LoadingDialog.updateProgress(((i) / dataRows.length) * 100);
       }
     } catch(e) {
       logger.e('error: $e, formmating error');
@@ -800,6 +939,12 @@ class _LastPageState extends State<LastPage> {
     } finally {
       logger.d('${context.mounted} fianl');
       LoadingDialog.hide();
+      if(context.mounted) {
+        Navigator.of(context).pop();
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('데이터 삽입 완료!')),
+        // );
+      }
     }
   }
 }
