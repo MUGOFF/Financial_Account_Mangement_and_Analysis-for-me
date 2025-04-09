@@ -410,7 +410,9 @@ class _BookAddState extends State<BookAdd> {
                           // Save data when Save button is pressed
                           _bottomSheetController?.close();
                           await updateDataToDatabase();
-                          Navigator.pop(context, true);
+                          if(context.mounted) {
+                            Navigator.pop(context, true);
+                          }
                         }
                       },
                       child: const Text('수정'),
@@ -430,12 +432,14 @@ class _BookAddState extends State<BookAdd> {
                       child: const Text('취소'),
                     ),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_formBookAddKey.currentState?.validate() ?? false) {
                           // Save data when Save button is pressed
                           _bottomSheetController?.close();
-                          insertDataToDatabase();
-                          Navigator.pop(context);
+                          await insertDataToDatabase();
+                          if(context.mounted) {
+                            Navigator.pop(context, true);
+                          }
                         }
                       },
                       child: const Text('저장'),

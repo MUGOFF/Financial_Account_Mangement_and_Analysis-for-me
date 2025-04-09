@@ -282,15 +282,23 @@ class _FirstPageState extends State<FirstPage> {
             // 첫 시트 기준으로 데이터 추출 (원하면 수정 가능)
             final Sheet sheet = excel.tables[excel.tables.keys.first]!;
             List<List<dynamic>> excelData = [];
-
+            logger.d('sheet check');
             for (List<Data?> row in sheet.rows) {
               excelData.add(row.map((cell) => cell?.value ?? '').toList());
             }
+            logger.d('sheet end');
 
             if (excelData.isNotEmpty) {
               widget.onFilePathSelected(result, 'XLSX');
               logger.i('XLSX END');
               return;
+            } else {
+              logger.w('No data found in the selected XLSX file.');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('XLSX 파일 첫번째 시트트에 데이터가 없습니다.')),
+                );
+              }
             }
           } catch (e) {
             logger.e('Error XLSX: $e');
@@ -858,9 +866,19 @@ class _LastPageState extends State<LastPage> {
           var rawDate = row[columnNames.indexOf(widget.modelColumnrelations[0])];
           DateTime parsedDate;
           if (rawDate is DateCellValue) {
+            logger.i(rawDate);
+            logger.i(rawDate.asDateTimeUtc());
+            logger.i(rawDate.toString());
             parsedDate = rawDate.asDateTimeUtc();
             // logger.i('엑셀의 경우 $parsedDate');
+          } else if (rawDate is DateTimeCellValue) {
+            logger.i(rawDate);
+            logger.i(rawDate.asDateTimeUtc());
+            logger.i(rawDate.toString());
+            parsedDate = rawDate.asDateTimeUtc();
+            logger.i('엑셀의 경우 $parsedDate');
           } else {
+            logger.d(rawDate.runtimeType);
             throw Exception('Unsupported date format: $rawDate');
           }
           TextCellValue rawCategory = row[columnNames.indexOf(widget.modelColumnrelations[3])];
