@@ -56,53 +56,150 @@ class ExternalTerminal extends StatelessWidget {
   }
 }
 
-/// 외부 데이터 입력 위젯
-class TableDataIn extends StatelessWidget {
+// /// 외부 데이터 입력 위젯
+// class TableDataIn extends StatelessWidget {
   
-/// 외부 데이터 입력 탭
+// /// 외부 데이터 입력 탭
+//   const TableDataIn({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Column(
+//       mainAxisAlignment: MainAxisAlignment.center,
+//       children: [
+//         const Icon(
+//           Icons.drive_folder_upload_rounded,
+//           size: 100.0,
+//         ),
+//         const SizedBox(height: 50),
+//         SizedBox(
+//           width: MediaQuery.of(context).size.width * 0.6,
+//           height: MediaQuery.of(context).size.height * 0.4*0.3,
+//           child: ElevatedButton(
+//             onPressed: () {
+//               showDialog(
+//                 context: context,
+//                 builder: (BuildContext context) {
+//                   return Dialog(
+//                     child: SizedBox(
+//                       width: MediaQuery.of(context).size.width * 0.8,
+//                       child: const Column(
+//                         mainAxisSize:  MainAxisSize.min,
+//                         crossAxisAlignment: CrossAxisAlignment.stretch,
+//                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//                         children: [
+//                           BookDialogContent(),
+//                         ],
+//                       ) 
+//                     )
+//                   );
+//                 },
+//               );
+//             },
+//             style: ElevatedButton.styleFrom(
+//               shape: RoundedRectangleBorder(
+//                 borderRadius: BorderRadius.circular(30.0), // 원하는 모양으로 조절
+//               ),
+//               backgroundColor: HoloColors.shioriNovella
+//             ),
+//             child: const AutoSizeText('데이터 \n업로드', style: TextStyle(fontSize: 36, color: Colors.white), maxLines: 2),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+// }
+
+class TableDataIn extends StatelessWidget {
   const TableDataIn({super.key});
+
+  Future<void> _pickFileAndOpenDialog(BuildContext context) async {
+    final Logger logger = Logger();
+    FilePickerResult? result;
+    String selectedCodec = 'UTF8';
+
+    try {
+      result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv', 'xlsx'],
+        allowMultiple: false,
+        withData: true,
+      );
+
+      if (result != null) {
+        final String filePath = result.files.single.path!;
+        final String extension = filePath.split('.').last.toLowerCase();
+
+        if (extension == 'csv') {
+          try {
+            var input = await File(filePath).readAsBytes();
+            var fields = const CsvToListConverter().convert(const CP949Codec().decoder.convert(input));
+            if (fields.isNotEmpty) selectedCodec = 'CP949';
+          } catch (e) {
+            try {
+              var input = File(filePath).openRead();
+              var fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
+              if (fields.isNotEmpty) selectedCodec = 'UTF8';
+            } catch (e) {
+              logger.e('CSV decoding failed for both codecs.');
+              return;
+            }
+          }
+        } else if (extension == 'xlsx') {
+          try {
+            final bytes = File(filePath).readAsBytesSync();
+            final excel = Excel.decodeBytes(bytes);
+            final Sheet sheet = excel.tables[excel.tables.keys.first]!;
+            if (sheet.rows.isEmpty) return;
+            selectedCodec = 'XLSX';
+          } catch (e) {
+            logger.e('XLSX decoding failed: $e');
+            return;
+          }
+        }
+
+        // 파일 선택 후 모달 열기 (SecondPage부터 시작)
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => Dialog(
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.8,
+                child: BookDialogContent(
+                  filePicked: result,
+                  fileCodec: selectedCodec,
+                ),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      logger.e('파일 선택 중 오류: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(
-          Icons.drive_folder_upload_rounded,
-          size: 100.0,
-        ),
+        const Icon(Icons.drive_folder_upload_rounded, size: 100.0),
         const SizedBox(height: 50),
         SizedBox(
           width: MediaQuery.of(context).size.width * 0.6,
-          height: MediaQuery.of(context).size.height * 0.4*0.3,
+          height: MediaQuery.of(context).size.height * 0.4 * 0.3,
           child: ElevatedButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return Dialog(
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.8,
-                      child: const Column(
-                        mainAxisSize:  MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          BookDialogContent(),
-                        ],
-                      ) 
-                    )
-                  );
-                },
-              );
-            },
+            onPressed: () => _pickFileAndOpenDialog(context),
             style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30.0), // 원하는 모양으로 조절
-              ),
-              backgroundColor: HoloColors.shioriNovella
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+              backgroundColor: HoloColors.shioriNovella,
             ),
-            child: const AutoSizeText('데이터 \n업로드', style: TextStyle(fontSize: 36, color: Colors.white), maxLines: 2),
+            child: const AutoSizeText(
+              '데이터 \n업로드',
+              style: TextStyle(fontSize: 36, color: Colors.white),
+              maxLines: 2,
+            ),
           ),
         ),
       ],
@@ -112,8 +209,10 @@ class TableDataIn extends StatelessWidget {
 
 /// 외부 데이터 입력 모달 위젯
 class BookDialogContent extends StatefulWidget {
+  final FilePickerResult? filePicked;
+  final String fileCodec;
   /// 외부 데이터 입력 모달 
-  const BookDialogContent({super.key});
+  const BookDialogContent({super.key, this.filePicked, this.fileCodec = 'UTF8'});
 
   @override
  State<BookDialogContent> createState() => _BookDialogContentState();
@@ -122,8 +221,6 @@ class BookDialogContent extends StatefulWidget {
 class _BookDialogContentState extends State<BookDialogContent> {
   late PageController _pageController;
   int _currentPageIndex = 0;
-  FilePickerResult? filePicked;
-  String fileCodec = 'UTF8';
   List<dynamic> modelColumnrelations = [];
   List<dynamic> setData = [];
 
@@ -142,6 +239,7 @@ class _BookDialogContentState extends State<BookDialogContent> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -164,7 +262,8 @@ class _BookDialogContentState extends State<BookDialogContent> {
         ),
         SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
-          height:_currentPageIndex > 0 ? MediaQuery.of(context).size.height * 0.6 : MediaQuery.of(context).size.height * 0.4,
+          height: MediaQuery.of(context).size.height * 0.7,
+          // height:_currentPageIndex > 0 ? MediaQuery.of(context).size.height * 0.6 : MediaQuery.of(context).size.height * 0.4,
           child: PageView(
             controller: _pageController,
             physics: const NeverScrollableScrollPhysics(),
@@ -175,18 +274,18 @@ class _BookDialogContentState extends State<BookDialogContent> {
             },
             children: [
               /// 파일 선택 페이지
-              FirstPage(
-                onFilePathSelected: (path, codec) {
-                  setState(() {
-                    filePicked = path;
-                    fileCodec = codec;
-                  });
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                },
-              ),
+              // FirstPage(
+              //   onFilePathSelected: (path, codec) {
+              //     setState(() {
+              //       filePicked = path;
+              //       fileCodec = codec;
+              //     });
+              //     _pageController.nextPage(
+              //       duration: const Duration(milliseconds: 300),
+              //       curve: Curves.easeInOut,
+              //     );
+              //   },
+              // ),
               /// 카테고리 정보 연결 페이지
               SecondPage(
                 onButtonPressed: (realtion, setforaccount) {
@@ -199,16 +298,16 @@ class _BookDialogContentState extends State<BookDialogContent> {
                     curve: Curves.easeInOut,
                   );
                 }, 
-                filePicked: filePicked,
-                fileCodec: fileCodec,
+                filePicked: widget.filePicked,
+                fileCodec: widget.fileCodec,
               ),
               /// 데이터 형식 판별 페이지
               LastPage(
                 onButtonPressed: () {
                   Navigator.of(context).pop();
                 },
-                filePicked: filePicked,
-                fileCodec: fileCodec,
+                filePicked: widget.filePicked,
+                fileCodec: widget.fileCodec,
                 modelColumnrelations: modelColumnrelations,
                 setData: setData,
               ),
@@ -453,7 +552,8 @@ class _SecondPageState extends State<SecondPage> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child:Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           const Text('칼럼 정렬', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
@@ -604,7 +704,14 @@ class _LastPageState extends State<LastPage> {
     super.initState();
     relationColumnandValue = List.filled(widget.setData.length, null);
     if (widget.filePicked != null) {
-      _readColumnNames(widget.filePicked!);
+      _readColumnNames(widget.filePicked!).then((_) {
+        if (fileFromat == 'xlsx') {
+          WidgetsBinding.instance.addPostFrameCallback((_) async{
+            widget.onButtonPressed();
+            await insertDatasToDatabase(context, dataRows);
+          });
+        }
+      });
     }
     // _readAccountsinDatabase();
   }
@@ -809,7 +916,8 @@ class _LastPageState extends State<LastPage> {
   Future<void> insertDatasToDatabase(BuildContext context, List<List<dynamic>> dataRows) async{
     int i = 0;
     try {
-      LoadingDialog.show(context, message: "데이터 처리 중...");
+      await LoadingDialog.show(context, message: "데이터 처리 중...");
+      await Future.delayed(const Duration(milliseconds: 100));
       for (var row in dataRows) {
         i++;
         if (fileFromat == 'csv') {
@@ -957,6 +1065,178 @@ class _LastPageState extends State<LastPage> {
     } finally {
       logger.d('${context.mounted} fianl');
       LoadingDialog.hide();
+      if(context.mounted) {
+        Navigator.of(context).pop();
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('데이터 삽입 완료!')),
+        // );
+      }
+    }
+  }
+
+  void showLoadingAndStart(BuildContext context, List<List<dynamic>> dataRows) {
+    LoadingDialog.show(
+      context,
+      message: "데이터 처리 중...",
+      onReady: () async {
+        await autoInsertDatasToDatabase(context, dataRows); // 여기서는 dialog를 띄우지 않음
+        LoadingDialog.hide(); // 모든 작업 끝나면 다이얼로그 닫기
+      },
+    );
+  }
+  ///xlsx의 경우
+  Future<void> autoInsertDatasToDatabase(BuildContext context, List<List<dynamic>> dataRows) async{
+    int i = 0;
+    try {
+      // await LoadingDialog.show(context, message: "데이터 처리 중...");
+      // await Future.delayed(const Duration(milliseconds: 100));
+      for (var row in dataRows) {
+        i++;
+        if (fileFromat == 'csv') {
+          var rawDate = row[columnNames.indexOf(widget.modelColumnrelations[0])];
+          DateTime parsedDate;
+          if (rawDate is String) {
+            parsedDate = DateFormat(dateFormat).parse(rawDate);
+          } else if (rawDate is DateTime) {
+            parsedDate = rawDate;
+          } else {
+            throw Exception('Unsupported date format: $rawDate');
+          }
+          String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(parsedDate);
+          String formattedcategory = widget.modelColumnrelations[3] != null ? row[columnNames.indexOf(widget.modelColumnrelations[3])] : "";
+          String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(row[columnNames.indexOf(widget.modelColumnrelations[4])]) ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "이체";
+          int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parseToInt(row[columnNames.indexOf(widget.modelColumnrelations[6])]) : 1;
+          try {
+            MoneyTransaction transaction = MoneyTransaction(
+              transactionTime: formattedDatetime,
+              amount: double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()),
+              goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
+              category: formattedcategory,
+              categoryType: formattedcategoryType,
+              installation: formattedInstallment ?? 1,
+              description: widget.modelColumnrelations[5] != null 
+              ? yearlyExpenseCategory.contains(formattedcategory) 
+                ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
+                : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
+              : yearlyExpenseCategory.contains(formattedcategory) 
+                ? "#연간예산 "
+                : "",
+              extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
+            );
+            bool exists = await DatabaseAdmin().checkIfTransCodeExists(
+              transaction.transactionTime,
+              transaction.goods,
+              transaction.amount,
+            );
+            if (!exists) {
+              try {
+                await DatabaseAdmin().insertMoneyTransaction(transaction);
+              } catch (e) {
+                logger.e('error: $e, not enough row data: $row');
+              }
+            }
+            // logger.i('${context.mounted} $processedCount');
+          } catch(e) {
+            logger.e('error: $e, formData row: $row');
+          }
+          LoadingDialog.updateProgress(((i) / dataRows.length) * 100);
+        ///엑셀의 경우
+        } else {
+          // logger.d('엑셀의 경우');
+          var rawDate = row[columnNames.indexOf(widget.modelColumnrelations[0])];
+          DateTime parsedDate;
+          if (rawDate is DateCellValue) {
+            logger.i(rawDate);
+            logger.i(rawDate.asDateTimeUtc());
+            logger.i(rawDate.toString());
+            parsedDate = rawDate.asDateTimeUtc();
+            // logger.i('엑셀의 경우 $parsedDate');
+          } else if (rawDate is DateTimeCellValue) {
+            logger.i(rawDate);
+            logger.i(rawDate.asDateTimeUtc());
+            logger.i(rawDate.toString());
+            parsedDate = rawDate.asDateTimeUtc();
+            logger.i('엑셀의 경우 $parsedDate');
+          } else {
+            logger.d(rawDate.runtimeType);
+            throw Exception('Unsupported date format: $rawDate');
+          }
+          TextCellValue rawCategory = row[columnNames.indexOf(widget.modelColumnrelations[3])];
+          // logger.i('엑셀의 경우 $rawCategory');
+          TextCellValue rawCategoryType = row[columnNames.indexOf(widget.modelColumnrelations[4])];
+          // logger.i('엑셀의 경우 $rawCategoryType');
+          var rawInstallment = widget.modelColumnrelations[6] != null ? row[columnNames.indexOf(widget.modelColumnrelations[6])] : const IntCellValue(1);
+          int parsedInstallment;
+          // logger.i(rawInstallment);
+          if (rawInstallment is IntCellValue) {
+            parsedInstallment = rawInstallment.value;
+          } else if(rawInstallment is TextCellValue) {
+            parsedInstallment = int.tryParse(rawInstallment.toString()) ?? 1;
+          } else {
+            throw Exception('Unsupported text or int format: $rawInstallment');
+          }
+          String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(parsedDate);
+          String formattedcategory = widget.modelColumnrelations[3] != null ? rawCategory.toString() : "";
+          String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(rawCategoryType.toString()) ? rawCategoryType.toString() : "이체";
+          int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parsedInstallment : 1;
+          var rawAmount = row[columnNames.indexOf(widget.modelColumnrelations[1])];
+          double parsedAmount;
+          if (rawAmount is IntCellValue) {
+            parsedAmount = rawAmount.value.toDouble();
+          } else if(rawAmount is TextCellValue) {
+            parsedAmount = double.tryParse(rawAmount.toString()) ?? 0.0;
+          } else if(rawAmount is DoubleCellValue) {
+            parsedAmount = rawAmount.value;
+          } else {
+            throw Exception('Unsupported double format: $rawAmount');
+          }
+          // logger.d(widget.modelColumnrelations[5]);
+          try {
+            MoneyTransaction transaction = MoneyTransaction(
+              transactionTime: formattedDatetime,
+              amount: parsedAmount,
+              goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
+              category: formattedcategory,
+              categoryType: formattedcategoryType,
+              installation: formattedInstallment,
+              description: widget.modelColumnrelations[5] != null 
+              ? yearlyExpenseCategory.contains(formattedcategory) 
+                ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
+                : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
+              : yearlyExpenseCategory.contains(formattedcategory) 
+                ? "#연간예산 "
+                : "",
+              extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
+            );
+            bool exists = await DatabaseAdmin().checkIfTransCodeExists(
+              transaction.transactionTime,
+              transaction.goods,
+              transaction.amount,
+            );
+            if (!exists) {
+              try {
+                await DatabaseAdmin().insertMoneyTransaction(transaction);
+              } catch (e) {
+                logger.e('error: $e, not enough row data: $row');
+              }
+            }
+            // logger.i('${context.mounted} $processedCount');
+          } catch(e) {
+            logger.e('error: $e, formData row: $row');
+          }
+          LoadingDialog.updateProgress(((i) / dataRows.length) * 100);
+        }
+      }
+    } catch(e) {
+      logger.e('error: $e, formmating error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error file format type')),
+        );
+      }
+    } finally {
+      logger.d('${context.mounted} fianl');
+      // LoadingDialog.hide();
       if(context.mounted) {
         Navigator.of(context).pop();
         // ScaffoldMessenger.of(context).showSnackBar(
