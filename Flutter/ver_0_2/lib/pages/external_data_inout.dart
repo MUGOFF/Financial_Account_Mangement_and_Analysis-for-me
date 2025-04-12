@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math';
 // import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -129,6 +130,7 @@ class TableDataIn extends StatelessWidget {
       if (result != null) {
         final String filePath = result.files.single.path!;
         final String extension = filePath.split('.').last.toLowerCase();
+        int initialPage = (extension == 'xlsx') ? 0 : 1;
 
         if (extension == 'csv') {
           try {
@@ -168,6 +170,7 @@ class TableDataIn extends StatelessWidget {
                 child: BookDialogContent(
                   filePicked: result,
                   fileCodec: selectedCodec,
+                  initialPage: initialPage,
                 ),
               ),
             ),
@@ -211,8 +214,9 @@ class TableDataIn extends StatelessWidget {
 class BookDialogContent extends StatefulWidget {
   final FilePickerResult? filePicked;
   final String fileCodec;
+  final int initialPage;
   /// 외부 데이터 입력 모달 
-  const BookDialogContent({super.key, this.filePicked, this.fileCodec = 'UTF8'});
+  const BookDialogContent({super.key, required this.initialPage, this.filePicked, this.fileCodec = 'UTF8'});
 
   @override
  State<BookDialogContent> createState() => _BookDialogContentState();
@@ -221,13 +225,14 @@ class BookDialogContent extends StatefulWidget {
 class _BookDialogContentState extends State<BookDialogContent> {
   late PageController _pageController;
   int _currentPageIndex = 0;
+  String sheetName = '';
   List<dynamic> modelColumnrelations = [];
   List<dynamic> setData = [];
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _pageController = PageController(initialPage: widget.initialPage);
   }
 
   @override
@@ -262,8 +267,7 @@ class _BookDialogContentState extends State<BookDialogContent> {
         ),
         SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
-          height: MediaQuery.of(context).size.height * 0.7,
-          // height:_currentPageIndex > 0 ? MediaQuery.of(context).size.height * 0.6 : MediaQuery.of(context).size.height * 0.4,
+          height: min(max(MediaQuery.of(context).size.height * 0.6, 600),MediaQuery.of(context).size.height * 0.9),
           child: PageView(
             controller: _pageController,
             physics: const NeverScrollableScrollPhysics(),
@@ -273,19 +277,20 @@ class _BookDialogContentState extends State<BookDialogContent> {
               });
             },
             children: [
-              /// 파일 선택 페이지
-              // FirstPage(
-              //   onFilePathSelected: (path, codec) {
-              //     setState(() {
-              //       filePicked = path;
-              //       fileCodec = codec;
-              //     });
-              //     _pageController.nextPage(
-              //       duration: const Duration(milliseconds: 300),
-              //       curve: Curves.easeInOut,
-              //     );
-              //   },
-              // ),
+              // 시트트 선택 페이지
+              FirstPage(
+                onFileSheetSelected: (sheetNameSelected) {
+                  setState(() {
+                    sheetName = sheetNameSelected;
+                    // fileCodec = codec;
+                  });
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                filePicked: widget.filePicked,
+              ),
               /// 카테고리 정보 연결 페이지
               SecondPage(
                 onButtonPressed: (realtion, setforaccount) {
@@ -300,6 +305,7 @@ class _BookDialogContentState extends State<BookDialogContent> {
                 }, 
                 filePicked: widget.filePicked,
                 fileCodec: widget.fileCodec,
+                xlsxSheet: sheetName,
               ),
               /// 데이터 형식 판별 페이지
               LastPage(
@@ -309,6 +315,7 @@ class _BookDialogContentState extends State<BookDialogContent> {
                 filePicked: widget.filePicked,
                 fileCodec: widget.fileCodec,
                 modelColumnrelations: modelColumnrelations,
+                xlsxSheet: sheetName,
                 setData: setData,
               ),
             ],
@@ -320,85 +327,58 @@ class _BookDialogContentState extends State<BookDialogContent> {
 }
 
 class FirstPage extends StatefulWidget {
-  final Function(FilePickerResult?, String) onFilePathSelected;
+  final FilePickerResult? filePicked;
+  final Function(String) onFileSheetSelected;
 
-  /// onFilePathSelected: 외부 파일 선택 시 발동 함수
+  /// onFileSheetSelected: 외부 파일 선택 시 발동 함수
   ///
   /// - 외부 위젯으로 값(파일) 전달
-  const FirstPage({required this.onFilePathSelected, super.key});
+  const FirstPage({required this.filePicked, required this.onFileSheetSelected, super.key});
 
   @override
   State<FirstPage> createState() => _FirstPageState();
 }
 
 class _FirstPageState extends State<FirstPage> {
-  Future<void> _pickFile() async {
+  Map<String, Sheet> fileSheets = {};
+  String? selectedSheet;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSheets();
+  }
+
+  Future<void> _loadSheets() async {
     final Logger logger = Logger();
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['csv', 'xlsx'],
-        allowMultiple: false,
-        withData: true,
-      );
-      if (result != null) {
-        final String filePath = result.files.single.path!;
+      if (widget.filePicked != null) {
+        final String filePath = widget.filePicked!.files.single.path!;
         final String extension = filePath.split('.').last.toLowerCase();
-         if (extension == 'csv') {
-          try {
-            logger.d('CP949 TRY');
-            var input = await File(result.files.single.path!).readAsBytes();
-            var fields = const CsvToListConverter().convert(const CP949Codec().decoder.convert(input));
-            if (fields.isNotEmpty) {
-              widget.onFilePathSelected(result, 'CP949');
-              logger.i('CP949 END');
-            } 
-          } catch(e) {
-            logger.e('Error picking file type CP949: $e');
-            logger.d('UTF8 TRY');
-            try {
-              var input = File(result.files.single.path!).openRead();
-              var fields = await input.transform(const Utf8Codec().decoder).transform(const CsvToListConverter()).toList();
-              if (fields.isNotEmpty) {
-                widget.onFilePathSelected(result, 'UTF8');
-                logger.i('UTF8 END');
-              } 
-            } catch (e) {
-              logger.e('Error picking file type or format: $e');
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Error picking file type or format')),
-                );
-              }
-            }
+         if (extension != 'xlsx') {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('XLSX 파일을 읽을 수 없습니다.')),
+            );
           }
-         } else if (extension == 'xlsx') {
+          Navigator.of(context).pop();
+         } else  {
           try {
-            logger.d('XLSX TRY');
+            logger.d('XLSX READ TRY');
             final bytes = File(filePath).readAsBytesSync();
             final excel = Excel.decodeBytes(bytes);
 
-            // 첫 시트 기준으로 데이터 추출 (원하면 수정 가능)
-            final Sheet sheet = excel.tables[excel.tables.keys.first]!;
-            List<List<dynamic>> excelData = [];
-            logger.d('sheet check');
-            for (List<Data?> row in sheet.rows) {
-              excelData.add(row.map((cell) => cell?.value ?? '').toList());
-            }
-            logger.d('sheet end');
-
-            if (excelData.isNotEmpty) {
-              widget.onFilePathSelected(result, 'XLSX');
-              logger.i('XLSX END');
-              return;
-            } else {
-              logger.w('No data found in the selected XLSX file.');
-              if (mounted) {
+            setState(() {
+              fileSheets = excel.tables;
+              if (fileSheets.isNotEmpty) {
+                selectedSheet = fileSheets.keys.first;
+              } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('XLSX 파일 첫번째 시트트에 데이터가 없습니다.')),
+                  const SnackBar(content: Text('XLSX 파일이 비어있습니다.')),
                 );
+                Navigator.of(context).pop();
               }
-            }
+            });
           } catch (e) {
             logger.e('Error XLSX: $e');
             if (mounted) {
@@ -421,20 +401,43 @@ class _FirstPageState extends State<FirstPage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        const Text('파일 입력', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+        const Text('시트 선택', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
         const SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 50.0),
+          child: DropdownButtonFormField<String>(
+            value: selectedSheet,
+            items: fileSheets.keys.map((sheetName) {
+              return DropdownMenuItem<String>(
+                value: sheetName,
+                child: Text(sheetName),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                selectedSheet = value;
+              });
+            },
+            decoration: const InputDecoration(
+              labelText: '시트를 선택하세요',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
         SizedBox(
           width: MediaQuery.of(context).size.width * 0.6,
           height: MediaQuery.of(context).size.height * 0.4*0.3,
           child:ElevatedButton(
-            onPressed: () {
-              _pickFile();
-            },
+            onPressed: selectedSheet != null
+              ? () {
+                  widget.onFileSheetSelected(selectedSheet!);
+                }
+              : null,
             style: ElevatedButton.styleFrom(
               shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(30))
             ),
             // child: const Text('.csv(UTF-8)'),
-            child: const Text('업로드 파일 선택', style: TextStyle(fontSize: 24)),
+            child: const Text('파일 시트 선택', style: TextStyle(fontSize: 24)),
           ),
         ),
         
@@ -447,12 +450,13 @@ class _FirstPageState extends State<FirstPage> {
 class SecondPage extends StatefulWidget {
   final FilePickerResult? filePicked;
   final String fileCodec;
+  final String? xlsxSheet;
   final Function(List<dynamic>, List<dynamic>) onButtonPressed;
 
   /// onButtonPressed: 다음 페이지 선택 시 발동 함수
   /// 
   /// - 외부 위젯으로 값 전달
-  const SecondPage({required this.filePicked, required this.fileCodec, required this.onButtonPressed, super.key});
+  const SecondPage({required this.filePicked, required this.fileCodec, required this.onButtonPressed, this.xlsxSheet, super.key});
 
   @override
   State<SecondPage> createState() => _SecondPageState();
@@ -491,7 +495,7 @@ class _SecondPageState extends State<SecondPage> {
         if (fileName != null && fileName.endsWith('.xlsx')) {
           final bytes = await File(fileName).readAsBytes();
           final excel = Excel.decodeBytes(bytes);
-          final Sheet sheet = excel.tables[excel.tables.keys.first]!;
+          final Sheet sheet = excel.tables[widget.xlsxSheet]!;
 
           for (List<Data?> row in sheet.rows) {
             fields.add(row.map((cell) => cell?.value ?? '').toList());
@@ -662,10 +666,11 @@ class LastPage extends StatefulWidget {
   final VoidCallback onButtonPressed;
   final FilePickerResult? filePicked;
   final String fileCodec;
+  final String? xlsxSheet;
   final List<dynamic> modelColumnrelations;
   final List<dynamic> setData;
 
-  const LastPage({required this.filePicked, required this.fileCodec, required this.onButtonPressed, required this.modelColumnrelations, required this.setData, super.key});
+  const LastPage({required this.filePicked, required this.fileCodec, required this.onButtonPressed, required this.modelColumnrelations, this.xlsxSheet, required this.setData, super.key});
 
   @override
   State<LastPage> createState() => _LastPageState();
@@ -725,7 +730,7 @@ class _LastPageState extends State<LastPage> {
           fileFromat = 'xlsx';
           final bytes = await File(fileName).readAsBytes();
           final excel = Excel.decodeBytes(bytes);
-          final Sheet sheet = excel.tables[excel.tables.keys.first]!;
+          final Sheet sheet = excel.tables[widget.xlsxSheet]!;
 
           for (List<Data?> row in sheet.rows) {
             fields.add(row.map((cell) => cell?.value ?? '').toList());
