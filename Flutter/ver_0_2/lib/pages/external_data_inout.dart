@@ -713,7 +713,7 @@ class _LastPageState extends State<LastPage> {
       _readColumnNames(widget.filePicked!).then((_) {
         if (fileFromat == 'xlsx') {
           WidgetsBinding.instance.addPostFrameCallback((_) async{
-            widget.onButtonPressed();
+            // widget.onButtonPressed();
             showLoadingAndStart(context, dataRows);
           });
         }
@@ -734,8 +734,14 @@ class _LastPageState extends State<LastPage> {
           final Sheet sheet = excel.tables[widget.xlsxSheet]!;
 
           for (List<Data?> row in sheet.rows) {
-            fields.add(row.map((cell) => cell?.value ?? '').toList());
+            List<dynamic> mappedRow = row.map((cell) => cell?.value ?? '').toList();
+            if (mappedRow.every((element) => element.toString().trim().isEmpty)) {
+              continue;
+            }
+            fields.add(mappedRow);
           }
+          logger.i('엑셀의 경우 ${fields.length}');
+          logger.d('엑셀의 경우 $fields');
         } else if (widget.fileCodec == 'UTF8') {
           var input = File(fileName!).openRead();
           fileFromat = 'csv';
@@ -974,93 +980,6 @@ class _LastPageState extends State<LastPage> {
           logger.e('error: $e, formData row: $row');
         }
         LoadingDialog.updateProgress(((i) / dataRows.length) * 100);
-        ///엑셀의 경우
-        // } 
-        // else {
-        //   // logger.d('엑셀의 경우');
-        //   var rawDate = row[columnNames.indexOf(widget.modelColumnrelations[0])];
-        //   DateTime parsedDate;
-        //   if (rawDate is DateCellValue) {
-        //     logger.i(rawDate);
-        //     logger.i(rawDate.asDateTimeUtc());
-        //     logger.i(rawDate.toString());
-        //     parsedDate = rawDate.asDateTimeUtc();
-        //     // logger.i('엑셀의 경우 $parsedDate');
-        //   } else if (rawDate is DateTimeCellValue) {
-        //     logger.i(rawDate);
-        //     logger.i(rawDate.asDateTimeUtc());
-        //     logger.i(rawDate.toString());
-        //     parsedDate = rawDate.asDateTimeUtc();
-        //     logger.i('엑셀의 경우 $parsedDate');
-        //   } else {
-        //     logger.d(rawDate.runtimeType);
-        //     throw Exception('Unsupported date format: $rawDate');
-        //   }
-        //   TextCellValue rawCategory = row[columnNames.indexOf(widget.modelColumnrelations[3])];
-        //   // logger.i('엑셀의 경우 $rawCategory');
-        //   TextCellValue rawCategoryType = row[columnNames.indexOf(widget.modelColumnrelations[4])];
-        //   // logger.i('엑셀의 경우 $rawCategoryType');
-        //   var rawInstallment = widget.modelColumnrelations[6] != null ? row[columnNames.indexOf(widget.modelColumnrelations[6])] : const IntCellValue(1);
-        //   int parsedInstallment;
-        //   // logger.i(rawInstallment);
-        //   if (rawInstallment is IntCellValue) {
-        //     parsedInstallment = rawInstallment.value;
-        //   } else if(rawInstallment is TextCellValue) {
-        //     parsedInstallment = int.tryParse(rawInstallment.toString()) ?? 1;
-        //   } else {
-        //     throw Exception('Unsupported text or int format: $rawInstallment');
-        //   }
-        //   String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(parsedDate);
-        //   String formattedcategory = widget.modelColumnrelations[3] != null ? rawCategory.toString() : "";
-        //   String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(rawCategoryType.toString()) ? rawCategoryType.toString() : "이체";
-        //   int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parsedInstallment : 1;
-        //   var rawAmount = row[columnNames.indexOf(widget.modelColumnrelations[1])];
-        //   double parsedAmount;
-        //   if (rawAmount is IntCellValue) {
-        //     parsedAmount = rawAmount.value.toDouble();
-        //   } else if(rawAmount is TextCellValue) {
-        //     parsedAmount = double.tryParse(rawAmount.toString()) ?? 0.0;
-        //   } else if(rawAmount is DoubleCellValue) {
-        //     parsedAmount = rawAmount.value;
-        //   } else {
-        //     throw Exception('Unsupported double format: $rawAmount');
-        //   }
-        //   // logger.d(widget.modelColumnrelations[5]);
-        //   try {
-        //     MoneyTransaction transaction = MoneyTransaction(
-        //       transactionTime: formattedDatetime,
-        //       amount: parsedAmount,
-        //       goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
-        //       category: formattedcategory,
-        //       categoryType: formattedcategoryType,
-        //       installation: formattedInstallment,
-        //       description: widget.modelColumnrelations[5] != null 
-        //       ? yearlyExpenseCategory.contains(formattedcategory) 
-        //         ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
-        //         : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
-        //       : yearlyExpenseCategory.contains(formattedcategory) 
-        //         ? "#연간예산 "
-        //         : "",
-        //       extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
-        //     );
-        //     bool exists = await DatabaseAdmin().checkIfTransCodeExists(
-        //       transaction.transactionTime,
-        //       transaction.goods,
-        //       transaction.amount,
-        //     );
-        //     if (!exists) {
-        //       try {
-        //         await DatabaseAdmin().insertMoneyTransaction(transaction);
-        //       } catch (e) {
-        //         logger.e('error: $e, not enough row data: $row');
-        //       }
-        //     }
-        //     // logger.i('${context.mounted} $processedCount');
-        //   } catch(e) {
-        //     logger.e('error: $e, formData row: $row');
-        //   }
-        //   LoadingDialog.updateProgress(((i) / dataRows.length) * 100);
-        // }
       }
     } catch(e) {
       logger.e('error: $e, formmating error');
@@ -1095,37 +1014,25 @@ class _LastPageState extends State<LastPage> {
   Future<void> autoInsertDatasToDatabase(BuildContext context, List<List<dynamic>> dataRows) async{
     int i = 0;
     try {
-      // await LoadingDialog.show(context, message: "데이터 처리 중...");
-      // await Future.delayed(const Duration(milliseconds: 100));
       for (var row in dataRows) {
         i++;
         ///엑셀의 경우
         var rawDate = row[columnNames.indexOf(widget.modelColumnrelations[0])];
+        if (rawDate == null || rawDate == '') {
+          continue;
+        }
         DateTime parsedDate;
         if (rawDate is DateCellValue) {
-          logger.i(rawDate);
-          logger.i(rawDate.asDateTimeUtc());
-          logger.i(rawDate.toString());
           parsedDate = rawDate.asDateTimeUtc();
-          // logger.i('엑셀의 경우 $parsedDate');
         } else if (rawDate is DateTimeCellValue) {
-          logger.i(rawDate);
-          logger.i(rawDate.asDateTimeUtc());
-          logger.i(rawDate.toString());
           parsedDate = rawDate.asDateTimeUtc();
           logger.i('엑셀의 경우 $parsedDate');
-        // } else if (rawDate is FormulaCellValue) {
-        //   logger.i('f');
-        //   logger.i(rawDate);
-        //   logger.i(rawDate.toString());
-        //   logger.i(rawDate.value);
-        //   parsedDate = DateTime.parse(rawDate.formula);
-        //   logger.i('엑셀의 경우 $parsedDate');
         } else {
           logger.d(rawDate.runtimeType);
+          logger.d(rawDate.toString());
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('지원하지 않는 날짜 포맷입니다')),
+              const SnackBar(content: Text('지원하지 않는 날짜 포맷이거나 함수수입니다')),
             );
           }
           throw Exception('Unsupported date format: $rawDate');
@@ -1142,6 +1049,11 @@ class _LastPageState extends State<LastPage> {
         } else if(rawInstallment is TextCellValue) {
           parsedInstallment = int.tryParse(rawInstallment.toString()) ?? 1;
         } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('할부 항목이 지원하지 않는 숫자 혹은 텍스트 포맷이거나 함수입니다')),
+            );
+          }
           throw Exception('Unsupported text or int format: $rawInstallment');
         }
         String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(parsedDate);
@@ -1157,6 +1069,11 @@ class _LastPageState extends State<LastPage> {
         } else if(rawAmount is DoubleCellValue) {
           parsedAmount = rawAmount.value;
         } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('금액 항목이 지원하지 않는 숫자 혹은 텍스트 포맷이거나 함수입니다')),
+            );
+          }
           throw Exception('Unsupported double format: $rawAmount');
         }
         // logger.d(widget.modelColumnrelations[5]);
@@ -1200,7 +1117,7 @@ class _LastPageState extends State<LastPage> {
       logger.e('error: $e, formmating error');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error file format type')),
+          const SnackBar(content: Text('내역 항목의 타입에 에러가 있습니다')),
         );
       }
     } finally {

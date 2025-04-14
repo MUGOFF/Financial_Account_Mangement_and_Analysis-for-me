@@ -1856,12 +1856,14 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
   List<int> selectedTransactionData = [];
   List<Map<String, dynamic>> _tableRawData = [];
   List<Map<String,double>> _chartMap = [];
-
+  Future<List<MoneyTransaction>> budgetDataDB = Future.value([]);
+  bool budgetDataLoading = true;
 
   @override
   void initState() {
     super.initState();
     fetchDatas();
+    fetchBudgetData();
   }
 
   Future<void> fetchDatas() async{
@@ -1885,6 +1887,13 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
       } else {
         Navigator.pop(context);
       }
+    });
+  }
+
+  Future<void> fetchBudgetData() async {
+    budgetDataDB = DatabaseAdmin().getExtrabugetcategory();
+    setState(() {
+      budgetDataLoading = false;
     });
   }
 
@@ -2054,6 +2063,7 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
     );
   }
 
+  // final ScrollController scrollDialogController = ScrollController();
   /// 특별 예산 내역 선택
   void _showDialog() {
     showDialog(
@@ -2068,9 +2078,9 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
                   width: MediaQuery.of(context).size.width * 0.8,
                   height: MediaQuery.of(context).size.height * 0.6,
                   child:FutureBuilder<List<MoneyTransaction>>(
-                future: DatabaseAdmin().getExtrabugetcategory(),
+                future: budgetDataDB,
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (snapshot.connectionState == ConnectionState.waiting || budgetDataLoading) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
@@ -2078,9 +2088,12 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
                     List<MoneyTransaction> extraTransactionDatas = snapshot.data ?? [];
                     List<MoneyTransaction> localselectedTransactionData = [];
                     for (var id in selectedTransactionData) {
-                      localselectedTransactionData.add(
-                        extraTransactionDatas.firstWhere((transaction) => transaction.id == id)
-                      );
+                      try {
+                        final match = extraTransactionDatas.firstWhere((transaction) => transaction.id == id);
+                        localselectedTransactionData.add(match);
+                      } catch (e) {
+                        logger.w('ID $id 에 해당하는 데이터를 찾을 수 없음: $e');
+                      }
                     }
                     // logger.d(localselectedTransactionData.length);
                     // logger.d(selectedTransactionData.length);
@@ -2094,6 +2107,7 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
                           children: [
                             Expanded(
                               child: ListView.builder(
+                                // controller: scrollDialogController,
                                 shrinkWrap: true,
                                 itemCount: extraTransactionDatas.length,
                                 itemBuilder: (context, index) {
