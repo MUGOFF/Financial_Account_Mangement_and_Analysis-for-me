@@ -239,8 +239,8 @@ class _ExtraBudgetGridState extends State<ExtraBudgetGrid> {
                     fontWeight: FontWeight.w600
                   ),
                   textAlign: TextAlign.center,
-                  maxLines: 2,
-                  minFontSize: 24,
+                  maxLines: 3,
+                  minFontSize: 16,
                 ),
               ),
             ),
