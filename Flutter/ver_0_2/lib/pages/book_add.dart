@@ -40,7 +40,7 @@ class _BookAddState extends State<BookAdd> {
   final TextEditingController _memoController = TextEditingController();
   String currentCategory = "소비";
   bool timeShow = false;
-  bool installmentShow = false;
+  bool iscredit = false;
   late String _pageType;
   int _selectedButton = 1;
   // bool _isMemoEditing = false;
@@ -79,15 +79,6 @@ class _BookAddState extends State<BookAdd> {
     });
     _initializeControllers();
     super.initState();
-    //  _memoController.addListener(() {
-    //   final input = _memoController.text;
-    //   logger.i(input);
-    //   setState(() {
-    //     suggestedTags = allTags
-    //         .where((tag) => RegExp(RegExp.escape(input), caseSensitive: false).hasMatch(tag))
-    //         .toList();
-    //   });
-    // });
   }
 
   @override
@@ -118,6 +109,7 @@ class _BookAddState extends State<BookAdd> {
       currentCategory = moneyTransactionOrigin!.categoryType;
       _selectedButton = currentCategory == '소비' ? 1 : currentCategory == '수입' ? 2 : 3 ;
       _memoController.text = moneyTransactionOrigin!.description ?? '';
+      iscredit = moneyTransactionOrigin!.credit;
     } else {
       _dateController.text = DateFormat('yyyy년 MM월 dd일').format(DateTime.now());
       _timeController.text = '${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}';
@@ -133,15 +125,7 @@ class _BookAddState extends State<BookAdd> {
     String newText = numberText.replaceAll(RegExp(r'[^0-9.-]'), '');
     if (newText.isEmpty) return "0";
 
-    // if(newText.contains('-'))
-    // {
-    //   newText = '-${newText.replaceAll(RegExp(r'-'), '')}';
-    // }
     final double value = double.parse(newText);
-    // if(value ==0) {
-    //   final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
-    //   return formattedText;
-    // }
     final formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
 
     return formattedText;
@@ -317,7 +301,7 @@ class _BookAddState extends State<BookAdd> {
                 // Date, String, Int, String, String Fields
                 buildDateTimeRow("날짜", _dateController, _timeController),
                 amountRow("거래금액", _amountdisplayController),
-                if(installmentShow || _pageType == "수정")
+                if(iscredit)
                 Row(
                   children: [
                     const Expanded(
@@ -734,10 +718,10 @@ class _BookAddState extends State<BookAdd> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Checkbox(
-                  value: installmentShow,
+                  value: iscredit,
                   onChanged: (bool? value) {
                     setState(() {
-                      installmentShow = value!;
+                      iscredit = value!;
                     });
                   },
                 ),
@@ -851,8 +835,6 @@ class _BookAddState extends State<BookAdd> {
   }
 
   Future<void> insertDataToDatabase() async {
-    // int insertID = 1;
-    // int installID = 1;
     String amountText  = _amountdisplayController.text.replaceAll(RegExp(r'[^0-9.-]'), '');
     if (_amountController.text.startsWith('-')) {
       amountText = '-${amountText.substring(1).replaceAll('-', '')}';
@@ -864,38 +846,6 @@ class _BookAddState extends State<BookAdd> {
       _timeController.text = '12:00';
     }
 
-    // if (installmentShow) {
-    //   int installmentMonths = int.tryParse(_installmentController.text) ?? 1; // 할부 개월 수 가져오기
-    //   DateTime startDate = DateFormat('yyyy년 MM월 dd일').parse(_dateController.text); // 시작 날짜
-    //   for (int i = 0; i < installmentMonths; i++) {
-    //     // 해당 달의 날짜 계산
-    //     DateTime installmentDate = DateTime(startDate.year, startDate.month + i, startDate.day);
-    //     String transactionTime = '${DateFormat('yyyy년 MM월 dd일').format(installmentDate).toString()}T${_timeController.text}';
-        
-    //     // 할부에 맞는 transaction 생성
-    //     final MoneyTransaction transaction = MoneyTransaction(
-    //       transactionTime: transactionTime,
-    //       amount: double.parse((double.parse(_amountController.text) / installmentMonths).toStringAsFixed(2)), // 할부로 나눈 금액
-    //       goods: _targetgoodsController.text,
-    //       category: _categoryController.text,
-    //       categoryType: currentCategory,
-    //       description: yearlyExpenseCategory.contains(_categoryController.text) && !_memoController.text.contains("#연간예산")
-    //           ? '#연간예산 ${i+1}차분 ${_memoController.text}'
-    //           : '${i+1}차분 ${_memoController.text}',
-    //       extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
-    //     );
-
-    //     // 데이터베이스에 삽입
-    //     if(i == 0) {
-    //       insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-    //       installID = insertID;
-    //       DatabaseAdmin().addInstallmentToParameter(insertID, installID);
-    //     } else {
-    //       insertID = await DatabaseAdmin().insertMoneyTransaction(transaction);
-    //       DatabaseAdmin().addInstallmentToParameter(insertID, installID);
-    //     }
-    //   }
-    // } else {
       int installmentMonths = int.tryParse(_installmentController.text) ?? 1;
       final MoneyTransaction transaction = MoneyTransaction(
         transactionTime: '${_dateController.text}T${_timeController.text}', // 여기서는 현재 시간을 사용할 수 있습니다. 
@@ -908,15 +858,9 @@ class _BookAddState extends State<BookAdd> {
         installation: installmentMonths,
         description: yearlyExpenseCategory.contains(_categoryController.text) &&  !_memoController.text.contains("#연간예산")? '#연간예산 ${_memoController.text}' : _memoController.text,
         extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
-      );
-
-      // 이제 transaction 객체를 데이터베이스에 삽입합니다.
-      // 예시:
-      // insertID = 
+        credit: iscredit
+      ); 
       await DatabaseAdmin().insertMoneyTransaction(transaction);
-      // installID = insertID;
-      // DatabaseAdmin().addInstallmentToParameter(insertID, installID);
-    // }
   }
 
   Future<void> updateDataToDatabase() async {
@@ -927,7 +871,6 @@ class _BookAddState extends State<BookAdd> {
       amountText = amountText.replaceAll('-', '');
     }
     _amountController.text = amountText;
-    // 은행 계좌 정보 생성
     MoneyTransaction transaction = MoneyTransaction(
       id: int.parse(_idController.text),
       transactionTime: '${_dateController.text}T${_timeController.text}', // 여기서는 현재 시간을 사용할 수 있습니다. 
@@ -939,8 +882,9 @@ class _BookAddState extends State<BookAdd> {
       installation: int.tryParse(_installmentController.text) ?? 1,
       description: yearlyExpenseCategory.contains(_categoryController.text) &&  !_memoController.text.contains("#연간예산 ")? '#연간예산 ${_memoController.text}' : _memoController.text,
       extraBudget: yearlyExpenseCategory.contains(_categoryController.text) ? true : false,
+      credit: iscredit
     );
-    // 데이터베이스에 은행 계좌 정보 장장
+
     await DatabaseAdmin().updateMoneyTransaction(transaction);
   }
 
@@ -980,17 +924,6 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
     } else {
       formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
     }
-    // logger.i('value$value');
-    // logger.i('formattedText$formattedText');
-
-    // 입력된 값을 금액 형식으로 변환합니다.
-    // final String newValueMinus = newValue.text.contains('-') ? '-' : '';
-    // final newText = newValue.text.replaceAll('-', '').replaceAllMapped(
-    //   RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-    //   (Match match) => '${match[1]},',
-    // );
-
-    // final formattedText = '$newValueMinus  ₩  $newText';
     // 기존 텍스트 길이 및 커서 위치
     final int oldTextLength = oldValue.text.length;
     final int cursorPosition = oldValue.selection.base.offset;
@@ -1013,43 +946,5 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
         selection: TextSelection.collapsed(offset: clampedCursorPosition),
       );
     }
-    // if (newValue.text.length > formattedText.length) {
-    //   return newValue.copyWith(
-    //     text: formattedText,
-    //     selection: TextSelection.collapsed(
-    //       offset: formattedText.length.clamp(0, formattedText.length),
-    //     ),
-    //   );
-    // } else {
-    //   return newValue.copyWith(
-    //     text: formattedText,
-    //     // selection: TextSelection.collapsed(
-    //     //   offset: formattedText.length.clamp(0, formattedText.length),
-    //     // ),
-    //   );
-    // }
   }
 }
-
-// String _thousandsFormmater(String numberText) {
-//     String newText = numberText.replaceAll(RegExp(r'[^0-9.-]'), '');
-//     if (newText.isEmpty) return "0";
-
-//     // if(newText.contains('-'))
-//     // {
-//     //   newText = '-${newText.replaceAll(RegExp(r'-'), '')}';
-//     // }
-//     logger.i('numberText$numberText');
-//     logger.i('newText$newText');
-//     String formattedText = '';
-//     final double value = double.parse(newText);
-//     if(value % 1 == 0) {
-//       formattedText = NumberFormat.simpleCurrency(decimalDigits: 0, locale: "ko-KR").format(value);
-//     } else {
-//       formattedText = NumberFormat.simpleCurrency(decimalDigits: 2, locale: "ko-KR").format(value);
-//     }
-//     logger.i('value$value');
-//     logger.i('formattedText$formattedText');
-
-//     return formattedText;
-//   }

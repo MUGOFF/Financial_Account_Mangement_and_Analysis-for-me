@@ -788,6 +788,7 @@ class DatabaseAdmin {
         parameter: firstTransaction['parameter'],
         installation: firstTransaction['installation'],
         extraBudget: firstTransaction['extraBudget'] == 0 ? false : true,
+        credit: firstTransaction['credit'] == 0 ? false : true,
       );
      } catch (e) {
       logger.e(e);
@@ -828,6 +829,7 @@ class DatabaseAdmin {
         parameter: transactionMaps[i]['parameter'],
         installation: transactionMaps[i]['installation'],
         extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
+        credit: transactionMaps[i]['credit'] == 0 ? false : true,
       );
     });
   }
@@ -1029,15 +1031,17 @@ class DatabaseAdmin {
       int month = (date.month + monthsToAdd - 1) % 12 + 1;
       return DateTime(year, month);
     }
-    
+    logger.i('ioni');
     final estimateMonth = DateTime(year, month);
     final estimatePreviousMonth =  DateTime(year, month-1);
     final estimateFutureMonth = addMonths(estimateMonth, 1);
     double thisMonthCost = 0;
     double nextMonthCost = 0;
     double remainingInstallmentsCost = 0;
+    logger.i('iit');
     try {
       final db = await database;
+      logger.i(1);
       final List<Map<String, dynamic>> debitMaps = await db.query(
         'money_transactions',
         columns: ['substr(transactionTime, 1, 9) AS yearmonth','SUM(amount) as totalAmount'],
@@ -1045,7 +1049,7 @@ class DatabaseAdmin {
         whereArgs: ['${estimateMonth.year}년 ${estimateMonth.month.toString().padLeft(2, '0')}월'],
       );
 
-      thisMonthCost += debitMaps.isNotEmpty ? debitMaps.first['totalAmount'] : 0;
+      thisMonthCost += (debitMaps.isNotEmpty && debitMaps.first['totalAmount'] != null) ? debitMaps.first['totalAmount'] : 0;
 
       final List<Map<String, dynamic>> creditMaps = await db.query(
         'money_transactions',
@@ -1054,7 +1058,7 @@ class DatabaseAdmin {
         whereArgs: ['${estimatePreviousMonth.year}년 ${estimatePreviousMonth.month.toString().padLeft(2, '0')}월'],
       );
 
-      thisMonthCost += creditMaps.isNotEmpty ? creditMaps.first['totalAmount'] : 0;
+      thisMonthCost += (creditMaps.isNotEmpty && creditMaps.first['totalAmount'] != null) ? creditMaps.first['totalAmount'] : 0;
 
       final List<Map<String, dynamic>> creditFutureMaps = await db.query(
         'money_transactions',
@@ -1063,15 +1067,20 @@ class DatabaseAdmin {
         whereArgs: ['${estimateMonth.year}년 ${estimateMonth.month.toString().padLeft(2, '0')}월'],
       );
 
-      nextMonthCost = creditFutureMaps.isNotEmpty ? creditFutureMaps.first['totalAmount'] : 0;
+      nextMonthCost = (creditFutureMaps.isNotEmpty && creditFutureMaps.first['totalAmount'] != null) ? creditFutureMaps.first['totalAmount'] : 0;
       
       final List<Map<String, dynamic>> installationMaps = await db.query(
         'money_transactions',
         columns: ['substr(transactionTime, 1, 9) AS yearmonth','SUM(amount) as totalAmount, installation'],
         where: "categoryType = '소비' AND credit == 1 AND installation > 1",
       );
-
       for (var i = 0; i < installationMaps.length; i++) {
+        if (installationMaps[i]['yearmonth'] == null ||
+            installationMaps[i]['totalAmount'] == null ||
+            installationMaps[i]['installation'] == null) {
+          // yearmonth, totalAmount, installation 중 하나라도 null이면 스킵
+          continue;
+        }
         try {
           logger.i(DateFormat('yyyy년 MM월').parse(installationMaps[i]['yearmonth']));
         } catch (e) {
@@ -1240,6 +1249,7 @@ class DatabaseAdmin {
           description: rawList[i]['description'],
           parameter: rawList[i]['parameter'],
           extraBudget: rawList[i]['extraBudget'] == 0 ? false : true,
+          credit: rawList[i]['credit'] == 0 ? false : true,
         );
       });
     } catch (e) {
@@ -1271,6 +1281,7 @@ class DatabaseAdmin {
           parameter: rawList[i]['parameter'],
           installation: rawList[i]['installation'],
           extraBudget: rawList[i]['extraBudget'] == 0 ? false : true,
+          credit: rawList[i]['credit'] == 0 ? false : true,
         );
       });
     } catch (e) {
@@ -1327,6 +1338,7 @@ class DatabaseAdmin {
         description: transactionMaps[i]['description'],
         parameter: transactionMaps[i]['parameter'],
         extraBudget: transactionMaps[i]['extraBudget'] == 0 ? false : true,
+        credit: transactionMaps[i]['credit'] == 0 ? false : true,
       );
     });
   }

@@ -11,6 +11,7 @@ class MoneyTransaction {
   final String? parameter;
   final int? installation;
   final bool extraBudget;
+  final bool credit; // true: 신용, false: 체크
 
   MoneyTransaction({
     this.id,
@@ -24,6 +25,7 @@ class MoneyTransaction {
     this.description ="",
     this.parameter ="",
     this.extraBudget = false,
+    this.credit = false,
     this.installation = 1,
   });
 
@@ -40,6 +42,7 @@ class MoneyTransaction {
       'description': description!="" ? description : " ",
       'parameter': parameter!="" ? parameter : "{}",
       'extraBudget': extraBudget ? 1 : 0,
+      'credit': credit ? 1 : 0,
       'installation': installation,
     };
   }
@@ -63,6 +66,7 @@ class MoneyTransaction {
     String? description,
     String? parameter,
     bool? extraBudget,
+    bool? credit,
     int? installation,
   }) {
     return MoneyTransaction(
@@ -76,6 +80,7 @@ class MoneyTransaction {
       description: description ?? this.description,
       parameter: parameter ?? this.parameter,
       extraBudget: extraBudget ?? this.extraBudget,
+      credit: credit ?? this.credit,
       installation: installation ?? this.installation,
     );
   }
