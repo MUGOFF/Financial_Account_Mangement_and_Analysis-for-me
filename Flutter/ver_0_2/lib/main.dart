@@ -8,7 +8,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 // import 'package:syncfusion_flutter_charts/charts.dart';
 // import 'package:http/http.dart' as http;
 // import 'package:logger/logger.dart';
-// import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 // import 'package:audioplayers/audioplayers.dart';
 // import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -204,6 +204,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
   List<Map<String, dynamic>>expenseData= [];
   double totalExpenseAmount= 0;
   bool isPercentageChannels = true;
+  Map<String, dynamic> creditExpenseData = {};
 
   @override
   void initState() {
@@ -231,6 +232,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
     List<Map<String, dynamic>> fetchedExpenseData =  await DatabaseAdmin().getTransactionsSUMByCategoryandDate(yearnow,monthnow);
     List<Map<String, dynamic>> localexpenseData = [...fetchedExpenseData];
     Map<String, dynamic> localIncomeData = await DatabaseAdmin().getIncome();
+    Map<String, dynamic> localCreditExpenseData = await DatabaseAdmin().estimateCostMonthly(yearnow, monthnow);
 
     localexpenseData.sort((previous, next) => next['totalAmount'].compareTo(previous['totalAmount']));
     for (var data in localexpenseData) {
@@ -241,6 +243,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
         expenseData = fetchedExpenseData;
         budgetSet = fetchedBudgetSet;
         totalExpenseAmount = localTotalExpenseAmount;
+        creditExpenseData = localCreditExpenseData;
         isloading = false;
         if (localIncomeData.isNotEmpty) {
           incomeId = localIncomeData['id'];
@@ -513,16 +516,62 @@ class _HomePageCotentState extends State<HomePageCotent> {
                                   ],
                                 );
                               } else{
-                                return const Column(
+                                return Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text("이번달 소득과 소비 현황",
+                                    const Text("이번달 소득과 소비 현황",
                                       style: TextStyle(
                                         fontSize: 32,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    Expanded(
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        TweenAnimationBuilder<double>(
+                                          tween: Tween<double>(begin: 0, end: creditExpenseData['thisMonthCost']),
+                                          duration: const Duration(seconds: 1),
+                                          builder: (context, value, child) {
+                                            return Text(
+                                              '금월 소비 금액 ${NumberFormat.simpleCurrency(
+                                                decimalDigits: 0,
+                                                locale: "ko-KR",
+                                              ).format(value)}',
+                                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(width: 4), // 두 텍스트 간 여백
+                                        TweenAnimationBuilder<double>(
+                                          tween: Tween<double>(begin: 0, end: creditExpenseData['nextMonthCost']),
+                                          duration: const Duration(seconds: 1),
+                                          builder: (context, value, child) {
+                                            return Text(
+                                              '차월 신용 소비${NumberFormat.simpleCurrency(
+                                                decimalDigits: 0,
+                                                locale: "ko-KR",
+                                              ).format(value)}',
+                                              style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.red),
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(width: 4), // 두 텍스트 간 여백
+                                        TweenAnimationBuilder<double>(
+                                          tween: Tween<double>(begin: 0, end: creditExpenseData['remainingInstallmentsCost']),
+                                          duration: const Duration(seconds: 1),
+                                          builder: (context, value, child) {
+                                            return Text(
+                                              '잔존 할부 금액 ${NumberFormat.simpleCurrency(
+                                                decimalDigits: 0,
+                                                locale: "ko-KR",
+                                              ).format(value)}',
+                                              style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.red),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    const Expanded(
                                       child: BudgetMainPagePieChart(),
                                     )
                                   ],

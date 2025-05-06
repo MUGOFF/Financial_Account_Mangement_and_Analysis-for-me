@@ -23,8 +23,8 @@ class DatabaseAdmin {
   Future<void> loadSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     isInstallmentSpread = prefs.getBool("intallmentCalculation") ?? false;
-    logger.d('settiong load');
-    logger.d(isInstallmentSpread);
+    // logger.d('settiong load');
+    // logger.d(isInstallmentSpread);
   }
 
   static Database? _database;
@@ -42,7 +42,7 @@ class DatabaseAdmin {
     await loadSettings();
     return openDatabase(
       path,
-      version: 21,
+      version: 22,
       onCreate: (db, version) {
         _createMoneyTransactionTable(db);
         _createTransactionCategoryTable(db);
@@ -59,6 +59,7 @@ class DatabaseAdmin {
         _createMoneyTransactionDisplayTableRenewal(db);
         _addColumnidToMoneyDisplayTransactionTable(db);
         _createPeriodTransTable(db);
+        _addColumnCreditCardToMoneyTransactionTable(db);
         // _addTriggerForParameterUpdate(db);
         // _createMoneyTransactionDisplayTable(db);
         // _createBankAccountTable(db);
@@ -100,6 +101,9 @@ class DatabaseAdmin {
         }
         if (oldVersion < 21) {
           _createPeriodTransTable(db);
+        }
+        if (oldVersion < 22) {
+          _addColumnCreditCardToMoneyTransactionTable(db);
         }
         // if (oldVersion < 4) {
         //   _createCurrentHoldingTable(db);
@@ -425,6 +429,16 @@ class DatabaseAdmin {
       """
       ALTER TABLE money_transactions
       ADD COLUMN installation INTEGER DEFAULT 1
+      """
+    );
+  }
+
+   /// 테이블 키 추가(할부기간)
+  void _addColumnCreditCardToMoneyTransactionTable(Database db) async  {
+    db.execute(
+      """
+      ALTER TABLE money_transactions
+      ADD COLUMN credit INTEGER DEFAULT 0
       """
     );
   }
@@ -993,6 +1007,7 @@ class DatabaseAdmin {
     }
   }
 
+
   ///카테고리별 월간 수입 총합 가져오기
   Future<List<Map<String, dynamic>>> getTransactionsIncomeSumByMonth(int year, int month) async {
     final db = await database;
@@ -1004,6 +1019,90 @@ class DatabaseAdmin {
     );
     
     return transactionMaps;
+  }
+
+  ///월간 소비 비용 계산하기
+  Future<Map<String, dynamic>> estimateCostMonthly(int year, int month) async {
+
+    DateTime addMonths(DateTime date, int monthsToAdd) {
+      int year = date.year + ((date.month + monthsToAdd - 1) ~/ 12);
+      int month = (date.month + monthsToAdd - 1) % 12 + 1;
+      return DateTime(year, month);
+    }
+    
+    final estimateMonth = DateTime(year, month);
+    final estimatePreviousMonth =  DateTime(year, month-1);
+    final estimateFutureMonth = addMonths(estimateMonth, 1);
+    double thisMonthCost = 0;
+    double nextMonthCost = 0;
+    double remainingInstallmentsCost = 0;
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> debitMaps = await db.query(
+        'money_transactions',
+        columns: ['substr(transactionTime, 1, 9) AS yearmonth','SUM(amount) as totalAmount'],
+        where: "substr(transactionTime,1,9) = ? AND categoryType = '소비' AND credit == 0",
+        whereArgs: ['${estimateMonth.year}년 ${estimateMonth.month.toString().padLeft(2, '0')}월'],
+      );
+
+      thisMonthCost += debitMaps.isNotEmpty ? debitMaps.first['totalAmount'] : 0;
+
+      final List<Map<String, dynamic>> creditMaps = await db.query(
+        'money_transactions',
+        columns: ['substr(transactionTime, 1, 9) AS yearmonth','SUM(amount) as totalAmount'],
+        where: "substr(transactionTime,1,9) = ? AND categoryType = '소비' AND credit == 1 AND installation == 1",
+        whereArgs: ['${estimatePreviousMonth.year}년 ${estimatePreviousMonth.month.toString().padLeft(2, '0')}월'],
+      );
+
+      thisMonthCost += creditMaps.isNotEmpty ? creditMaps.first['totalAmount'] : 0;
+
+      final List<Map<String, dynamic>> creditFutureMaps = await db.query(
+        'money_transactions',
+        columns: ['substr(transactionTime, 1, 9) AS yearmonth','SUM(amount) as totalAmount'],
+        where: "substr(transactionTime,1,9) = ? AND categoryType = '소비' AND credit == 1 AND installation == 1",
+        whereArgs: ['${estimateMonth.year}년 ${estimateMonth.month.toString().padLeft(2, '0')}월'],
+      );
+
+      nextMonthCost = creditFutureMaps.isNotEmpty ? creditFutureMaps.first['totalAmount'] : 0;
+      
+      final List<Map<String, dynamic>> installationMaps = await db.query(
+        'money_transactions',
+        columns: ['substr(transactionTime, 1, 9) AS yearmonth','SUM(amount) as totalAmount, installation'],
+        where: "categoryType = '소비' AND credit == 1 AND installation > 1",
+      );
+
+      for (var i = 0; i < installationMaps.length; i++) {
+        try {
+          logger.i(DateFormat('yyyy년 MM월').parse(installationMaps[i]['yearmonth']));
+        } catch (e) {
+          logger.e('logger $e');
+        }
+        DateTime transactionDate = DateFormat('yyyy년 MM월').parse(installationMaps[i]['yearmonth']);
+        bool isAfterMonthCredit = addMonths(transactionDate, int.parse(installationMaps[i]['installation'])).compareTo(estimateMonth) >= 0;
+        // DateTime(transactionDate.year, (transactionDate.month + int.parse(installationMaps[i]['installation']))).compareTo(estimateMonth) >= 0;
+        if (isAfterMonthCredit) {
+          for (int j = 0; j < int.parse(installationMaps[i]['installation']); j++) {
+            if (addMonths(transactionDate, j).compareTo(estimateMonth) == 0) {
+              thisMonthCost += installationMaps[i]['totalAmount'] / installationMaps[i]['installation'];
+            }
+            else if (addMonths(transactionDate, j).compareTo(estimateFutureMonth) == 0) {
+              nextMonthCost += installationMaps[i]['totalAmount'] / installationMaps[i]['installation'];
+            } 
+            else if (addMonths(transactionDate, j).compareTo(estimateFutureMonth) > 0) {
+              remainingInstallmentsCost += installationMaps[i]['totalAmount'] / installationMaps[i]['installation'];
+            }
+          }
+        }
+      }
+    } catch (e) {
+      logger.e(e);
+    }
+    
+    return {
+      'thisMonthCost': thisMonthCost,
+      'nextMonthCost': nextMonthCost,
+      'remainingInstallmentsCost': remainingInstallmentsCost,
+    };
   }
 
   ///카테고리별 월간 소비 총합 가져오기

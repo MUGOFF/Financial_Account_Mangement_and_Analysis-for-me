@@ -1993,7 +1993,7 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
                 case 'transacton_adminstration':
                   _showDialog();
                   break;
-                case 'option2':
+                case 'chart_selection':
                   // selectedWidget = const Book();
                   break;
                 case 'option3':
@@ -2008,8 +2008,8 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
                   child: Text('거래 내역 관리'),
                 ),
                 PopupMenuItem<String>(
-                  value: 'option2',
-                  child: Text('Option 2'),
+                  value: 'chart_selection',
+                  child: Text('차트 선택'),
                 ),
                 PopupMenuItem<String>(
                   value: 'option3',
@@ -2069,6 +2069,10 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        DateTime firstDate = DateTime(2020, 1, 1);
+        String searchKeyword = '';
+        DateTime? startDate;
+        DateTime? endDate;
         return Dialog(
           child: StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
@@ -2077,78 +2081,148 @@ class _ExtraBudgetGroupDetailState extends State<ExtraBudgetGroupDetail> {
                 child: SizedBox(
                   width: MediaQuery.of(context).size.width * 0.8,
                   height: MediaQuery.of(context).size.height * 0.6,
-                  child:FutureBuilder<List<MoneyTransaction>>(
-                future: budgetDataDB,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting || budgetDataLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else {
-                    List<MoneyTransaction> extraTransactionDatas = snapshot.data ?? [];
-                    List<MoneyTransaction> localselectedTransactionData = [];
-                    for (var id in selectedTransactionData) {
-                      try {
-                        final match = extraTransactionDatas.firstWhere((transaction) => transaction.id == id);
-                        localselectedTransactionData.add(match);
-                      } catch (e) {
-                        logger.w('ID $id 에 해당하는 데이터를 찾을 수 없음: $e');
-                      }
-                    }
-                    // logger.d(localselectedTransactionData.length);
-                    // logger.d(selectedTransactionData.length);
-                    if (extraTransactionDatas.isEmpty) {
-                      return const Center(child: Text('No data available', style: TextStyle(fontSize: 32),));
-                    }
-                    return  Column(
-                          mainAxisSize:  MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Expanded(
-                              child: ListView.builder(
-                                // controller: scrollDialogController,
-                                shrinkWrap: true,
-                                itemCount: extraTransactionDatas.length,
-                                itemBuilder: (context, index) {
-                                  return ListTile(
-                                    leading: Icon(
-                                      selectedTransactionData.contains(extraTransactionDatas[index].id)
-                                          ? Icons.check_circle
-                                          : Icons.check_circle_outline,
-                                      color: selectedTransactionData.contains(extraTransactionDatas[index].id)
-                                          ? Colors.blue
-                                          : Colors.grey,
-                                    ),
-                                    title: Text(extraTransactionDatas[index].goods),
-                                    subtitle: Text(extraTransactionDatas[index].transactionTime),
-                                    onTap: () {
-                                      setState(() {
-                                        if (selectedTransactionData.contains(extraTransactionDatas[index].id)) {
-                                          selectedTransactionData.remove(extraTransactionDatas[index].id);
-                                          localselectedTransactionData.remove(extraTransactionDatas[index]);
-                                        } else {
-                                          selectedTransactionData.add(extraTransactionDatas[index].id!);
-                                          localselectedTransactionData.add(extraTransactionDatas[index]);
-                                        }
-                                        // logger.d(selectedTransactionData);
-                                      });
-                                    },
-                                  );
-                                },
-                              )
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop(localselectedTransactionData);
+                  child: 
+                  Column(
+                    mainAxisSize:  MainAxisSize.min,
+                    children: [ 
+                      Row(
+                        mainAxisSize:  MainAxisSize.min,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              final picked = await showDateRangePicker(
+                                context: context,
+                                firstDate: firstDate,
+                                lastDate: DateTime.now(),
+                              );
+                              logger.i('picked: $picked');
+                              if (picked != null) {
+                                setState(() {
+                                  startDate = picked.start;
+                                  endDate = picked.end;
+                                  logger.i(startDate);
+                                  logger.i('endDate: $endDate');
+                                });
+                              }
+                              // await fetchBudgetData();
+                            },
+                            child: Text(startDate != null && endDate != null
+                                ? '${DateFormat("yy.MM.dd").format(startDate!)} ~ ${DateFormat("yy.MM.dd").format(endDate!)}'
+                                : '기간 선택'),
+                          ),
+                          Expanded(
+                            child: 
+                            TextField(
+                              decoration: const InputDecoration(
+                                labelText: '항목 검색',
+                                isDense: true,
+                              ),
+                              onChanged: (value)  {
+                                logger.i('searchKeywordC: $searchKeyword');
+                                setState(() {
+                                  searchKeyword = value;
+                                logger.i('searchKeywordCh: $searchKeyword');
+                                  // fetchBudgetData();
+                                });
                               },
-                              child: const Text('확인', style: TextStyle(fontSize: 24),),
                             ),
-                          ]
-                        );
-                      }
-                    }
-                  )
+                          )
+                        ],
+                      ),
+                      Expanded(
+                        child:
+                        FutureBuilder<List<MoneyTransaction>>(
+                          future: budgetDataDB,
+                          builder: (context, snapshot) {
+                            // logger.d('loading');
+                            if (snapshot.connectionState == ConnectionState.waiting || budgetDataLoading) {
+                              return const Center(child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return Center(child: Text('Error: ${snapshot.error}'));
+                            } else {
+                              List<MoneyTransaction> extraTransactionDatas = snapshot.data ?? [];
+                              List<MoneyTransaction> localselectedTransactionData = [];
+                              for (var id in selectedTransactionData) {
+                                try {
+                                  final match = extraTransactionDatas.firstWhere((transaction) => transaction.id == id);
+                                  localselectedTransactionData.add(match);
+                                } catch (e) {
+                                  logger.w('ID $id 에 해당하는 데이터를 찾을 수 없음: $e');
+                                }
+                              }
+                              DateFormat format = DateFormat("yyyy년 MM월 dd일THH:mm");
+                              extraTransactionDatas.sort((a, b) {
+                                DateTime dateA = format.parse(a.transactionTime);
+                                DateTime dateB = format.parse(b.transactionTime);
+                                return dateA.compareTo(dateB);
+                              });
+                              firstDate = format.parse(extraTransactionDatas.first.transactionTime);
+                              // logger.d(localselectedTransactionData.length);
+                              // logger.d(selectedTransactionData.length);
+                              if (extraTransactionDatas.isEmpty) {
+                                return const Center(child: Text('No data available', style: TextStyle(fontSize: 32),));
+                              }
+
+                              // 🔎 필터링 적용
+                              logger.i(searchKeyword);
+                              List<MoneyTransaction> filteredTransactions = extraTransactionDatas.where((transaction) {
+                                DateTime txDate = format.parse(transaction.transactionTime);
+                                bool matchesDate = (startDate == null || !txDate.isBefore(startDate!)) &&
+                                                    (endDate == null || !txDate.isAfter(endDate!));
+                                bool matchesKeyword = transaction.goods.contains(searchKeyword);
+                                return matchesDate && matchesKeyword;
+                              }).toList();
+                              return  Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Expanded(
+                                    child: ListView.builder(
+                                      // controller: scrollDialogController,
+                                      shrinkWrap: true,
+                                      itemCount: filteredTransactions.length,
+                                      itemBuilder: (context, index) {
+                                        return ListTile(
+                                          leading: Icon(
+                                            selectedTransactionData.contains(filteredTransactions[index].id)
+                                                ? Icons.check_circle
+                                                : Icons.check_circle_outline,
+                                            color: selectedTransactionData.contains(filteredTransactions[index].id)
+                                                ? Colors.blue
+                                                : Colors.grey,
+                                          ),
+                                          title: Text(filteredTransactions[index].goods),
+                                          subtitle: Text(filteredTransactions[index].transactionTime),
+                                          onTap: () {
+                                            setState(() {
+                                              if (selectedTransactionData.contains(filteredTransactions[index].id)) {
+                                                selectedTransactionData.remove(filteredTransactions[index].id);
+                                                localselectedTransactionData.remove(filteredTransactions[index]);
+                                              } else {
+                                                selectedTransactionData.add(filteredTransactions[index].id!);
+                                                localselectedTransactionData.add(filteredTransactions[index]);
+                                              }
+                                              // logger.d(selectedTransactionData);
+                                            });
+                                          },  
+                                        );
+                                      },
+                                    )
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(localselectedTransactionData);
+                                    },
+                                    child: const Text('확인', style: TextStyle(fontSize: 24),),
+                                  ),
+                                ]
+                              );
+                            }
+                          }
+                        )
+                      )
+                    ],
+                  ),
                 )
               );
             }

@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:logger/logger.dart';
-import 'package:ver_0_2/main.dart';
+// import 'package:ver_0_2/main.dart';
 import 'package:ver_0_2/pages/book_category_admin.dart';
 import 'package:ver_0_2/pages/external_data_inout.dart';
 import 'package:ver_0_2/pages/personal_setting.dart';

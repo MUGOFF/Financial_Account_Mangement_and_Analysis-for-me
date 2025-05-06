@@ -13,6 +13,7 @@ class PersonalSettings extends StatefulWidget {
 
 class _PersonalSettingsState extends State<PersonalSettings> {
   bool isInstallmentSpread = false;
+  bool isCreditSpread = false;
 
   @override
   void initState() {
@@ -24,6 +25,7 @@ class _PersonalSettingsState extends State<PersonalSettings> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       isInstallmentSpread = prefs.getBool('intallmentCalculation') ?? false;
+      isInstallmentSpread = prefs.getBool('creditCardCaseOn') ?? false;
     });
   }
 
@@ -65,6 +67,17 @@ class _PersonalSettingsState extends State<PersonalSettings> {
                 isInstallmentSpread = value;
               });
               _saveSetting('intallmentCalculation', value);
+            },
+          ),
+          const Divider(),
+          SwitchListTile(
+            title: const Text('신용카드 설정 켜기기'),
+            value: isCreditSpread,
+            onChanged: (bool value) {
+              setState(() {
+                isCreditSpread = value;
+              });
+              _saveSetting('creditCardCaseOn', value);
             },
           ),
           const Divider(),
