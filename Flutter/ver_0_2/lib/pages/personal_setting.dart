@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
+import 'package:ver_0_2/widgets/loading_widget.dart';
 
 
 class PersonalSettings extends StatefulWidget {
@@ -14,6 +15,7 @@ class PersonalSettings extends StatefulWidget {
 class _PersonalSettingsState extends State<PersonalSettings> {
   bool isInstallmentSpread = false;
   bool isCreditSpread = false;
+  Logger logger = Logger();
 
   @override
   void initState() {
@@ -84,7 +86,7 @@ class _PersonalSettingsState extends State<PersonalSettings> {
           ListTile(
             title: const Text('정기 지출 관리'),
             trailing: IconButton(
-              onPressed: (){
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -96,9 +98,48 @@ class _PersonalSettingsState extends State<PersonalSettings> {
             )
           ),
           const Divider(),
+          ListTile(
+            title: const Text('내역 테이블 무결성 체크 및 재구성'),
+            trailing: IconButton(
+              onPressed: () {
+                showLoadingAndStart(context);
+              }, 
+              icon: const Icon(Icons.repeat_on_rounded)
+            )
+          ),
         ]
       )
     );
+  }
+
+  void showLoadingAndStart(BuildContext context) {
+    LoadingDialog.show(
+      context,
+      message: "테이블 재구성 중...",
+      onReady: () async {
+        await rebuildDB(context); // 여기서는 dialog를 띄우지 않음
+        LoadingDialog.hide(); // 모든 작업 끝나면 다이얼로그 닫기
+      },
+    );
+  }
+
+  Future<void> rebuildDB(BuildContext context) async{
+    try {
+      LoadingDialog.updateProgress(-1);
+      await DatabaseAdmin().rebuildMoneyTransactionsDisplay();
+    } catch(e) {
+      logger.e('error: $e, formmating error');
+      
+    } finally {
+      logger.d('${context.mounted} fianl');
+      // LoadingDialog.hide();
+      if(context.mounted) {
+        Navigator.of(context).pop();
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('데이터 삽입 완료!')),
+        // );
+      }
+    }
   }
 }
 

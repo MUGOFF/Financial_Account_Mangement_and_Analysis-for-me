@@ -42,7 +42,6 @@ class _BookAddState extends State<BookAdd> {
   bool timeShow = false;
   bool iscredit = false;
   late String _pageType;
-  int _selectedButton = 1;
   // bool _isMemoEditing = false;
   TextStyle normalStyle = const TextStyle(color: Colors.black, fontSize: 20);
   TextStyle tagStyle = TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 20, backgroundColor: Colors.yellow.shade100);
@@ -107,7 +106,6 @@ class _BookAddState extends State<BookAdd> {
       _installmentController.text = moneyTransactionOrigin!.installation.toString();
       // logger.d(moneyTransactionOrigin!.categoryType);
       currentCategory = moneyTransactionOrigin!.categoryType;
-      _selectedButton = currentCategory == '소비' ? 1 : currentCategory == '수입' ? 2 : 3 ;
       _memoController.text = moneyTransactionOrigin!.description ?? '';
       iscredit = moneyTransactionOrigin!.credit;
     } else {
@@ -118,6 +116,9 @@ class _BookAddState extends State<BookAdd> {
     }
     allTags = await DatabaseAdmin().getTransactionsTags();
     yearlyExpenseCategory = (await DatabaseAdmin().getYearlyExpenseCategories()).itemList ?? [];
+    setState(() {
+      
+    });
     // logger.d(allTags);
   }
 
@@ -265,10 +266,9 @@ class _BookAddState extends State<BookAdd> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     categoryRadioButton(
-                      1, '소비', HoloColors.ookamiMio,
+                      '소비', HoloColors.ookamiMio,
                       () {
                         setState(() {
-                          _selectedButton = 1;
                           currentCategory = "소비";
                           // _amountController.text = "-0";
                           _amountdisplayController.text = _thousandsFormmater(_amountController.text);
@@ -276,10 +276,9 @@ class _BookAddState extends State<BookAdd> {
                       }
                     ),
                     categoryRadioButton(
-                      2, '수입', HoloColors.ceresFauna,
+                      '수입', HoloColors.ceresFauna,
                       () {
                         setState(() {
-                          _selectedButton = 2;
                           currentCategory = "수입";
                           // _amountController.text = "0";
                           _amountdisplayController.text = _thousandsFormmater(_amountController.text);
@@ -287,10 +286,9 @@ class _BookAddState extends State<BookAdd> {
                       }
                     ),
                     categoryRadioButton(
-                      3, '이체', HoloColors.shiroganeNoel,
+                      '이체', HoloColors.shiroganeNoel,
                       () {
                         setState(() {
-                          _selectedButton = 3;
                           currentCategory = "이체";
                         });
                       }
@@ -682,7 +680,7 @@ class _BookAddState extends State<BookAdd> {
             ),
           ),
           Expanded(
-            flex: _pageType == "입력"?  2: 3,
+            flex: 2,
             child: TextFormField(
               controller: controller,
               focusNode: _focusAmountNode,
@@ -711,7 +709,6 @@ class _BookAddState extends State<BookAdd> {
               inputFormatters: [ThousandsSeparatorInputFormatter()],
             ),
           ),
-          if(_pageType == "입력")
           Expanded(
             flex: 1,
             child: Row(
@@ -725,7 +722,7 @@ class _BookAddState extends State<BookAdd> {
                     });
                   },
                 ),
-                const Text('할부 여부')
+                const Text('신용 여부')
               ],
             )
           ),
@@ -802,14 +799,14 @@ class _BookAddState extends State<BookAdd> {
     );
   }
 
-  Widget categoryRadioButton(int value, String text, Color color, void Function() onPressed) {
+  Widget categoryRadioButton(String text, Color color, void Function() onPressed) {
     return OutlinedButton(
       onPressed: onPressed,
       style: ButtonStyle(
         minimumSize: WidgetStateProperty.all<Size>(const Size(120, 30)),
         backgroundColor: WidgetStateProperty.resolveWith<Color>(
           (Set<WidgetState> states) {
-            if (_selectedButton == value) {
+            if (currentCategory == text) {
               return color.withValues(alpha: 0.4);
             }
             return Colors.transparent;
@@ -817,7 +814,7 @@ class _BookAddState extends State<BookAdd> {
         ),
         side : WidgetStateProperty.resolveWith<BorderSide>(
           (Set<WidgetState> states) {
-            if (_selectedButton == value) {
+            if (currentCategory == text) {
               return const BorderSide(color: Colors.transparent);
             }
             return BorderSide(color: color.withValues(alpha: 0.9));

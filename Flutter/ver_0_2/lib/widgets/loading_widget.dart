@@ -34,6 +34,7 @@ class LoadingDialog extends StatefulWidget {
 
 class LoadingDialogState extends State<LoadingDialog> {
   double progress = 0.0;
+  bool isIndeterminate = false;
   Logger logger = Logger();
 
   void closeDialog() {
@@ -50,7 +51,12 @@ class LoadingDialogState extends State<LoadingDialog> {
     LoadingDialog.updateProgress = (value) {
       if (mounted) {
         setState(() {
-          progress = value;
+          if (value == -1) {
+            isIndeterminate = true;
+          } else {
+            isIndeterminate = false;
+            progress = value;
+          }
         });
       }
     };
@@ -65,11 +71,16 @@ class LoadingDialogState extends State<LoadingDialog> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(value: progress / 100), // 진행도 반영
+            isIndeterminate
+              ? const CircularProgressIndicator() // value 없이 무한 회전
+              : CircularProgressIndicator(value: progress / 100), // 진행도 표시
             const SizedBox(height: 16),
             Text(widget.message, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
-            Text("${progress.toInt()}%", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            if (!isIndeterminate) ...[
+              const SizedBox(height: 8),
+              Text("${progress.toInt()}%", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            ],
           ],
         ),
       ),
