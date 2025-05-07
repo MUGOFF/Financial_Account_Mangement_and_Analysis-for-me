@@ -607,6 +607,7 @@ class DatabaseAdmin {
     try{
       transactionData.remove('updateTime');
       transactionData.remove('parameter');
+      transactionData.remove('credit');
       transactionData.remove('extraBudget');
 
       transactionData['foreign_id'] = moneyTransaction.id;
@@ -659,6 +660,7 @@ class DatabaseAdmin {
     try {
       transactionData.remove('updateTime');
       transactionData.remove('parameter');
+      transactionData.remove('credit');
       transactionData.remove('extraBudget');
 
       transactionData['foreign_id'] = updatedTransaction.id;
@@ -687,6 +689,31 @@ class DatabaseAdmin {
     }
   }
 
+  ///테이블 무결성 체크 리빌드 
+  Future<void> rebuildMoneyTransactionsDisplay() async {
+    final db = await database;
+
+    // 1. money_transactions_display 데이터 전체 삭제
+    await db.delete('money_transactions_display');
+
+    // 2. money_transactions_display id 시퀀스 리셋
+    await db.rawDelete('DELETE FROM sqlite_sequence WHERE name = "money_transactions_display"');
+
+    // 3. money_transactions 전체 읽어오기
+    final List<Map<String, dynamic>> transactions = await db.query('money_transactions');
+
+    // 4. 하나씩 money_transactions_display에 다시 삽입
+    for (var transactionMap in transactions) {
+      try {
+        MoneyTransaction transaction = MoneyTransaction.fromMap(transactionMap);
+        await insertMoneyTransactionDisplay(transaction);
+      } catch (e) {
+        logger.e('rebuild 실패: $e');
+      }
+    }
+
+    logger.i('money_transactions_display 재구성 완료 (id 리셋 포함)');
+  }
   // ///특정 대상 카테고리 일괄 변경
   // Future<void> updateCategorySearchAllTable(String goodsname, String newValue, String newValueType, bool isPositive) async {
   //   final db = await database;

@@ -55,6 +55,23 @@ class MoneyTransaction {
     };
   }
 
+  factory MoneyTransaction.fromMap(Map<String, dynamic> map) {
+    return MoneyTransaction(
+      id: map['id'] as int?, // id는 nullable
+      updateTime: map['updateTime'] != null ? DateTime.tryParse(map['updateTime']) : null,
+      transactionTime: map['transactionTime'] as String,
+      amount: (map['amount'] as num).toDouble(),
+      goods: map['goods'] as String,
+      category: map['category'] ?? "미분류",
+      categoryType: map['categoryType'] ?? "미지정",
+      description: map['description']?.toString() ?? "",
+      parameter: map['parameter']?.toString() ?? "",
+      extraBudget: (map['extraBudget'] ?? 0) == 1,
+      credit: (map['credit'] ?? 0) == 1,
+      installation: map['installation'] as int? ?? 1,
+    );
+  }
+
   MoneyTransaction copyWith({
     int? id,
     DateTime? updateTime,
