@@ -3,6 +3,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 // import 'package:syncfusion_flutter_charts/charts.dart';
@@ -536,38 +537,43 @@ class _HomePageCotentState extends State<HomePageCotent> {
                                               '금월 소비 금액 ${NumberFormat.simpleCurrency(
                                                 decimalDigits: 0,
                                                 locale: "ko-KR",
-                                              ).format(value)}',
-                                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                              ).format(value.abs())}',
+                                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                             );
                                           },
                                         ),
-                                        const SizedBox(width: 4), // 두 텍스트 간 여백
-                                        TweenAnimationBuilder<double>(
-                                          tween: Tween<double>(begin: 0, end: creditExpenseData['nextMonthCost']),
-                                          duration: const Duration(seconds: 1),
-                                          builder: (context, value, child) {
-                                            return Text(
-                                              '차월 신용 소비${NumberFormat.simpleCurrency(
-                                                decimalDigits: 0,
-                                                locale: "ko-KR",
-                                              ).format(value)}',
-                                              style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.red),
-                                            );
-                                          },
-                                        ),
-                                        const SizedBox(width: 4), // 두 텍스트 간 여백
-                                        TweenAnimationBuilder<double>(
-                                          tween: Tween<double>(begin: 0, end: creditExpenseData['remainingInstallmentsCost']),
-                                          duration: const Duration(seconds: 1),
-                                          builder: (context, value, child) {
-                                            return Text(
-                                              '잔존 할부 금액 ${NumberFormat.simpleCurrency(
-                                                decimalDigits: 0,
-                                                locale: "ko-KR",
-                                              ).format(value)}',
-                                              style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.red),
-                                            );
-                                          },
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            TweenAnimationBuilder<double>(
+                                              tween: Tween<double>(begin: 0, end: creditExpenseData['nextMonthCost']),
+                                              duration: const Duration(seconds: 1),
+                                              builder: (context, value, child) {
+                                                return Text(
+                                                  '차월 신용 소비${NumberFormat.simpleCurrency(
+                                                    decimalDigits: 0,
+                                                    locale: "ko-KR",
+                                                  ).format(value.abs())}',
+                                                  style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic, color: Colors.red),
+                                                );
+                                              },
+                                            ),
+                                            const SizedBox(width: 8), // 두 텍스트 간 여백
+                                            TweenAnimationBuilder<double>(
+                                              tween: Tween<double>(begin: 0, end: creditExpenseData['remainingInstallmentsCost']),
+                                              duration: const Duration(seconds: 1),
+                                              builder: (context, value, child) {
+                                                return Text(
+                                                  '잔존 할부 금액 ${NumberFormat.simpleCurrency(
+                                                    decimalDigits: 0,
+                                                    locale: "ko-KR",
+                                                  ).format(value.abs())}',
+                                                  style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic, color: Colors.red),
+                                                );
+                                              },
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -714,6 +720,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
 
 
   void setInitialSaving() {
+    BuildContext context = this.context;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -749,7 +756,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
               onPressed: () {
                 Navigator.pop(context);
                 if(income == null) {
-                  setInitialIncome();
+                  setInitialIncome(context);
                 } else {
                   showDialog(
                     context: context,
@@ -759,7 +766,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
                         TextButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            setInitialIncome();
+                            setInitialIncome(context);
                           },
                           child: const Text('아니오'),
                         ),
@@ -789,7 +796,7 @@ class _HomePageCotentState extends State<HomePageCotent> {
     );
   }
 
-  void setInitialIncome() {
+  void setInitialIncome(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {

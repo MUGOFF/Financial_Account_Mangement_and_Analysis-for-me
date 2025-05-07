@@ -1098,36 +1098,36 @@ class DatabaseAdmin {
       
       final List<Map<String, dynamic>> installationMaps = await db.query(
         'money_transactions',
-        columns: ['substr(transactionTime, 1, 9) AS yearmonth','SUM(amount) as totalAmount, installation'],
+        columns: ['transactionTime','amount', 'installation'],
         where: "categoryType = '소비' AND credit == 1 AND installation > 1",
       );
+      
       for (var i = 0; i < installationMaps.length; i++) {
-        if (installationMaps[i]['yearmonth'] == null ||
-            installationMaps[i]['totalAmount'] == null ||
-            installationMaps[i]['installation'] == null) {
+        if (installationMaps[i]['transactionTime'] == null ||
+            installationMaps[i]['amount'] == null ||
+            installationMaps[i]['installation'] == null || installationMaps[i]['installation'].runtimeType == String) {
           // yearmonth, totalAmount, installation 중 하나라도 null이면 스킵
           continue;
         }
         try {
-          logger.i(DateFormat('yyyy년 MM월').parse(installationMaps[i]['yearmonth']));
-        } catch (e) {
-          logger.e('logger $e');
-        }
-        DateTime transactionDate = DateFormat('yyyy년 MM월').parse(installationMaps[i]['yearmonth']);
-        bool isAfterMonthCredit = addMonths(transactionDate, int.parse(installationMaps[i]['installation'])).compareTo(estimateMonth) >= 0;
-        // DateTime(transactionDate.year, (transactionDate.month + int.parse(installationMaps[i]['installation']))).compareTo(estimateMonth) >= 0;
-        if (isAfterMonthCredit) {
-          for (int j = 0; j < int.parse(installationMaps[i]['installation']); j++) {
-            if (addMonths(transactionDate, j).compareTo(estimateMonth) == 0) {
-              thisMonthCost += installationMaps[i]['totalAmount'] / installationMaps[i]['installation'];
-            }
-            else if (addMonths(transactionDate, j).compareTo(estimateFutureMonth) == 0) {
-              nextMonthCost += installationMaps[i]['totalAmount'] / installationMaps[i]['installation'];
-            } 
-            else if (addMonths(transactionDate, j).compareTo(estimateFutureMonth) > 0) {
-              remainingInstallmentsCost += installationMaps[i]['totalAmount'] / installationMaps[i]['installation'];
+          DateTime transactionDate = DateFormat('yyyy년 MM월 dd일').parse(installationMaps[i]['transactionTime']);
+          bool isAfterMonthCredit = addMonths(transactionDate, installationMaps[i]['installation']).compareTo(estimateMonth) >= 0;
+          // logger.d(installationMaps);
+          if (isAfterMonthCredit) {
+            for (int j = 0; j < installationMaps[i]['installation']; j++) {
+              if (addMonths(transactionDate, j).compareTo(estimateMonth) == 0) {
+                thisMonthCost += installationMaps[i]['amount'] / installationMaps[i]['installation'];
+              }
+              else if (addMonths(transactionDate, j).compareTo(estimateFutureMonth) == 0) {
+                nextMonthCost += installationMaps[i]['amount'] / installationMaps[i]['installation'];
+              } 
+              else if (addMonths(transactionDate, j).compareTo(estimateFutureMonth) > 0) {
+                remainingInstallmentsCost += installationMaps[i]['amount'] / installationMaps[i]['installation'];
+              }
             }
           }
+        } catch (e) {
+          logger.e('logger install $e');
         }
       }
     } catch (e) {
