@@ -526,8 +526,9 @@ class _HomePageCotentState extends State<HomePageCotent> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                    Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
                                         TweenAnimationBuilder<double>(
                                           tween: Tween<double>(begin: 0, end: creditExpenseData['thisMonthCost']),
@@ -542,38 +543,31 @@ class _HomePageCotentState extends State<HomePageCotent> {
                                             );
                                           },
                                         ),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            TweenAnimationBuilder<double>(
-                                              tween: Tween<double>(begin: 0, end: creditExpenseData['nextMonthCost']),
-                                              duration: const Duration(seconds: 1),
-                                              builder: (context, value, child) {
-                                                return Text(
-                                                  '차월 신용 소비${NumberFormat.simpleCurrency(
-                                                    decimalDigits: 0,
-                                                    locale: "ko-KR",
-                                                  ).format(value.abs())}',
-                                                  style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic, color: Colors.red),
-                                                );
-                                              },
-                                            ),
-                                            const SizedBox(width: 8), // 두 텍스트 간 여백
-                                            TweenAnimationBuilder<double>(
-                                              tween: Tween<double>(begin: 0, end: creditExpenseData['remainingInstallmentsCost']),
-                                              duration: const Duration(seconds: 1),
-                                              builder: (context, value, child) {
-                                                return Text(
-                                                  '잔존 할부 금액 ${NumberFormat.simpleCurrency(
-                                                    decimalDigits: 0,
-                                                    locale: "ko-KR",
-                                                  ).format(value.abs())}',
-                                                  style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic, color: Colors.red),
-                                                );
-                                              },
-                                            ),
-                                          ],
+                                        TweenAnimationBuilder<double>(
+                                          tween: Tween<double>(begin: 0, end: creditExpenseData['nextMonthCost']),
+                                          duration: const Duration(seconds: 1),
+                                          builder: (context, value, child) {
+                                            return Text(
+                                              '차월 신용 소비${NumberFormat.simpleCurrency(
+                                                decimalDigits: 0,
+                                                locale: "ko-KR",
+                                              ).format(value.abs())}',
+                                              style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic, color: Colors.red),
+                                            );
+                                          },
+                                        ),
+                                        TweenAnimationBuilder<double>(
+                                          tween: Tween<double>(begin: 0, end: creditExpenseData['remainingInstallmentsCost']),
+                                          duration: const Duration(seconds: 1),
+                                          builder: (context, value, child) {
+                                            return Text(
+                                              '잔존 할부 금액 ${NumberFormat.simpleCurrency(
+                                                decimalDigits: 0,
+                                                locale: "ko-KR",
+                                              ).format(value.abs())}',
+                                              style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic, color: Colors.red),
+                                            );
+                                          },
                                         ),
                                       ],
                                     ),

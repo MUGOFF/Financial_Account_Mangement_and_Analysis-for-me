@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
-// import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -13,13 +12,8 @@ import 'package:cp949_codec/cp949_codec.dart';
 import 'package:ver_0_2/colorsholo.dart';
 import 'package:ver_0_2/widgets/database_admin.dart';
 import 'package:ver_0_2/widgets/synchro_data_grid.dart';
-// import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsx;
-// import 'package:ver_0_2/widgets/models/bank_account.dart';
-// import 'package:ver_0_2/widgets/models/card_account.dart';
 import 'package:ver_0_2/widgets/models/money_transaction.dart';
 import 'package:ver_0_2/widgets/loading_widget.dart';
-// import 'package:ver_0_2/widgets/models/expiration_investment.dart';
-// import 'package:ver_0_2/widgets/models/nonexpiration_investment.dart';
 
 /// 입출력 페이지 구성
 class ExternalTerminal extends StatelessWidget {
@@ -228,7 +222,6 @@ class _BookDialogContentState extends State<BookDialogContent> {
   int _currentPageIndex = 0;
   String sheetName = '';
   List<dynamic> modelColumnrelations = [];
-  List<dynamic> setData = [];
 
   @override
   void initState() {
@@ -294,10 +287,9 @@ class _BookDialogContentState extends State<BookDialogContent> {
               ),
               /// 카테고리 정보 연결 페이지
               SecondPage(
-                onButtonPressed: (realtion, setforaccount) {
+                onButtonPressed: (realtion) {
                   setState(() {
                     modelColumnrelations = realtion;
-                    setData = setforaccount;
                   });
                   _pageController.nextPage(
                     duration: const Duration(milliseconds: 300),
@@ -317,7 +309,6 @@ class _BookDialogContentState extends State<BookDialogContent> {
                 fileCodec: widget.fileCodec,
                 modelColumnrelations: modelColumnrelations,
                 xlsxSheet: sheetName,
-                setData: setData,
               ),
             ],
           ),
@@ -452,7 +443,7 @@ class SecondPage extends StatefulWidget {
   final FilePickerResult? filePicked;
   final String fileCodec;
   final String? xlsxSheet;
-  final Function(List<dynamic>, List<dynamic>) onButtonPressed;
+  final Function(List<dynamic>) onButtonPressed;
 
   /// onButtonPressed: 다음 페이지 선택 시 발동 함수
   /// 
@@ -466,8 +457,7 @@ class SecondPage extends StatefulWidget {
 class _SecondPageState extends State<SecondPage> {
   final Logger logger = Logger();
   List<String> columnNames = [];
-  List<dynamic> relationColumnandValue =List.filled(7, null);
-  List<dynamic> relationColumnandselectedAccount = [];
+  List<dynamic> relationColumnandValue =List.filled(8, null);
   List<List<dynamic>> dataRows = [];
   String? selectedTransactionTime;
   String? selectedAmount;
@@ -476,7 +466,31 @@ class _SecondPageState extends State<SecondPage> {
   String? selectedCategoryType;
   String? selectedDescription;
   String? selectedInstallment;
+  String? selectedCredit;
 
+  static const requiredFields = [0, 1, 2]; // 날짜, 금액, 상품
+
+  static const fieldLabels = [
+    '거래 날짜',
+    '거래 금액',
+    '거래 상품',
+    '거래 종류(대분류)',
+    '카테 고리(소분류)',
+    '메모',
+    '할부',
+    '신용',
+  ];
+
+  static const fieldKeywords = [
+    ['transactionTime', '일시'],
+    ['amount', '금액'],
+    ['goods', '명칭'],
+    ['categoryType', '분류'],
+    ['category', '카테고리'],
+    ['memo', '메모'],
+    ['installment', '할부'],
+    ['credit', '신용'],
+  ];
 
   @override
   void initState() {
@@ -512,42 +526,38 @@ class _SecondPageState extends State<SecondPage> {
           columnNames = fields.first.map((field) => field.toString().trim()).where((field) => field.isNotEmpty).toList();
           dataRows = fields.skip(1).toList();    
           setState(() {
-            selectedTransactionTime = findMatchingColumn('transactionTime', '날짜', 0);
-            selectedAmount = findMatchingColumn('amount', '금액', 1);
-            selectedGoods = findMatchingColumn('goods', '상품', 2);
-            selectedCategory = findMatchingColumn('category', '카테고리', 3);
-            selectedCategoryType = findMatchingColumn('categoryType', '타입', 4);
-            selectedDescription = findMatchingColumn('memo', '메모', 5);
-            selectedInstallment = findMatchingColumn('installment', '할부', 6);
+            _autoMatchColumns();
           });
-          // logger.d(columnNames); 
         }
       }
     } catch (e) {
       logger.e('Error while processing the file: $e');
     }
   }
-  /// [transactionTime,amount, account, goods, category, categoryType, memo]
-  String? findMatchingColumn(String parameter, String koreanparameter ,int position) {
-    for (var columnName in columnNames) {
-      if (columnName.toLowerCase() == parameter.toLowerCase() || columnName.contains(koreanparameter)) {
-        relationColumnandValue[position] = columnName;
-        return columnName;
+
+  void _autoMatchColumns() {
+    for (int i = 0; i < fieldKeywords.length; i++) {
+      for (final keyword in fieldKeywords[i]) {
+        final match = columnNames.firstWhere(
+          (col) => col.toLowerCase().contains(keyword.toLowerCase()),
+          orElse: () => '',
+        );
+        if (match.isNotEmpty) {
+          relationColumnandValue[i] = match;
+          break;
+        }
       }
     }
-    return null;
   }
 
   bool isButtonEnabled() {
-    return selectedTransactionTime != null &&
-           selectedAmount != null &&
-           selectedGoods != null;
+    return requiredFields.every((index) => relationColumnandValue[index] != null);
   }
 
-  Future<void> _onButtonPressed(List<dynamic> realtion, List<dynamic> setforaccount) async {
+  Future<void> _onButtonPressed(List<dynamic> relationColumnandValue) async {
     final Logger logger = Logger();
     try {
-      widget.onButtonPressed(realtion, setforaccount);
+      widget.onButtonPressed(relationColumnandValue);
     } catch (e) {
       logger.e('Error picking file: $e');
     }
@@ -566,48 +576,7 @@ class _SecondPageState extends State<SecondPage> {
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              buildTextDropdown('거래 날짜', true, selectedTransactionTime, (newValue) {
-                setState(() {
-                  selectedTransactionTime = newValue;
-                  relationColumnandValue[0] = newValue;
-                });
-              }),
-              buildTextDropdown('거래 금액', true, selectedAmount, (newValue) {
-                setState(() {
-                  selectedAmount = newValue;
-                  relationColumnandValue[1] = newValue;
-                });
-              }),
-              buildTextDropdown('거래 상품', true, selectedGoods, (newValue) {
-                setState(() {
-                  selectedGoods = newValue;
-                  relationColumnandValue[2] = newValue;
-                });
-              }),
-              buildTextDropdown('거래 타입', false, selectedCategoryType, (newValue) {
-                setState(() {
-                  selectedCategoryType = newValue;
-                  relationColumnandValue[4] = newValue;
-                });
-              }),
-              buildTextDropdown('세부 종류', false, selectedCategory, (newValue) {
-                setState(() {
-                  selectedCategory = newValue;
-                  relationColumnandValue[3] = newValue;
-                });
-              }),
-              buildTextDropdown('메모', false, selectedDescription, (newValue) {
-                setState(() {
-                  selectedDescription = newValue;
-                  relationColumnandValue[5] = newValue;
-                });
-              }),
-              buildTextDropdown('할부', false, selectedInstallment, (newValue) {
-                setState(() {
-                  selectedInstallment = newValue;
-                  relationColumnandValue[6] = newValue;
-                });
-              }),
+              ..._buildColumnMappingDropdowns(),
             ],
           ),
           const SizedBox(height: 24),
@@ -616,9 +585,7 @@ class _SecondPageState extends State<SecondPage> {
             height: MediaQuery.of(context).size.height * 0.4*0.2,
             child:ElevatedButton(
               onPressed: isButtonEnabled() ? () {
-                List<dynamic> accountColumnData = [];
-                relationColumnandselectedAccount = accountColumnData.toSet().toList();
-                _onButtonPressed(relationColumnandValue,relationColumnandselectedAccount);
+                _onButtonPressed(relationColumnandValue);
               } : null,
               style: ElevatedButton.styleFrom(
                 shape: ContinuousRectangleBorder(borderRadius: BorderRadius.circular(30))
@@ -630,7 +597,21 @@ class _SecondPageState extends State<SecondPage> {
       ),
     );
   }
-  
+
+  List<Widget> _buildColumnMappingDropdowns() {
+    return List.generate(fieldLabels.length, (index) {
+      return buildTextDropdown(
+        fieldLabels[index],
+        requiredFields.contains(index),
+        relationColumnandValue[index],
+        (newValue) {
+          setState(() {
+            relationColumnandValue[index] = newValue;
+          });
+        },
+      );
+    });
+  }
   Widget buildTextDropdown(String title,bool  requiredParameter, String? parameter, Function(String?) onChanged) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -669,9 +650,8 @@ class LastPage extends StatefulWidget {
   final String fileCodec;
   final String? xlsxSheet;
   final List<dynamic> modelColumnrelations;
-  final List<dynamic> setData;
 
-  const LastPage({required this.filePicked, required this.fileCodec, required this.onButtonPressed, required this.modelColumnrelations, this.xlsxSheet, required this.setData, super.key});
+  const LastPage({required this.filePicked, required this.fileCodec, required this.onButtonPressed, required this.modelColumnrelations, this.xlsxSheet, super.key});
 
   @override
   State<LastPage> createState() => _LastPageState();
@@ -708,7 +688,7 @@ class _LastPageState extends State<LastPage> {
   @override
   void initState() {
     super.initState();
-    relationColumnandValue = List.filled(widget.setData.length, null);
+    relationColumnandValue = List.filled(widget.modelColumnrelations.length, null);
     if (widget.filePicked != null) {
       _readColumnNames(widget.filePicked!).then((_) {
         if (fileFromat == 'xlsx') {
@@ -740,8 +720,6 @@ class _LastPageState extends State<LastPage> {
             }
             fields.add(mappedRow);
           }
-          logger.i('엑셀의 경우 ${fields.length}');
-          logger.d('엑셀의 경우 $fields');
         } else if (widget.fileCodec == 'UTF8') {
           var input = File(fileName!).openRead();
           fileFromat = 'csv';
@@ -902,26 +880,7 @@ class _LastPageState extends State<LastPage> {
       ],
     );
   }
-
-  // Future<void> insertDatasToDatabase(BuildContext context, List<List<dynamic>> dataRows) async {
-  //   LoadingDialog.show(context, message: "데이터 처리 중...");
-
-  //   try {
-  //     await TransactionIsolate.start(dataRows);
-
-  //     if (context.mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('데이터 삽입 완료!')),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     logger.e('error: $e');
-  //   }
-
-  //   LoadingDialog.hide();
-  // }
-
-  
+ 
 
 
   /// modelColumnrelations = [transactionTime, amount, goods, category, categoryType, memo. installment]
@@ -943,9 +902,10 @@ class _LastPageState extends State<LastPage> {
           throw Exception('Unsupported date format: $rawDate');
         }
         String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(parsedDate);
-        String formattedcategory = widget.modelColumnrelations[3] != null ? row[columnNames.indexOf(widget.modelColumnrelations[3])] : "";
-        String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(row[columnNames.indexOf(widget.modelColumnrelations[4])]) ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "이체";
+        String formattedcategoryType = widget.modelColumnrelations[3] == null ? "이체" : ['소비', '수입', '이체'].contains(row[columnNames.indexOf(widget.modelColumnrelations[4])]) ? row[columnNames.indexOf(widget.modelColumnrelations[4])] : "이체";
+        String formattedcategory = widget.modelColumnrelations[4] != null ? row[columnNames.indexOf(widget.modelColumnrelations[3])] : "";
         int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parseToInt(row[columnNames.indexOf(widget.modelColumnrelations[6])]) : 1;
+        bool formattedCredit  = widget.modelColumnrelations[7] != null ? ['1','신용','신용카드', 'O'].contains(row[columnNames.indexOf(widget.modelColumnrelations[7])]) : false;
         try {
           MoneyTransaction transaction = MoneyTransaction(
             transactionTime: formattedDatetime,
@@ -962,6 +922,7 @@ class _LastPageState extends State<LastPage> {
               ? "#연간예산 "
               : "",
             extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
+            credit: formattedCredit ? true : false,
           );
           bool exists = await DatabaseAdmin().checkIfTransCodeExists(
             transaction.transactionTime,
@@ -1026,7 +987,6 @@ class _LastPageState extends State<LastPage> {
           parsedDate = rawDate.asDateTimeUtc();
         } else if (rawDate is DateTimeCellValue) {
           parsedDate = rawDate.asDateTimeUtc();
-          logger.i('엑셀의 경우 $parsedDate');
         } else {
           logger.d(rawDate.runtimeType);
           logger.d(rawDate.toString());
@@ -1038,12 +998,10 @@ class _LastPageState extends State<LastPage> {
           throw Exception('Unsupported date format: $rawDate');
         }
         TextCellValue rawCategory = row[columnNames.indexOf(widget.modelColumnrelations[3])];
-        // logger.i('엑셀의 경우 $rawCategory');
         TextCellValue rawCategoryType = row[columnNames.indexOf(widget.modelColumnrelations[4])];
-        // logger.i('엑셀의 경우 $rawCategoryType');
+        TextCellValue rawCredit = row[columnNames.indexOf(widget.modelColumnrelations[7])].runtimeType == TextCellValue ? row[columnNames.indexOf(widget.modelColumnrelations[7])] : TextCellValue('check');
         var rawInstallment = widget.modelColumnrelations[6] != null ? row[columnNames.indexOf(widget.modelColumnrelations[6])] : const IntCellValue(1);
         int parsedInstallment;
-        // logger.i(rawInstallment);
         if (rawInstallment is IntCellValue) {
           parsedInstallment = rawInstallment.value;
         } else if(rawInstallment is TextCellValue) {
@@ -1057,9 +1015,10 @@ class _LastPageState extends State<LastPage> {
           throw Exception('Unsupported text or int format: $rawInstallment');
         }
         String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(parsedDate);
-        String formattedcategory = widget.modelColumnrelations[3] != null ? rawCategory.toString() : "";
-        String formattedcategoryType = widget.modelColumnrelations[4] == null ? "이체" : ['소비', '수입', '이체'].contains(rawCategoryType.toString()) ? rawCategoryType.toString() : "이체";
+        String formattedcategoryType = widget.modelColumnrelations[3] == null ? "이체" : ['소비', '수입', '이체'].contains(rawCategoryType.toString()) ? rawCategoryType.toString() : "이체";
+        String formattedcategory = widget.modelColumnrelations[4] != null ? rawCategory.toString() : "";
         int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parsedInstallment : 1;
+        bool formattedCredit =  widget.modelColumnrelations[7] != null ? ['1','신용','신용카드', 'O'].contains(rawCredit.toString()) : false;
         var rawAmount = row[columnNames.indexOf(widget.modelColumnrelations[1])];
         double parsedAmount;
         if (rawAmount is IntCellValue) {
@@ -1076,7 +1035,6 @@ class _LastPageState extends State<LastPage> {
           }
           throw Exception('Unsupported double format: $rawAmount');
         }
-        // logger.d(widget.modelColumnrelations[5]);
         try {
           MoneyTransaction transaction = MoneyTransaction(
             transactionTime: formattedDatetime,
@@ -1093,6 +1051,7 @@ class _LastPageState extends State<LastPage> {
               ? "#연간예산 "
               : "",
             extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
+            credit: formattedCredit ? true : false,
           );
           bool exists = await DatabaseAdmin().checkIfTransCodeExists(
             transaction.transactionTime,

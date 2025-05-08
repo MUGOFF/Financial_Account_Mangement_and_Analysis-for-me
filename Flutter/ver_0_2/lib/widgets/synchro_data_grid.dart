@@ -18,21 +18,8 @@ import 'package:ver_0_2/widgets/models/extra_budget_group.dart';
 class TransactionGridDataSource extends DataGridSource {
   final List<MoneyTransaction> transanctions;
   TransactionGridDataSource({required this.transanctions}) {
-    // tagTransactionPage = transanctions.length < _rowsPerPage
-    //   ? transanctions
-    //   : transanctions.getRange(0, _rowsPerPage).toList();
     buildPaginatedDataGridRows();
-    // dataGridRows = transanctions
-    //     .map<DataGridRow>((dataGridRow) => DataGridRow(cells: [
-    //           DataGridCell<String>(columnName: 'Date', value: dataGridRow.transactionTime),
-    //           DataGridCell<String>(columnName: 'Name', value: dataGridRow.goods),
-    //           DataGridCell<double>(columnName: 'Amount', value: dataGridRow.amount),
-    //           DataGridCell<String>(columnName: 'Category', value: dataGridRow.category),
-    //         ]))
-    //     .toList();
   }
-  // List<MoneyTransaction> tagTransactionPage=[];
-  // final int _rowsPerPage = 5;
 
   Logger logger = Logger();
 
@@ -88,22 +75,6 @@ class TransactionGridDataSource extends DataGridSource {
         );
     }).toList());
   }
-
-  // @override
-  // Future<bool> handlePageChange(int oldPageIndex, int newPageIndex) async {
-  //   int startIndex = newPageIndex * _rowsPerPage;
-  //   int endIndex = startIndex + _rowsPerPage;
-  //   if (startIndex < transanctions.length && endIndex <= transanctions.length) {
-  //     tagTransactionPage =
-  //         transanctions.getRange(startIndex, endIndex).toList(growable: false);
-  //     buildPaginatedDataGridRows();
-  //     notifyListeners();
-  //   } else {
-  //     tagTransactionPage = [];
-  //   }
-  //   logger.d('index move $tagTransactionPage');
-  //   return true;
-  // }
 
   void buildPaginatedDataGridRows() {
     dataGridRows = transanctions.map<DataGridRow>((dataGridRow) {
@@ -239,31 +210,12 @@ class ExtraTransactionSource extends DataGridSource {
   // final Function(String, String)? afterEdit;
   ExtraTransactionSource({
     required this.extraTransaction,
-    // this.afterEdit,
     required this.context,
   }) {
-    // if (extraTransaction.length < _rowsPerPage){
-    //   extraTransactionPage = extraTransaction;
-    // } else {
-    //   extraTransactionPage = extraTransaction.getRange(0, _rowsPerPage).toList();
-    // }
     extraTransactionPage = extraTransaction.length < _rowsPerPage
       ? extraTransaction
       : extraTransaction.getRange(0, _rowsPerPage).toList();
     buildPaginatedDataGridRows();
-    // dataGridRows = extraTransaction
-    //   .map<DataGridRow>((dataGridRow) => DataGridRow(cells: [
-    //     // DataGridCell<String>(columnName: 'id', value: dataGridRow.dataid),
-    //     DataGridCell<String>(columnName: 'name', value: dataGridRow.name),
-    //     DataGridCell<String>(
-    //         columnName: 'category', value: dataGridRow.category),
-    //     DataGridCell<int>(
-    //         columnName: 'amount', value: dataGridRow.amount),
-    //     DataGridCell<Function>(
-    //         columnName: 'modify', value: dataGridRow.modifyCategory),
-    //   ]))
-    //   .toList();
-    // logger.d(dataGridRows);
   }
   List<ExtraTransactionGrid> extraTransactionPage=[];
   final int _rowsPerPage = 5;
@@ -362,18 +314,8 @@ class ExtraTransactionSource extends DataGridSource {
         DataGridCell<Function>(
             columnName: 'modify', value: dataGridRow.modifyCategory),
       ]);
-      // DataGridRow(cells: [
-      //   DataGridCell(columnName: 'orderID', value: dataGridRow.orderID),
-      //   DataGridCell(columnName: 'customerID', value: dataGridRow.customerID),
-      //   DataGridCell(columnName: 'orderDate', value: dataGridRow.orderDate),
-      //   DataGridCell(columnName: 'freight', value: dataGridRow.freight),
-      // ]);
     }).toList(growable: false);
-    // logger.i(dataGridRows);
   }
-  // void updateDataToDatabase(String jsonData, int dataID) {
-  //   DatabaseAdmin().updateExtraJsonData(jsonData, dataID);
-  // }
 }
 
 ///특별 예산 데이타표
@@ -444,38 +386,7 @@ class _ExtraBudgetDataGridState extends State<ExtraBudgetDataGrid> {
       );
     });
   } 
-  // void fetchTableData() {
-  //   _tableRawData.asMap().forEach((index, rows) {
-  //     // logger.d(_tableRawData);
-  //     //_tableData에서 _tableRawData에 포함되지 않은 dataid를 가진 항목을 제거
-  //     tableData.removeWhere((row) => !_tableRawData.any((rawRow) => rawRow['dataid'] == row.dataid));
-  //     if (tableData.isEmpty || !(tableData.any((tableRow) => tableRow.dataid == rows['dataid']))) {
-  //       selectedTransactionData.add(rows['id']);
-  //       tableData.add(ExtraTransactionGrid(
-  //         dataid: rows['dataid'],
-  //         name: rows['goods'],
-  //         category: rows['category'],
-  //         amount: rows['amount'],
-  //         modifyCategory: (String category) {
-  //           setState(() {
-  //             _tableRawData[index]['category'] = category;
-  //             updateCategoryDataToDatabase(_tableRawData,widget.id);
-  //             fetchBaseDatas();
-  //             widget.updatePageCallback();
-  //           });
-  //           // logger.i(_tableRawData);
-  //         },
-  //       ));
-  //     }
-  //   });
-  //   setState(() {
-  //     _tableDataSource = ExtraTransactionSource(
-  //       extraTransaction: tableData,
-  //       context: context
-  //     );
-  //   });
-  // }
-  
+
   @override
   Widget build(BuildContext context) {
     if (_tableDataSource == null) {
@@ -578,7 +489,8 @@ class TransactionExportGridDataSource extends DataGridSource {
               DataGridCell<String>(columnName: 'Category', value: dataGridRow.category),
               DataGridCell<String>(columnName: 'CategoryType', value: dataGridRow.categoryType),
               DataGridCell<String>(columnName: 'Description', value: dataGridRow.description),
-              DataGridCell<int>(columnName: 'installation', value: dataGridRow.installation),
+              DataGridCell<int>(columnName: 'Installation', value: dataGridRow.installation),
+              DataGridCell<bool>(columnName: 'Credit', value: dataGridRow.credit),
             ]))
         .toList();
   }
@@ -622,11 +534,7 @@ class TransactionExportGridDataSource extends DataGridSource {
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 10.0),
           child: AutoSizeText(
-            (dataGridCell.columnName == 'Amount')
-            ? formatterK(dataGridCell.value)
-            : (dataGridCell.columnName == 'Date')
-            ? formatterDate(dataGridCell.value)
-            : dataGridCell.value.toString(),
+            _formatCellValue(dataGridCell),
             overflow: (dataGridCell.columnName == 'Name')
               ? TextOverflow.ellipsis
               : TextOverflow.clip,
@@ -637,7 +545,21 @@ class TransactionExportGridDataSource extends DataGridSource {
         );
     }).toList());
   }
+
+  String _formatCellValue(DataGridCell dataGridCell) {
+    switch (dataGridCell.columnName) {
+      case 'Amount':
+        return formatterK(dataGridCell.value);
+      case 'Date':
+        return formatterDate(dataGridCell.value);
+      case 'Credit':
+        return dataGridCell.value? 'Credit' : 'Debit';
+      default:
+        return dataGridCell.value.toString();
+    }
+  }
 }
+
 /// 데이터 내보내기기
 class DataGridExportExample extends StatefulWidget {
 
@@ -842,11 +764,19 @@ class _DataGridExportExampleState extends State<DataGridExportExample> {
                 )
               ),
               GridColumn(
-                columnName: 'installation',
+                columnName: 'Installation',
                 label: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   alignment: Alignment.center,
-                  child: const Text('installation')
+                  child: const Text('Installation')
+                )
+              ),
+              GridColumn(
+                columnName: 'Credit',
+                label: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  alignment: Alignment.center,
+                  child: const Text('Credit')
                 )
               ),
             ],
