@@ -35,7 +35,7 @@ class _BookState extends State<Book> {
   Set<int> selectedIds = {};
   bool isSelectionMode = false;
   List<String> filterValue = ['소비', '수입'];
-  String? transactionFilter = '기본';
+  Map<String, String> transactionFilter = {'거래분류': '기본', '결제종류': '기본'};
   String? lastTopDatetime;
   String searchTransacion= '';
 
@@ -265,6 +265,9 @@ class _BookState extends State<Book> {
                     if (!filterValue.contains(transactions[index].categoryType)) {
                       return const SizedBox.shrink();
                     }
+                    if (transactionFilter['결제종류'] != '기본' && transaction.credit == (transactionFilter['결제종류'] == '신용')) {
+                      return const SizedBox.shrink();
+                    }
                     final isSelected = selectedIds.contains(transaction.id);
                     // logger.i(transactions[0].id);
                     return Container(
@@ -345,7 +348,7 @@ class _BookState extends State<Book> {
               showFilterDialog(context);
             },
             tooltip: '표시 내역 필터',
-            child: transactionFilter == '기본' ? const Icon(Icons.filter_alt_outlined) : const Icon(Icons.filter_alt),
+            child: transactionFilter['거래분류'] == '기본' ||  transactionFilter['결제종류'] == '기본'? const Icon(Icons.filter_alt_outlined) : const Icon(Icons.filter_alt),
           ),
           const SizedBox(height: 8.0),
           // Visibility(
@@ -401,88 +404,147 @@ class _BookState extends State<Book> {
                 padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).viewInsets.bottom, // 키보드 높이만큼 패딩 제거
                 ),
-                child:SingleChildScrollView(
-                  child: SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.6,
-                    width: MediaQuery.of(context).size.width * 0.8,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        TextField(
-                          decoration: const InputDecoration(
-                            labelText: '검색',
-                            prefixIcon: Icon(Icons.search),
-                            border: OutlineInputBorder(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.6,
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      TextField(
+                        decoration: InputDecoration(
+                          labelText: '검색',
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              if (tempTransactions.isNotEmpty) {
+                                transactions = tempTransactions;
+                              }
+                              tempTransactions = transactions;
+                              setState(() {
+                                transactions = transactions.where((element) => element.goods.contains(searchTransacion)).toList();
+                              });
+                              showSearchButton();
+                              Navigator.of(context).pop();
+                            },
+                            icon: const Icon(Icons.search),
                           ),
-                          onChanged: (value) {
-                            searchTransacion = value;
-                          },
-                          onSubmitted: (value) {
-                            searchTransacion = value;
-                          },
-                          // onEditingComplete: () {
-                          //   tempTransactions = transactions;
-                          //   setState(() {
-                          //     transactions = transactions.where((element) => element.goods.contains(searchTransacion)).toList();
-                          //   });
-                          // },
+                          border: const OutlineInputBorder(),
                         ),
-                        GridView.count(
-                          crossAxisCount: 2, // 2열로 구성
-                          shrinkWrap: true, // 크기를 콘텐츠에 맞춤
-                          mainAxisSpacing: 1.0,
-                          crossAxisSpacing: 1.0,
-                          // childAspectRatio: 2.5,
-                          physics: const NeverScrollableScrollPhysics(),
+                        onChanged: (value) {
+                          searchTransacion = value;
+                        },
+                        onSubmitted: (value) {
+                          searchTransacion = value;
+                        },
+                        // onEditingComplete: () {
+                        //   tempTransactions = transactions;
+                        //   setState(() {
+                        //     transactions = transactions.where((element) => element.goods.contains(searchTransacion)).toList();
+                        //   });
+                        // },
+                      ),
+                      const Divider(),
+                      Flexible(
+                        flex: 2,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            RadioListTile<String>(
-                              value: '기본',
-                              groupValue: transactionFilter,
-                              onChanged: (String? value) {
-                                setState(() {
-                                  transactionFilter = value;
-                                });
-                              },
-                              title: const AutoSizeText('기본', maxLines: 1),
-                              // subtitle: const Text('소비 + 수입'),
+                            Expanded(
+                              child: 
+                            GridView.count(
+                              crossAxisCount: 2, // 2열로 구성
+                              shrinkWrap: true, // 크기를 콘텐츠에 맞춤
+                              mainAxisSpacing: 0.1,
+                              crossAxisSpacing: 0.1,
+                              childAspectRatio: 2.5,
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: [
+                                RadioListTile<String>(
+                                  value: '기본',
+                                  groupValue: transactionFilter['거래분류'],
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      transactionFilter['거래분류'] = value ??  '기본';
+                                    });
+                                  },
+                                  title: const AutoSizeText('기본', maxLines: 1),
+                                  // subtitle: const Text('소비 + 수입'),
+                                ),
+                                RadioListTile<String>(
+                                  value: '소비',
+                                  groupValue: transactionFilter['거래분류'],
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      transactionFilter['거래분류'] = value ??  '소비';
+                                    });
+                                  },
+                                  title: const AutoSizeText('소비', maxLines: 1),
+                                  // subtitle: const Text('소비 내역만'),
+                                ),
+                                RadioListTile<String>(
+                                  value: '수입',
+                                  groupValue: transactionFilter['거래분류'],
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      transactionFilter['거래분류'] = value ??  '수입';
+                                    });
+                                  },
+                                  title: const AutoSizeText('수입', maxLines: 1),
+                                  // subtitle: const Text('수입 내역만'),
+                                ),
+                                RadioListTile<String>(
+                                  value: '전체',
+                                  groupValue: transactionFilter['거래분류'],
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      transactionFilter['거래분류'] = value ??  '전체';
+                                    });
+                                  },
+                                  title: const AutoSizeText('전체', maxLines: 1),
+                                  // subtitle: const Text('소비 + 수입 + 이체'),
+                                ),
+                              ],
                             ),
-                            RadioListTile<String>(
-                              value: '소비',
-                              groupValue: transactionFilter,
-                              onChanged: (String? value) {
-                                setState(() {
-                                  transactionFilter = value;
-                                });
-                              },
-                              title: const AutoSizeText('소비', maxLines: 1),
-                              // subtitle: const Text('소비 내역만'),
                             ),
-                            RadioListTile<String>(
-                              value: '수입',
-                              groupValue: transactionFilter,
-                              onChanged: (String? value) {
-                                setState(() {
-                                  transactionFilter = value;
-                                });
-                              },
-                              title: const AutoSizeText('수입', maxLines: 1),
-                              // subtitle: const Text('수입 내역만'),
+                            const Divider(),
+                            Expanded(
+                              child:
+                            GridView.count(
+                              crossAxisCount: 2, // 2열로 구성
+                              shrinkWrap: true, // 크기를 콘텐츠에 맞춤
+                              mainAxisSpacing: 0.1,
+                              crossAxisSpacing: 0.1,
+                              childAspectRatio: 2.5,
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: [
+                                RadioListTile<String>(
+                                  value: '신용',
+                                  groupValue: transactionFilter['결제종류'],
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      transactionFilter['결제종류'] = value ?? '신용';
+                                    });
+                                  },
+                                  title: const AutoSizeText('신용', maxLines: 1),
+                                  // subtitle: const Text('소비 + 수입'),
+                                ),
+                                RadioListTile<String>(
+                                  value: '체크',
+                                  groupValue: transactionFilter['결제종류'],
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      transactionFilter['결제종류'] = value ?? '체크';
+                                    });
+                                  },
+                                  title: const AutoSizeText('체크', maxLines: 1),
+                                  // subtitle: const Text('소비 내역만'),
+                                ),
+                              ],
                             ),
-                            RadioListTile<String>(
-                              value: '전체',
-                              groupValue: transactionFilter,
-                              onChanged: (String? value) {
-                                setState(() {
-                                  transactionFilter = value;
-                                });
-                              },
-                              title: const AutoSizeText('전체', maxLines: 1),
-                              // subtitle: const Text('소비 + 수입 + 이체'),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -490,23 +552,34 @@ class _BookState extends State<Book> {
           ),
           actions: <Widget>[
             TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('취소'),
-              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  transactionFilter['거래분류'] = '기본';
+                  filterValue = ['소비', '수입'];
+                  transactionFilter['결제종류'] = '기본';
+                });
+              },
+              child: const Text('초기화'),
+            ),
             TextButton(
                 onPressed: () {
-                  if (tempTransactions.isNotEmpty) {
-                    transactions = tempTransactions;
-                  }
-                  tempTransactions = transactions;
+                  // if (tempTransactions.isNotEmpty) {
+                  //   transactions = tempTransactions;
+                  // }
+                  // tempTransactions = transactions;
+                  // setState(() {
+                  //   transactions = transactions.where((element) => element.goods.contains(searchTransacion)).toList();
+                  // });
+                  // showSearchButton();
                   setState(() {
-                    transactions = transactions.where((element) => element.goods.contains(searchTransacion)).toList();
-                  });
-                  showSearchButton();
-                  setState(() {
-                    switch (transactionFilter) {
+                    switch (transactionFilter['거래분류']) {
                       case '기본' :
                         filterValue = ['소비', '수입'];
                         break;
@@ -524,7 +597,7 @@ class _BookState extends State<Book> {
                   // _setstating();
                   Navigator.of(context).pop();
                 },
-                child: const Text('확인'),
+                child: const Text('필터'),
               ),
           ],
         );

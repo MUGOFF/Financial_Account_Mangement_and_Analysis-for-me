@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
@@ -971,35 +972,73 @@ class _LastPageState extends State<LastPage> {
       },
     );
   }
-  ///xlsx의 경우
+
+  ///xlsx의 경우 처리
   Future<void> autoInsertDatasToDatabase(BuildContext context, List<List<dynamic>> dataRows) async{
     int i = 0;
     try {
       for (var row in dataRows) {
         i++;
-        ///엑셀의 경우
+        //날짜
         var rawDate = row[columnNames.indexOf(widget.modelColumnrelations[0])];
+        DateTime parsedDate;
         if (rawDate == null || rawDate == '') {
           continue;
         }
-        DateTime parsedDate;
-        if (rawDate is DateCellValue) {
-          parsedDate = rawDate.asDateTimeUtc();
-        } else if (rawDate is DateTimeCellValue) {
+        if (rawDate is DateCellValue || rawDate is DateTimeCellValue) {
           parsedDate = rawDate.asDateTimeUtc();
         } else {
-          logger.d(rawDate.runtimeType);
-          logger.d(rawDate.toString());
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('지원하지 않는 날짜 포맷이거나 함수수입니다')),
-            );
-          }
-          throw Exception('Unsupported date format: $rawDate');
+          logger.d('e');
+          throw Exception('Date');
         }
-        TextCellValue rawCategory = row[columnNames.indexOf(widget.modelColumnrelations[3])];
-        TextCellValue rawCategoryType = row[columnNames.indexOf(widget.modelColumnrelations[4])];
-        TextCellValue rawCredit = row[columnNames.indexOf(widget.modelColumnrelations[7])].runtimeType == TextCellValue ? row[columnNames.indexOf(widget.modelColumnrelations[7])] : TextCellValue('check');
+        String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(parsedDate);
+        //금액
+        var rawAmount = row[columnNames.indexOf(widget.modelColumnrelations[1])];
+        double parsedAmount;
+        if (rawAmount is IntCellValue) {
+          parsedAmount = rawAmount.value.toDouble();
+        } else if(rawAmount is TextCellValue || rawAmount is String) {
+          parsedAmount = double.tryParse(rawAmount.toString()) ?? 0.0;
+        } else if(rawAmount is DoubleCellValue) {
+          parsedAmount = rawAmount.value;
+        } else {
+          logger.d('e');
+          throw Exception('Amount');
+        }
+        //항목
+        var rawGoods = row[columnNames.indexOf(widget.modelColumnrelations[2])];
+        String parsedGoods;
+        if(rawGoods is TextCellValue || rawGoods is String) {
+          parsedGoods = rawAmount.toString();
+        } else {
+          logger.d('e');
+          throw Exception('Goods');
+        }
+        //분류
+        var rawCategoryType = row[columnNames.indexOf(widget.modelColumnrelations[3])];
+        String parsedCategoryType;
+        if(rawCategoryType is TextCellValue || rawCategoryType is String) {
+          parsedCategoryType = ['소비', '수입', '이체'].contains(rawCategoryType.toString()) ? rawCategoryType.toString() : "이체";
+        } else if(rawCategoryType == null) {
+          parsedCategoryType = '이체';
+        } else {  
+          logger.d('e');
+          throw Exception('CategoryType');
+        }
+        //카테고리
+        var rawCategory = row[columnNames.indexOf(widget.modelColumnrelations[4])];
+        String parsedCategory;
+        if(rawCategory is TextCellValue || rawCategory is String) {
+          parsedCategory = rawCategoryType.toString();
+        } else if(rawCategory == null) {
+          parsedCategory = '미기재';
+        } else {  
+          logger.d('e');
+          throw Exception('Category');
+        }
+        //메모
+        var rawDescription = widget.modelColumnrelations[5] != null ? row[columnNames.indexOf(widget.modelColumnrelations[5])] : TextCellValue('');
+        //할부
         var rawInstallment = widget.modelColumnrelations[6] != null ? row[columnNames.indexOf(widget.modelColumnrelations[6])] : const IntCellValue(1);
         int parsedInstallment;
         if (rawInstallment is IntCellValue) {
@@ -1007,50 +1046,24 @@ class _LastPageState extends State<LastPage> {
         } else if(rawInstallment is TextCellValue) {
           parsedInstallment = int.tryParse(rawInstallment.toString()) ?? 1;
         } else {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('할부 항목이 지원하지 않는 숫자 혹은 텍스트 포맷이거나 함수입니다')),
-            );
-          }
-          throw Exception('Unsupported text or int format: $rawInstallment');
+          logger.d('e');
+          throw Exception('Installment');
         }
-        String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm').format(parsedDate);
-        String formattedcategoryType = widget.modelColumnrelations[3] == null ? "이체" : ['소비', '수입', '이체'].contains(rawCategoryType.toString()) ? rawCategoryType.toString() : "이체";
-        String formattedcategory = widget.modelColumnrelations[4] != null ? rawCategory.toString() : "";
-        int? formattedInstallment  = widget.modelColumnrelations[6] != null ? parsedInstallment : 1;
+        //신용
+        TextCellValue rawCredit = row[columnNames.indexOf(widget.modelColumnrelations[7])].runtimeType == TextCellValue ? row[columnNames.indexOf(widget.modelColumnrelations[7])] : TextCellValue('check');
         bool formattedCredit =  widget.modelColumnrelations[7] != null ? ['1','신용','신용카드', 'O'].contains(rawCredit.toString()) : false;
-        var rawAmount = row[columnNames.indexOf(widget.modelColumnrelations[1])];
-        double parsedAmount;
-        if (rawAmount is IntCellValue) {
-          parsedAmount = rawAmount.value.toDouble();
-        } else if(rawAmount is TextCellValue) {
-          parsedAmount = double.tryParse(rawAmount.toString()) ?? 0.0;
-        } else if(rawAmount is DoubleCellValue) {
-          parsedAmount = rawAmount.value;
-        } else {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('금액 항목이 지원하지 않는 숫자 혹은 텍스트 포맷이거나 함수입니다')),
-            );
-          }
-          throw Exception('Unsupported double format: $rawAmount');
-        }
         try {
           MoneyTransaction transaction = MoneyTransaction(
             transactionTime: formattedDatetime,
             amount: parsedAmount,
-            goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
-            category: formattedcategory,
-            categoryType: formattedcategoryType,
-            installation: formattedInstallment,
-            description: widget.modelColumnrelations[5] != null 
-            ? yearlyExpenseCategory.contains(formattedcategory) 
-              ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
-              : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
-            : yearlyExpenseCategory.contains(formattedcategory) 
-              ? "#연간예산 "
-              : "",
-            extraBudget: yearlyExpenseCategory.contains(formattedcategory) ? true : false,
+            goods: parsedGoods != '' ? parsedGoods : '미기재',
+            category: parsedCategory,
+            categoryType: parsedCategoryType,
+            installation: parsedInstallment,
+            description: yearlyExpenseCategory.contains(parsedCategory) 
+              ? '${rawDescription.toString()} #연간예산 '
+              : rawDescription.toString(),
+            extraBudget: yearlyExpenseCategory.contains(parsedCategory) ? true : false,
             credit: formattedCredit ? true : false,
           );
           bool exists = await DatabaseAdmin().checkIfTransCodeExists(
@@ -1074,10 +1087,55 @@ class _LastPageState extends State<LastPage> {
       }
     } catch(e) {
       logger.e('error: $e, formmating error');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('내역 항목의 타입에 에러가 있습니다')),
-        );
+      switch (e) {
+        case 'Date':
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('날짜 포맷이 아닙니다')),
+            );
+          }
+          break;
+        case 'Installment':
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('할부 항목이 숫자 혹은 텍스트 포맷이 아닙니다')),
+            );
+          }
+          break;
+        case 'Amount':
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('금액 항목이 숫자 혹은 텍스트 포맷이 아닙니다')),
+            );
+          }
+          break;
+        case 'Goods':
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('내역 항목이 텍스트 포맷이 아닙니다')),
+            );
+          }
+          break;
+        case 'CategoryType':
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('거래분류 항목이 텍스트 포맷이 아닙니다')),
+            );
+          }
+          break;
+        case 'Category':
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('카테고리 항목이 텍스트 포맷이 아닙니다')),
+            );
+          }
+          break;
+        default:
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('일부 항목이 적절하지 않은 타입으로 설정되있습니다')),
+            );
+          }
       }
     } finally {
       logger.d('${context.mounted} fianl');
@@ -1091,91 +1149,6 @@ class _LastPageState extends State<LastPage> {
     }
   }
 }
-
-// class TransactionIsolate {
-//   static Future<void> start(List<List<dynamic>> dataRows) async {
-//     final receivePort = ReceivePort();
-//     await Isolate.spawn(_processAndInsertTransactions, receivePort.sendPort);
-    
-//     final sendPort = await receivePort.first as SendPort;
-//     final responsePort = ReceivePort();
-    
-//     sendPort.send([dataRows, responsePort.sendPort]);
-    
-//     await for (var message in responsePort) {
-//       if (message == "done") {
-//         break;
-//       }
-//     }
-
-//     receivePort.close();
-//     responsePort.close();
-//   }
-
-//   static void _processAndInsertTransactions(SendPort sendPort) async {
-//     final port = ReceivePort();
-//     sendPort.send(port.sendPort);
-    
-//     await for (var message in port) {
-//       if (message is List) {
-//         List<List<dynamic>> dataRows = message[0];
-//         SendPort replyPort = message[1];
-
-//         for (var row in dataRows) {
-//           try {
-//             // 데이터 변환
-//             String formattedDatetime = DateFormat('yyyy년 MM월 dd일THH:mm')
-//                 .format(DateFormat(dateFormat).parse(row[columnNames.indexOf(widget.modelColumnrelations[0])])); 
-//             String formattedCategory = widget.modelColumnrelations[3] != null
-//                 ? row[columnNames.indexOf(widget.modelColumnrelations[3])]
-//                 : "";
-//             String formattedCategoryType = widget.modelColumnrelations[4] == null
-//                 ? "이체"
-//                 : ['소비', '수입', '이체'].contains(row[columnNames.indexOf(widget.modelColumnrelations[4])])
-//                     ? row[columnNames.indexOf(widget.modelColumnrelations[4])]
-//                     : "이체";
-//             int? formattedInstallment = widget.modelColumnrelations[6] != null
-//                 ? parseToInt(row[columnNames.indexOf(widget.modelColumnrelations[6])])
-//                 : 1;
-
-//             MoneyTransaction transaction = MoneyTransaction(
-//               transactionTime: formattedDatetime,
-//               amount: double.parse(row[columnNames.indexOf(widget.modelColumnrelations[1])].toString()),
-//               goods: row[columnNames.indexOf(widget.modelColumnrelations[2])].toString(),
-//               category: formattedCategory,
-//               categoryType: formattedCategoryType,
-//               installation: formattedInstallment ?? 1,
-//               description: widget.modelColumnrelations[5] != null
-//                   ? yearlyExpenseCategory.contains(formattedCategory)
-//                       ? '${row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()} #연간예산 '
-//                       : row[columnNames.indexOf(widget.modelColumnrelations[5])].toString()
-//                   : yearlyExpenseCategory.contains(formattedCategory)
-//                       ? "#연간예산 "
-//                       : "",
-//               extraBudget: yearlyExpenseCategory.contains(formattedCategory),
-//             );
-
-//             // 데이터베이스에 삽입
-//             bool exists = await DatabaseAdmin().checkIfTransCodeExists(
-//               transaction.transactionTime,
-//               transaction.goods,
-//               transaction.amount,
-//             );
-
-//             if (!exists) {
-//               await DatabaseAdmin().insertMoneyTransaction(transaction);
-//             }
-//           } catch (e) {
-//             logger.e('error: $e, formData row: $row');
-//           }
-//         }
-
-//         replyPort.send("done");
-//       }
-//     }
-//   }
-// }
-
 
 class TableDataOut extends StatefulWidget {
   const TableDataOut({super.key});
@@ -1198,6 +1171,5 @@ class _TableDataOutState extends State<TableDataOut> {
         DataGridExportExample(),
       ],
     );
-    // return const Text("업데이트 예정");
   }
 }
