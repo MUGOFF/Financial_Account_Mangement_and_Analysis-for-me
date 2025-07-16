@@ -124,6 +124,15 @@ class TableDataIn extends StatelessWidget {
       );
 
       if (result != null) {
+        // 로딩 다이얼로그 먼저 표시
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+
         final String filePath = result.files.single.path!;
         final String extension = filePath.split('.').last.toLowerCase();
         int initialPage = (extension == 'xlsx') ? 0 : 1;
@@ -155,6 +164,9 @@ class TableDataIn extends StatelessWidget {
             return;
           }
         }
+
+        // 로딩 다이얼로그 닫기
+        Navigator.of(context).pop();
 
         // 파일 선택 후 모달 열기 (SecondPage부터 시작)
         if (context.mounted) {
