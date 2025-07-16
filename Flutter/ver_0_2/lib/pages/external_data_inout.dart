@@ -154,10 +154,10 @@ class TableDataIn extends StatelessWidget {
           }
         } else if (extension == 'xlsx') {
           try {
-            final bytes = File(filePath).readAsBytesSync();
-            final excel = Excel.decodeBytes(bytes);
-            final Sheet sheet = excel.tables[excel.tables.keys.first]!;
-            if (sheet.rows.isEmpty) return;
+            // final bytes = File(filePath).readAsBytesSync();
+            // final excel = Excel.decodeBytes(bytes);
+            // final Sheet sheet = excel.tables[excel.tables.keys.first]!;
+            // if (sheet.rows.isEmpty) return;
             selectedCodec = 'XLSX';
           } catch (e) {
             logger.e('XLSX decoding failed: $e');
@@ -187,6 +187,10 @@ class TableDataIn extends StatelessWidget {
       }
     } catch (e) {
       logger.e('파일 선택 중 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('일부 항목이 적절하지 않은 타입으로 설정되있습니다')),
+      );
+      Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
     }
   }
 
